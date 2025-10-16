@@ -1,0 +1,72 @@
+import type { User } from "@/lib/types"
+
+export const mockUsers: User[] = [
+  {
+    id: "1",
+    email: "admin@ambacar.com",
+    nombre: "Carlos",
+    apellido: "Administrador",
+    rol: "admin",
+    telefono: "+593 99 123 4567",
+    sucursal: "Quito Norte",
+    activo: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+  {
+    id: "2",
+    email: "recepcion@ambacar.com",
+    nombre: "María",
+    apellido: "Recepción",
+    rol: "recepcion",
+    telefono: "+593 99 234 5678",
+    sucursal: "Quito Norte",
+    activo: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+  {
+    id: "3",
+    email: "tecnico1@ambacar.com",
+    nombre: "Juan",
+    apellido: "Técnico",
+    rol: "tecnico",
+    telefono: "+593 99 345 6789",
+    sucursal: "Quito Norte",
+    activo: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+  {
+    id: "4",
+    email: "jefe@ambacar.com",
+    nombre: "Roberto",
+    apellido: "Jefe Taller",
+    rol: "jefe_taller",
+    telefono: "+593 99 456 7890",
+    sucursal: "Quito Norte",
+    activo: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+  {
+    id: "5",
+    email: "cliente@example.com",
+    nombre: "Ana",
+    apellido: "Cliente",
+    rol: "cliente",
+    telefono: "+593 99 567 8901",
+    activo: true,
+    createdAt: new Date("2024-01-01"),
+    updatedAt: new Date("2024-01-01"),
+  },
+]
+
+// Mock credentials for testing
+export const mockCredentials = {
+  admin: { email: "admin@ambacar.com", password: "admin123" },
+  recepcion: { email: "recepcion@ambacar.com", password: "recepcion123" },
+  tecnico: { email: "tecnico1@ambacar.com", password: "tecnico123" },
+  jefe: { email: "jefe@ambacar.com", password: "jefe123" },
+  cliente: { email: "cliente@example.com", password: "cliente123" },
+}

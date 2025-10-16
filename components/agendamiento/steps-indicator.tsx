@@ -1,0 +1,67 @@
+"use client"
+
+import { motion } from "framer-motion"
+import { Check } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+interface Step {
+  number: number
+  title: string
+}
+
+interface StepsIndicatorProps {
+  steps: Step[]
+  currentStep: number
+}
+
+export function StepsIndicator({ steps, currentStep }: StepsIndicatorProps) {
+  return (
+    <div className="w-full max-w-3xl mx-auto mb-8">
+      <div className="flex items-center justify-between">
+        {steps.map((step, index) => {
+          const isCompleted = currentStep > step.number
+          const isCurrent = currentStep === step.number
+          const isLast = index === steps.length - 1
+
+          return (
+            <div key={step.number} className="flex items-center flex-1">
+              <div className="flex flex-col items-center">
+                <motion.div
+                  initial={false}
+                  animate={{
+                    scale: isCurrent ? 1.1 : 1,
+                    backgroundColor: isCompleted || isCurrent ? "#ED1C24" : "#e5e7eb",
+                  }}
+                  className={cn(
+                    "w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors",
+                    isCompleted || isCurrent ? "text-white" : "text-gray-500",
+                  )}
+                >
+                  {isCompleted ? <Check className="h-5 w-5" /> : step.number}
+                </motion.div>
+                <p
+                  className={cn("text-sm mt-2 font-medium text-center", isCurrent ? "text-[#ED1C24]" : "text-gray-600")}
+                >
+                  {step.title}
+                </p>
+              </div>
+
+              {!isLast && (
+                <div className="flex-1 h-0.5 mx-4 bg-gray-200 relative overflow-hidden">
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      width: isCompleted ? "100%" : "0%",
+                    }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0 bg-[#ED1C24]"
+                  />
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
