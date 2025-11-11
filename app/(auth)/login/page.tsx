@@ -59,8 +59,8 @@ export default function LoginPage() {
         await refreshUser()
 
         toast({
-          title: "¡Bienvenido!",
-          description: `Has iniciado sesión como ${result.user.first_name} ${result.user.last_name}`,
+          title: "¡Inicio de sesión exitoso!",
+          description: `Has iniciado sesión como ${result.user?.first_name || ''} ${result.user?.last_name || ''}`,
         })
 
         // Redirect to dashboard or original destination

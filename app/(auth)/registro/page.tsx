@@ -64,7 +64,7 @@ export default function RegistroPage() {
 
         toast({
           title: "¡Registro exitoso!",
-          description: `Bienvenido ${result.user.first_name} ${result.user.last_name}`,
+          description: `Bienvenido ${result.user?.first_name || ''} ${result.user?.last_name || ''}`,
         })
 
         router.push("/dashboard")

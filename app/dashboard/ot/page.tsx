@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Search, Plus, ClipboardList, Clock, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,11 +9,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { mockOrdenesTrabajoData } from "@/lib/fixtures/ordenes-trabajo"
-import { mockClientes, mockVehiculos } from "@/lib/fixtures/clientes"
-import { mockUsers } from "@/lib/fixtures/users"
+import { Spinner } from "@/components/ui/spinner"
+import { getOrdenesTrabajo, type OrdenTrabajoAPI } from "@/lib/api/ordenes-trabajo"
+import { getClientAccessToken } from "@/lib/auth/actions"
+import { toast } from "sonner"
 
-const estadoColors = {
+// Estado colors mapping
+const estadoColors: Record<string, string> = {
   creada: "bg-gray-500/10 text-gray-500 border-gray-500/20",
   en_diagnostico: "bg-orange-500/10 text-orange-500 border-orange-500/20",
   presupuestada: "bg-purple-500/10 text-purple-500 border-purple-500/20",
@@ -24,42 +26,114 @@ const estadoColors = {
   entregada: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
 }
 
-const prioridadColors = {
+const prioridadColors: Record<string, string> = {
   baja: "bg-gray-500/10 text-gray-500 border-gray-500/20",
   media: "bg-blue-500/10 text-blue-500 border-blue-500/20",
   alta: "bg-orange-500/10 text-orange-500 border-orange-500/20",
   urgente: "bg-red-500/10 text-red-500 border-red-500/20",
 }
 
+// Helper function to get estado color class
+const getEstadoColorClass = (codigo: string): string => {
+  const codigoLower = codigo.toLowerCase().replace(/-/g, "_")
+  return estadoColors[codigoLower] || estadoColors.creada
+}
+
+// Estado list for completed OTs
+const ESTADOS_COMPLETADOS = ["Entregada", "Completada", "Facturada"]
+
 export default function OrdenesTrabajoPage() {
+  const [ordenesData, setOrdenesData] = useState<OrdenTrabajoAPI[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [filterEstado, setFilterEstado] = useState<string>("todas")
-  const [filterPrioridad, setFilterPrioridad] = useState<string>("todas")
+  const [filterTipo, setFilterTipo] = useState<string>("todas")
 
-  const filteredOTs = mockOrdenesTrabajoData.filter((ot) => {
-    const cliente = mockClientes.find((c) => c.id === ot.clienteId)
-    const vehiculo = mockVehiculos.find((v) => v.id === ot.vehiculoId)
+  // Fetch ordenes de trabajo
+  useEffect(() => {
+    let isMounted = true
 
+    const fetchOrdenes = async () => {
+      // Get token from httpOnly cookies via server action
+      const token = await getClientAccessToken()
+
+      if (!token) {
+        toast.error("No se encontró token de autenticación")
+        setLoading(false)
+        return
+      }
+
+      try {
+        const data = await getOrdenesTrabajo(token)
+        if (isMounted) {
+          setOrdenesData(data)
+        }
+      } catch (error) {
+        console.error("Error fetching ordenes:", error)
+        if (isMounted) {
+          toast.error("Error al cargar las órdenes de trabajo")
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchOrdenes()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  // Filter ordenes
+  const filteredOTs = ordenesData.filter((ot) => {
+    const clienteNombre = `${ot.cliente_detalle.first_name} ${ot.cliente_detalle.last_name}`
     const matchesSearch =
       searchQuery === "" ||
-      ot.numero.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cliente?.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cliente?.apellido.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      vehiculo?.placa.toLowerCase().includes(searchQuery.toLowerCase())
+      ot.numero_orden.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      clienteNombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ot.vehiculo_detalle.placa.toLowerCase().includes(searchQuery.toLowerCase())
 
-    const matchesEstado = filterEstado === "todas" || ot.estado === filterEstado
-    const matchesPrioridad = filterPrioridad === "todas" || ot.prioridad === filterPrioridad
+    const matchesEstado = filterEstado === "todas" || ot.estado_detalle.nombre === filterEstado
+    const matchesTipo = filterTipo === "todas" || ot.tipo_detalle.nombre === filterTipo
 
-    return matchesSearch && matchesEstado && matchesPrioridad
+    return matchesSearch && matchesEstado && matchesTipo
   })
 
+  // Separate by status
   const otsPorEstado = {
-    activas: filteredOTs.filter((ot) => !["completada", "entregada"].includes(ot.estado)),
-    completadas: filteredOTs.filter((ot) => ["completada", "entregada"].includes(ot.estado)),
+    activas: filteredOTs.filter((ot) => !ESTADOS_COMPLETADOS.includes(ot.estado_detalle.nombre)),
+    completadas: filteredOTs.filter((ot) => ESTADOS_COMPLETADOS.includes(ot.estado_detalle.nombre)),
+  }
+
+  // Get unique estados and tipos for filters
+  const uniqueEstados = Array.from(new Set(ordenesData.map((ot) => ot.estado_detalle.nombre)))
+  const uniqueTipos = Array.from(new Set(ordenesData.map((ot) => ot.tipo_detalle.nombre)))
+
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        {/*<Spinner className="h-8 w-8" />*/}
+      </div>
+    )
   }
 
   return (
     <div className="space-y-6">
+      {/* Debug Info */}
+      {ordenesData.length === 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-yellow-600">
+              ⚠️ No se han cargado datos de la API. Total de órdenes: {ordenesData.length}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -93,26 +167,24 @@ export default function OrdenesTrabajoPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todos los estados</SelectItem>
-                <SelectItem value="creada">Creada</SelectItem>
-                <SelectItem value="en_diagnostico">En Diagnóstico</SelectItem>
-                <SelectItem value="presupuestada">Presupuestada</SelectItem>
-                <SelectItem value="aprobada">Aprobada</SelectItem>
-                <SelectItem value="en_proceso">En Proceso</SelectItem>
-                <SelectItem value="en_prueba">En Prueba</SelectItem>
-                <SelectItem value="completada">Completada</SelectItem>
-                <SelectItem value="entregada">Entregada</SelectItem>
+                {uniqueEstados.map((estado) => (
+                  <SelectItem key={estado} value={estado}>
+                    {estado}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            <Select value={filterPrioridad} onValueChange={setFilterPrioridad}>
+            <Select value={filterTipo} onValueChange={setFilterTipo}>
               <SelectTrigger className="w-full md:w-[180px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todas">Todas las prioridades</SelectItem>
-                <SelectItem value="baja">Baja</SelectItem>
-                <SelectItem value="media">Media</SelectItem>
-                <SelectItem value="alta">Alta</SelectItem>
-                <SelectItem value="urgente">Urgente</SelectItem>
+                <SelectItem value="todas">Todos los tipos</SelectItem>
+                {uniqueTipos.map((tipo) => (
+                  <SelectItem key={tipo} value={tipo}>
+                    {tipo}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -141,99 +213,83 @@ export default function OrdenesTrabajoPage() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {otsPorEstado.activas.map((ot) => {
-                const cliente = mockClientes.find((c) => c.id === ot.clienteId)
-                const vehiculo = mockVehiculos.find((v) => v.id === ot.vehiculoId)
-                const tecnico = mockUsers.find((u) => u.id === ot.tecnicoId)
-
-                return (
-                  <Card key={ot.id} className="transition-colors hover:bg-accent/50">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="font-semibold">{ot.numero}</h3>
-                                <Badge variant="outline" className={estadoColors[ot.estado]}>
-                                  {ot.estado.replace("_", " ")}
-                                </Badge>
-                                <Badge variant="outline" className={prioridadColors[ot.prioridad]}>
-                                  {ot.prioridad}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {cliente?.nombre} {cliente?.apellido}
-                              </p>
+              {otsPorEstado.activas.map((ot) => (
+                <Card key={`ot-activa-${ot.id}`} className="transition-colors hover:bg-accent/50">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                      <div className="flex-1 space-y-3">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold">{ot.numero_orden}</h3>
+                              <Badge variant="outline" className={getEstadoColorClass(ot.estado_detalle.codigo)}>
+                                {ot.estado_detalle.nombre}
+                              </Badge>
+                              <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+                                {ot.tipo_detalle.nombre}
+                              </Badge>
                             </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name}
+                            </p>
                           </div>
-
-                          <div className="grid gap-3 sm:grid-cols-3">
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="font-medium">Vehículo:</span>
-                              <span>
-                                {vehiculo?.marca} {vehiculo?.modelo}
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="font-medium">Placa:</span>
-                              <span>{vehiculo?.placa}</span>
-                            </div>
-                            {tecnico && (
-                              <div className="flex items-center gap-2 text-sm">
-                                <User className="h-4 w-4 text-muted-foreground" />
-                                <span>
-                                  {tecnico.nombre} {tecnico.apellido}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-4 text-sm">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span>
-                                Ingreso:{" "}
-                                {new Date(ot.fechaIngreso).toLocaleDateString("es-EC", {
-                                  day: "2-digit",
-                                  month: "short",
-                                })}
-                              </span>
-                            </div>
-                            {ot.fechaEstimadaEntrega && (
-                              <div className="flex items-center gap-2">
-                                <span className="text-muted-foreground">Entrega estimada:</span>
-                                <span>
-                                  {new Date(ot.fechaEstimadaEntrega).toLocaleDateString("es-EC", {
-                                    day: "2-digit",
-                                    month: "short",
-                                  })}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          {ot.subtareas.length > 0 && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-muted-foreground">Progreso:</span>
-                              <span>
-                                {ot.subtareas.filter((st) => st.estado === "completada").length} / {ot.subtareas.length}{" "}
-                                tareas
-                              </span>
-                            </div>
-                          )}
                         </div>
 
-                        <div className="flex gap-2">
-                          <Button asChild variant="outline" size="sm">
-                            <Link href={`/dashboard/ot/${ot.id}`}>Ver Detalles</Link>
-                          </Button>
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-medium">Vehículo:</span>
+                            <span>
+                              {ot.vehiculo_detalle.modelo_tecnico_detalle.marca}{" "}
+                              {ot.vehiculo_detalle.modelo_tecnico_detalle.modelo}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="font-medium">Placa:</span>
+                            <span>{ot.vehiculo_detalle.placa}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span>Juan Técnico</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span>
+                              Ingreso:{" "}
+                              {new Date(ot.fecha_apertura).toLocaleDateString("es-EC", {
+                                day: "2-digit",
+                                month: "short",
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">Entrega estimada:</span>
+                            <span>
+                              {new Date(ot.fecha_promesa_entrega).toLocaleDateString("es-EC", {
+                                day: "2-digit",
+                                month: "short",
+                              })}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-muted-foreground">Progreso:</span>
+                          <span>1 / 2 tareas</span>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+
+                      <div className="flex gap-2">
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={`/dashboard/ot/${ot.id}`}>Ver Detalles</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </TabsContent>
@@ -248,34 +304,32 @@ export default function OrdenesTrabajoPage() {
             </Card>
           ) : (
             <div className="grid gap-4">
-              {otsPorEstado.completadas.map((ot) => {
-                const cliente = mockClientes.find((c) => c.id === ot.clienteId)
-                const vehiculo = mockVehiculos.find((v) => v.id === ot.vehiculoId)
-
-                return (
-                  <Card key={ot.id} className="transition-colors hover:bg-accent/50">
-                    <CardContent className="p-6">
-                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="font-semibold">{ot.numero}</h3>
-                            <Badge variant="outline" className={estadoColors[ot.estado]}>
-                              {ot.estado}
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground">
-                            {cliente?.nombre} {cliente?.apellido} - {vehiculo?.marca} {vehiculo?.modelo}
-                          </p>
-                          <p className="text-sm font-medium">Total: ${ot.total.toFixed(2)}</p>
+              {otsPorEstado.completadas.map((ot) => (
+                <Card key={`ot-completada-${ot.id}`} className="transition-colors hover:bg-accent/50">
+                  <CardContent className="p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold">{ot.numero_orden}</h3>
+                          <Badge variant="outline" className={getEstadoColorClass(ot.estado_detalle.codigo)}>
+                            {ot.estado_detalle.nombre}
+                          </Badge>
+                          <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+                            {ot.tipo_detalle.nombre}
+                          </Badge>
                         </div>
-                        <Button asChild variant="outline" size="sm">
-                          <Link href={`/dashboard/ot/${ot.id}`}>Ver Detalles</Link>
-                        </Button>
+                        <p className="text-sm text-muted-foreground">
+                          {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name} - {ot.vehiculo_detalle.placa}
+                        </p>
+                        <p className="text-sm font-medium">Total: $0.00</p>
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/dashboard/ot/${ot.id}`}>Ver Detalles</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </TabsContent>

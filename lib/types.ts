@@ -195,23 +195,7 @@ export interface Hallazgo {
   fotos?: string[]
 }
 
-export interface Reporte {
-  id: string
-  tipo: "ventas" | "productividad" | "inventario" | "clientes"
-  titulo: string
-  fechaInicio: Date
-  fechaFin: Date
-  parametros: Record<string, any>
-  generadoPor: string
-  createdAt: Date
-}
-
-export interface AuthResponse {
-  user: User
-  access: string
-  refresh: string
-}
-
+// Auth related types
 export interface LoginCredentials {
   email: string
   password: string
@@ -227,3 +211,21 @@ export interface RegisterData {
   role: UserRole
   phone?: string
 }
+
+export interface AuthResponse {
+  user: User
+  access: string
+  refresh: string
+}
+
+export interface Reporte {
+  id: string
+  tipo: "ventas" | "productividad" | "inventario" | "clientes"
+  titulo: string
+  fechaInicio: Date
+  fechaFin: Date
+  parametros: Record<string, any>
+  generadoPor: string
+  createdAt: Date
+}
+

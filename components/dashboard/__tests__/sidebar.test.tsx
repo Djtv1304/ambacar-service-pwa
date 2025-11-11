@@ -22,6 +22,8 @@ describe('Sidebar Component', () => {
       isLoading: false,
       refreshUser: vi.fn(),
       isAuthenticated: true,
+      login: vi.fn(),
+      register: vi.fn(),
     })
 
     render(<Sidebar />)
@@ -46,6 +48,8 @@ describe('Sidebar Component', () => {
       isLoading: false,
       refreshUser: vi.fn(),
       isAuthenticated: true,
+      login: vi.fn(),
+      register: vi.fn(),
     })
 
     render(<Sidebar />)
@@ -70,6 +74,8 @@ describe('Sidebar Component', () => {
       isLoading: false,
       refreshUser: vi.fn(),
       isAuthenticated: true,
+      login: vi.fn(),
+      register: vi.fn(),
     })
 
     render(<Sidebar />)

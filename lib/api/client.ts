@@ -20,9 +20,9 @@ interface RequestOptions extends RequestInit {
 export async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { token, ...fetchOptions } = options
 
-  const headers: HeadersInit = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...fetchOptions.headers,
+    ...(fetchOptions.headers as Record<string, string>),
   }
 
   if (token) {
@@ -49,15 +49,15 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
     const data = await response.json()
 
     if (!response.ok) {
-      // Handle validation errors
-      if (response.status === 400 && typeof data === "object") {
-        throw new ApiError("Validation error", response.status, data)
-      }
+      // Extract error message - Priority: non_field_errors > detail > message > first field error > HTTP status
+      const errorMessage =
+        data.non_field_errors?.[0] ??
+        data.detail ??
+        data.message ??
+        (Object.values(data).find((value): value is string[] => Array.isArray(value) && value.length > 0)?.[0]) ??
+        `HTTP ${response.status}`
 
-      // Handle other errors
-      const message = data.detail || data.message || data.non_field_errors?.[0] || `HTTP ${response.status}`
-
-      throw new ApiError(message, response.status, data)
+      throw new ApiError(errorMessage, response.status, data)
     }
 
     return data

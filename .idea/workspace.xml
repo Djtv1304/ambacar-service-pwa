@@ -5,14 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ed939dfd-494f-4ab6-b368-b8545f69e227" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/components/auth/__tests__/auth-provider.test.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/components/dashboard/__tests__/sidebar.test.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/playwright.config.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/setup.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/vitest.config.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/RESUMEN_IMPLEMENTACION.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/dashboard/ot/page-new.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/lib/api/ordenes-trabajo.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pnpm-lock.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pnpm-lock.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/login/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/(auth)/registro/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/registro/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/dashboard/ot/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/dashboard/ot/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/auth/auth-provider.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/auth/auth-provider.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/components/dashboard/__tests__/sidebar.test.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/__tests__/sidebar.test.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/api/client.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/api/client.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/auth/actions.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/auth/actions.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/types.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -22,6 +26,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;Djtv1304&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/Djtv1304/ambacar-service-pwa.git&quot;,
+    &quot;accountId&quot;: &quot;2ca4b3d7-33ba-43aa-b8e7-5396466b5218&quot;
+  }
+}</component>
   <component name="ProjectColorInfo">{
   &quot;customColor&quot;: &quot;&quot;,
   &quot;associatedIndex&quot;: 1
@@ -39,6 +55,7 @@
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;master&quot;,
     &quot;js.debugger.nextJs.config.created.client&quot;: &quot;true&quot;,
     &quot;js.debugger.nextJs.config.created.server&quot;: &quot;true&quot;,
@@ -81,10 +98,31 @@
       <option name="presentableId" value="Default" />
       <updated>1760576957227</updated>
       <workItem from="1760576958686" duration="8075000" />
+      <workItem from="1760742167433" duration="8042000" />
+      <workItem from="1760987888164" duration="14000" />
+      <workItem from="1760987933915" duration="291000" />
+      <workItem from="1761017567982" duration="3760000" />
+      <workItem from="1761666253402" duration="26798000" />
+      <workItem from="1762819604228" duration="12403000" />
     </task>
+    <task id="LOCAL-00001" summary="Adición de archivos de configuración (Vitest y Playwright) y tests para la autenticación y el componente sidebar">
+      <option name="closed" value="true" />
+      <created>1760742390590</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1760742390590</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="First commit" />
+    <MESSAGE value="add initial configuration files and tests for authentication and sidebar components" />
+    <MESSAGE value="Adición de archivos de configuración (Vitest y Playwright) y tests para la autenticación y el componente sidebar" />
+    <option name="LAST_COMMIT_MESSAGE" value="Adición de archivos de configuración (Vitest y Playwright) y tests para la autenticación y el componente sidebar" />
   </component>
 </project>

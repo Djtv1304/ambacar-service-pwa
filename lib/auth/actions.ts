@@ -133,3 +133,20 @@ export async function refreshAccessToken(): Promise<boolean> {
     return false
   }
 }
+
+/**
+ * Get the access token for client components
+ * This is a server action that can be called from client components
+ */
+export async function getClientAccessToken(): Promise<string | null> {
+  try {
+    const accessToken = await getAccessToken()
+    if (!accessToken) {
+      return null
+    }
+    return accessToken
+  } catch (error) {
+    return null
+  }
+}
+
