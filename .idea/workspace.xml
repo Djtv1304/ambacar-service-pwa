@@ -5,17 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ed939dfd-494f-4ab6-b368-b8545f69e227" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/RESUMEN_IMPLEMENTACION.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/app/dashboard/ot/page-new.tsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/lib/api/ordenes-trabajo.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/app/dashboard/ot/nueva/page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(auth)/login/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/login/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(auth)/registro/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(auth)/registro/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/dashboard/ot/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/dashboard/ot/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/auth/auth-provider.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/auth/auth-provider.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/components/dashboard/__tests__/sidebar.test.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/components/dashboard/__tests__/sidebar.test.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/api/client.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/api/client.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/auth/actions.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/auth/actions.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/dashboard/ot/page-new.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/api/ordenes-trabajo.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/api/ordenes-trabajo.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/types.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -24,6 +17,11 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="develop" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -50,24 +48,29 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;js.debugger.nextJs.config.created.client&quot;: &quot;true&quot;,
-    &quot;js.debugger.nextJs.config.created.server&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;pnpm&quot;,
-    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\Diego\\Downloads\\ambacar-service-pwa\\node_modules\\typescript\\lib&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "feature/crear-orden-trabajo",
+    "js.debugger.nextJs.config.created.client": "true",
+    "js.debugger.nextJs.config.created.server": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "pnpm",
+    "ts.external.directory.path": "C:\\Users\\Diego\\Downloads\\ambacar-service-pwa\\node_modules\\typescript\\lib",
+    "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "mysql_aurora"
+    ]
   }
-}</component>
+}]]></component>
   <component name="RunManager" selected="npm.Next.js: server-side">
     <configuration name="Next.js: debug client-side" type="JavascriptDebugType" uri="http://localhost:3000/">
       <method v="2" />
