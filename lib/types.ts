@@ -229,3 +229,92 @@ export interface Reporte {
   createdAt: Date
 }
 
+// API Types for Ordenes de Trabajo
+export interface TipoOT {
+  id: number
+  codigo: string
+  nombre: string
+  descripcion: string
+}
+
+export interface ClienteAPI {
+  id: number
+  first_name: string
+  last_name: string
+  email: string
+}
+
+export interface VehiculoAPI {
+  id: number
+  placa: string
+  modelo_tecnico_detalle: {
+    marca: string
+    modelo: string
+  }
+  cliente: number
+}
+
+export interface CreateOrdenTrabajoData {
+  tipo: number
+  subtipo?: number
+  cliente: number
+  vehiculo: number
+  fecha_promesa_entrega: string
+  kilometraje_ingreso: number
+  descripcion_trabajo: string
+}
+
+export interface SubtipoOT {
+  id: number
+  codigo: string
+  nombre: string
+  tipo__codigo: string
+  tipo__nombre: string
+}
+
+export interface EstadoOT {
+  id: number
+  codigo: string
+  nombre: string
+  color: string
+  es_inicial: boolean
+  es_final: boolean
+}
+
+export interface ClienteTestData {
+  id: number
+  first_name: string
+  last_name: string
+  email: string
+  cedula: string
+}
+
+export interface AsesorTestData {
+  id: number
+  first_name: string
+  last_name: string
+  email: string
+  cedula: string
+}
+
+export interface VehiculoTestData {
+  id: number
+  placa: string
+  cliente__id: number
+  cliente__first_name: string
+  cliente__last_name: string
+  modelo_tecnico__marca: string
+  modelo_tecnico__modelo: string
+  kilometraje_actual: number
+}
+
+export interface TestDataResponse {
+  info: string
+  tipos_orden_trabajo: TipoOT[]
+  subtipos_orden_trabajo: SubtipoOT[]
+  estados_orden_trabajo: EstadoOT[]
+  clientes: ClienteTestData[]
+  asesores: AsesorTestData[]
+  vehiculos: VehiculoTestData[]
+}
+
