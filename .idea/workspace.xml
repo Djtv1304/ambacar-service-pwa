@@ -4,10 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ed939dfd-494f-4ab6-b368-b8545f69e227" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/app/dashboard/ot/nueva/page.tsx" afterDir="false" />
+    <list default="true" id="ed939dfd-494f-4ab6-b368-b8545f69e227" name="Changes" comment="Implementación de la página para crear nuevas órdenes de trabajo y funciones API relacionadas">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/dashboard/ot/page-new.tsx" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/agendamiento/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/agendamiento/layout.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/agendamiento/nueva/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/agendamiento/nueva/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/agendamiento/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/agendamiento/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app/dashboard/ot/[id]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/dashboard/ot/[id]/page.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/lib/api/agendamiento.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/api/agendamiento.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/api/ordenes-trabajo.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/api/ordenes-trabajo.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/types.ts" afterDir="false" />
     </list>
@@ -54,7 +57,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "feature/crear-orden-trabajo",
+    "git-widget-placeholder": "feature/detalles-OT",
     "js.debugger.nextJs.config.created.client": "true",
     "js.debugger.nextJs.config.created.server": "true",
     "node.js.detected.package.eslint": "true",
@@ -62,6 +65,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "pnpm",
+    "settings.editor.selected.configurable": "com.github.copilot.settings.customization.CustomizationConfigurable",
     "ts.external.directory.path": "C:\\Users\\Diego\\Downloads\\ambacar-service-pwa\\node_modules\\typescript\\lib",
     "vue.rearranger.settings.migration": "true"
   },
@@ -107,6 +111,7 @@
       <workItem from="1761017567982" duration="3760000" />
       <workItem from="1761666253402" duration="26798000" />
       <workItem from="1762819604228" duration="12403000" />
+      <workItem from="1763143025230" duration="9428000" />
     </task>
     <task id="LOCAL-00001" summary="Adición de archivos de configuración (Vitest y Playwright) y tests para la autenticación y el componente sidebar">
       <option name="closed" value="true" />
@@ -122,10 +127,29 @@
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="First commit" />
     <MESSAGE value="add initial configuration files and tests for authentication and sidebar components" />
     <MESSAGE value="Adición de archivos de configuración (Vitest y Playwright) y tests para la autenticación y el componente sidebar" />
     <option name="LAST_COMMIT_MESSAGE" value="Adición de archivos de configuración (Vitest y Playwright) y tests para la autenticación y el componente sidebar" />
+  </component>
+  <component name="github-copilot-workspace">
+    <instructionFileLocations>
+      <option value=".github/instructions" />
+    </instructionFileLocations>
+    <promptFileLocations>
+      <option value=".github/prompts" />
+    </promptFileLocations>
   </component>
 </project>

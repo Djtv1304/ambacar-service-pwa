@@ -318,3 +318,146 @@ export interface TestDataResponse {
   vehiculos: VehiculoTestData[]
 }
 
+// Agendamiento Types
+export interface VerificarUsuarioResponse {
+  existe: boolean
+  usuario?: {
+    id: number
+    first_name: string
+    last_name: string
+    email: string
+    cedula: string
+    phone: string
+  }
+}
+
+export interface VehiculoAgendamientoAPI {
+  id: number
+  cliente_nombre: string
+  cliente_email: string
+  modelo_tecnico_detalle: any | null
+  marca_nombre: string
+  modelo_nombre: string
+  marca_display: string
+  modelo_display: string
+  historial_kilometraje: any[]
+  placa: string
+  vin: string | null
+  marca_otro: string | null
+  modelo_otro: string | null
+  anio_fabricacion: number
+  color: string | null
+  kilometraje_actual: number
+  fecha_compra: string | null
+  numero_motor: string | null
+  observaciones: string | null
+  estado: string
+  created_at: string
+  updated_at: string
+  cliente: number
+  modelo_tecnico: number | null
+  marca: number
+  modelo: number
+}
+
+// Detailed OT types
+export interface OrdenTrabajoDetalle {
+  id: number
+  cliente_detalle: {
+    id: number
+    first_name: string
+    last_name: string
+    role: string
+    cedula: string
+  }
+  vehiculo_detalle: {
+    cliente_nombre: string
+    placa: string
+    color: string
+    vin: string
+    kilometraje_actual: number
+    modelo_tecnico_detalle: {
+      id: number
+      tipo_vehiculo_display: string
+      combustible_display: string
+      transmision_display: string
+      marca: string
+      modelo: string
+      anio: number
+    }
+  }
+  asesor_detalle: {
+    first_name: string
+    last_name: string
+    role: string
+    cedula: string
+  } | null
+  tipo_detalle: {
+    id: number
+    codigo: string
+    nombre: string
+    descripcion: string
+    estado: string
+    created_at: string
+    updated_at: string
+  }
+  subtipo_detalle: {
+    id: number
+    codigo: string
+    nombre: string
+  } | null
+  estado_detalle: {
+    id: number
+    codigo: string
+    nombre: string
+    descripcion: string | null
+    color: string
+    orden: number
+    es_inicial: boolean
+    es_final: boolean
+    permite_edicion: boolean
+    estado: string
+    created_at: string
+    updated_at: string
+  }
+  presupuesto_detalle: any | null
+  etapas: any[]
+  tareas: any[]
+  repuestos: any[]
+  rubros: any[]
+  imagenes: any[]
+  novedades: any[]
+  fechas_adicionales: any[]
+  nivel_combustible_display: string | null
+  numero_orden: string
+  fecha_apertura: string
+  fecha_cierre: string | null
+  fecha_promesa_entrega: string
+  fecha_entrega_real: string | null
+  kilometraje_ingreso: number
+  nivel_combustible: number | null
+  descripcion_trabajo: string
+  observaciones_cliente: string | null
+  observaciones_internas: string | null
+  subtotal_mano_obra: string
+  subtotal_repuestos: string
+  subtotal: string
+  descuento: string
+  iva: string
+  total: string
+  es_garantia: boolean
+  requiere_autorizacion: boolean
+  autorizado: boolean
+  fecha_autorizacion: string | null
+  sincronizado_erp: boolean
+  fecha_sincronizacion: string | null
+  id_erp_externo: string | null
+  tipo: number
+  subtipo: number | null
+  estado: number
+  cliente: number
+  vehiculo: number
+  presupuesto: number | null
+  asesor: number | null
+}
+

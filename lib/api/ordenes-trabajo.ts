@@ -1,7 +1,7 @@
 // API functions for Ordenes de Trabajo
 
 import { apiRequest } from "./client"
-import type { User, TipoOT, ClienteAPI, VehiculoAPI, CreateOrdenTrabajoData } from "@/lib/types"
+import type { User, TipoOT, ClienteAPI, VehiculoAPI, CreateOrdenTrabajoData, OrdenTrabajoDetalle } from "@/lib/types"
 
 export interface OrdenTrabajoAPI {
   id: number
@@ -59,6 +59,16 @@ export async function getOrdenesTrabajo(token: string): Promise<OrdenTrabajoAPI[
  */
 export async function getOrdenTrabajoById(id: number, token: string): Promise<OrdenTrabajoAPI> {
   return apiRequest<OrdenTrabajoAPI>(`/api/ordenes-trabajo/${id}/`, {
+    method: "GET",
+    token,
+  })
+}
+
+/**
+ * Obtiene el detalle completo de una orden de trabajo por ID
+ */
+export async function getOrdenTrabajoDetalle(id: number, token: string): Promise<OrdenTrabajoDetalle> {
+  return apiRequest<OrdenTrabajoDetalle>(`/api/ordenes-trabajo/${id}/`, {
     method: "GET",
     token,
   })

@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast"
 import { StepsIndicator } from "@/components/agendamiento/steps-indicator"
 import { vehiculoSchema, citaSchema, type VehiculoFormData, type CitaFormData } from "@/lib/validations/agendamiento"
 import {
-  fetchVehiculosByCedula,
+  fetchVehiculosByClienteId,
   registrarVehiculo,
   prefetchDisponibilidad,
   reservarSlot,
@@ -23,7 +23,9 @@ import {
   sendEmailConfirm,
   sendWhatsAppConfirm,
 } from "@/lib/api/agendamiento"
+import { getClientAccessToken } from "@/lib/auth/actions"
 import type { Cliente, Vehiculo, Cita } from "@/lib/types"
+import { toast as sonnerToast } from "sonner"
 
 const steps = [
   { number: 1, title: "Vehículo" },
@@ -79,30 +81,53 @@ export default function NuevaCitaPage() {
 
   // Load cliente from session
   useEffect(() => {
-    const clienteData = sessionStorage.getItem("agendamiento_cliente")
-    if (!clienteData) {
-      router.push("/agendamiento")
-      return
-    }
+    const loadClienteAndVehicles = async () => {
+      const clienteData = sessionStorage.getItem("agendamiento_cliente")
+      if (!clienteData) {
+        router.push("/agendamiento")
+        return
+      }
 
-    const clienteObj = JSON.parse(clienteData) as Cliente
-    setCliente(clienteObj)
+      const clienteObj = JSON.parse(clienteData) as Cliente
+      setCliente(clienteObj)
 
-    // Fetch vehiculos
-    fetchVehiculosByCedula(clienteObj.cedula)
-      .then((vehs) => {
+      try {
+        // Obtener token de autenticación
+        const token = await getClientAccessToken()
+        if (!token) {
+          sonnerToast.error("Error de autenticación", {
+            description: "No se pudo obtener el token de acceso",
+          })
+          setLoadingVehiculos(false)
+          return
+        }
+
+        // Fetch vehiculos desde la API
+        const vehs = await fetchVehiculosByClienteId(parseInt(clienteObj.id), token)
         setVehiculos(vehs)
+
         if (vehs.length > 0) {
           setVehiculoSeleccionado(vehs[0])
         } else {
           setNuevoVehiculo(true)
         }
-      })
-      .finally(() => setLoadingVehiculos(false))
+      } catch (error) {
+        console.error("Error cargando vehículos:", error)
+        sonnerToast.error("Error", {
+          description: "No se pudieron cargar los vehículos",
+        })
+        // Si hay error, permitir agregar nuevo vehículo
+        setNuevoVehiculo(true)
+      } finally {
+        setLoadingVehiculos(false)
+      }
 
-    // Prefetch disponibilidad
-    const now = new Date()
-    prefetchDisponibilidad(now.getFullYear(), now.getMonth() + 1).then(setDisponibilidad)
+      // Prefetch disponibilidad
+      const now = new Date()
+      prefetchDisponibilidad(now.getFullYear(), now.getMonth() + 1).then(setDisponibilidad)
+    }
+
+    loadClienteAndVehicles()
   }, [router])
 
   const handleVehiculoSubmit = async (data: VehiculoFormData) => {
@@ -114,21 +139,41 @@ export default function NuevaCitaPage() {
         const nuevoVeh = await registrarVehiculo(cliente.id, data)
         setVehiculoSeleccionado(nuevoVeh)
         setVehiculos([...vehiculos, nuevoVeh])
-        toast({
-          title: "Vehículo registrado",
+        sonnerToast.success("Vehículo registrado", {
           description: "Tu vehículo ha sido guardado correctamente.",
         })
         setCurrentStep(2)
       } catch (error) {
-        toast({
-          title: "Error",
+        sonnerToast.error("Error", {
           description: "No se pudo registrar el vehículo.",
-          variant: "destructive",
         })
       } finally {
         setLoading(false)
       }
     } else {
+      // Verificar que hay un vehículo seleccionado
+      if (!vehiculoSeleccionado) {
+        sonnerToast.error("Error", {
+          description: "Por favor selecciona un vehículo",
+        })
+        return
+      }
+      setCurrentStep(2)
+    }
+  }
+
+  const handleContinuarVehiculo = () => {
+    if (nuevoVehiculo) {
+      // Si es nuevo vehículo, usar el submit del formulario
+      vehiculoForm.handleSubmit(handleVehiculoSubmit)()
+    } else {
+      // Si hay vehículo seleccionado, continuar directamente
+      if (!vehiculoSeleccionado) {
+        sonnerToast.error("Error", {
+          description: "Por favor selecciona un vehículo",
+        })
+        return
+      }
       setCurrentStep(2)
     }
   }
@@ -390,7 +435,8 @@ export default function NuevaCitaPage() {
 
                     <div className="flex justify-end pt-4">
                       <Button
-                        type="submit"
+                        type="button"
+                        onClick={handleContinuarVehiculo}
                         disabled={loading || (!nuevoVehiculo && !vehiculoSeleccionado)}
                         className="bg-[#ED1C24] hover:bg-[#c41820] text-white px-8"
                       >
