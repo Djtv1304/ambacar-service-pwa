@@ -5,26 +5,24 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ArrowLeft, ArrowRight, Car, CheckCircle2, Loader2 } from "lucide-react"
+import { ArrowLeft, ArrowRight, Car, CheckCircle2, Loader2, Calendar as CalendarIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar } from "@/components/ui/calendar"
-import { useToast } from "@/hooks/use-toast"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StepsIndicator } from "@/components/agendamiento/steps-indicator"
 import { vehiculoSchema, citaSchema, type VehiculoFormData, type CitaFormData } from "@/lib/validations/agendamiento"
 import {
   fetchVehiculosByClienteId,
   registrarVehiculo,
-  prefetchDisponibilidad,
-  reservarSlot,
-  crearCita,
-  sendEmailConfirm,
-  sendWhatsAppConfirm,
+  getHorariosDisponibles,
+  getTiposServicio,
+  crearCitaAPI,
 } from "@/lib/api/agendamiento"
 import { getClientAccessToken } from "@/lib/auth/actions"
-import type { Cliente, Vehiculo, Cita } from "@/lib/types"
+import type { Cliente, Vehiculo, Cita, HorarioDisponible, TipoServicio } from "@/lib/types"
 import { toast as sonnerToast } from "sonner"
 
 const steps = [
@@ -33,11 +31,8 @@ const steps = [
   { number: 3, title: "Confirmación" },
 ]
 
-const horarios = ["08:00", "09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00"]
-
 export default function NuevaCitaPage() {
   const router = useRouter()
-  const { toast } = useToast()
   const [currentStep, setCurrentStep] = useState(1)
   const [cliente, setCliente] = useState<Cliente | null>(null)
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([])
@@ -50,10 +45,13 @@ export default function NuevaCitaPage() {
   // Calendar state
   const [selectedDate, setSelectedDate] = useState<Date>()
   const [selectedHora, setSelectedHora] = useState<string>("")
-  const [disponibilidad, setDisponibilidad] = useState<{
-    fechasNoDisponibles: string[]
-    horariosOcupados: Record<string, string[]>
-  }>({ fechasNoDisponibles: [], horariosOcupados: {} })
+  const [horariosDisponibles, setHorariosDisponibles] = useState<HorarioDisponible[]>([])
+  const [loadingHorarios, setLoadingHorarios] = useState(false)
+
+  // Service types state
+  const [tiposServicio, setTiposServicio] = useState<TipoServicio[]>([])
+  const [selectedServicio, setSelectedServicio] = useState<string>("")
+  const [loadingServicios, setLoadingServicios] = useState(false)
 
   // Forms
   const vehiculoForm = useForm<VehiculoFormData>({
@@ -79,7 +77,7 @@ export default function NuevaCitaPage() {
     },
   })
 
-  // Load cliente from session
+  // Load cliente from session and fetch service types
   useEffect(() => {
     const loadClienteAndVehicles = async () => {
       const clienteData = sessionStorage.getItem("agendamiento_cliente")
@@ -121,14 +119,69 @@ export default function NuevaCitaPage() {
       } finally {
         setLoadingVehiculos(false)
       }
-
-      // Prefetch disponibilidad
-      const now = new Date()
-      prefetchDisponibilidad(now.getFullYear(), now.getMonth() + 1).then(setDisponibilidad)
     }
 
     loadClienteAndVehicles()
   }, [router])
+
+  // Fetch service types when step 2 is reached
+  useEffect(() => {
+    if (currentStep === 2 && tiposServicio.length === 0) {
+      const fetchServicios = async () => {
+        setLoadingServicios(true)
+        try {
+          const servicios = await getTiposServicio()
+          setTiposServicio(servicios)
+        } catch (error) {
+          console.error("Error cargando tipos de servicio:", error)
+          sonnerToast.error("Error", {
+            description: "No se pudieron cargar los tipos de servicio",
+          })
+        } finally {
+          setLoadingServicios(false)
+        }
+      }
+
+      fetchServicios()
+    }
+  }, [currentStep, tiposServicio.length])
+
+  // Sync selectedServicio with form field
+  useEffect(() => {
+    if (selectedServicio) {
+      const servicioData = tiposServicio.find((s) => s.id.toString() === selectedServicio)
+      if (servicioData) {
+        citaForm.setValue("servicio", servicioData.nombre)
+      }
+    }
+  }, [selectedServicio, tiposServicio, citaForm])
+
+  // Fetch available hours when date is selected
+  useEffect(() => {
+    if (selectedDate) {
+      const fetchHorarios = async () => {
+        setLoadingHorarios(true)
+        setSelectedHora("") // Reset selected hour
+        try {
+          const fecha = selectedDate.toISOString().split("T")[0]
+          const response = await getHorariosDisponibles(fecha)
+          setHorariosDisponibles(response.horarios_disponibles || [])
+        } catch (error) {
+          console.error("Error cargando horarios:", error)
+          sonnerToast.error("Error", {
+            description: "No se pudieron cargar los horarios disponibles",
+          })
+          setHorariosDisponibles([])
+        } finally {
+          setLoadingHorarios(false)
+        }
+      }
+
+      fetchHorarios()
+    } else {
+      setHorariosDisponibles([])
+    }
+  }, [selectedDate])
 
   const handleVehiculoSubmit = async (data: VehiculoFormData) => {
     if (!cliente) return
@@ -178,47 +231,91 @@ export default function NuevaCitaPage() {
     }
   }
 
-  const handleCitaSubmit = async (data: CitaFormData) => {
-    if (!cliente || !vehiculoSeleccionado || !selectedDate || !selectedHora) return
+  const handleCitaSubmit = async () => {
+    if (!cliente || !vehiculoSeleccionado || !selectedDate || !selectedHora || !selectedServicio) {
+      sonnerToast.error("Error", {
+        description: "Por favor completa todos los campos requeridos",
+      })
+      return
+    }
+
+    // Solo avanzar al paso 3 para revisión
+    setCurrentStep(3)
+  }
+
+  const handleConfirmarCita = async () => {
+    if (!cliente || !vehiculoSeleccionado || !selectedDate || !selectedHora || !selectedServicio) return
 
     setLoading(true)
     try {
-      // Reservar slot
-      await reservarSlot({
-        fecha: selectedDate.toISOString().split("T")[0],
-        hora: selectedHora,
-        placa: vehiculoSeleccionado.placa,
-      })
+      // Obtener token de autenticación
+      const token = await getClientAccessToken()
+      if (!token) {
+        sonnerToast.error("Error de autenticación", {
+          description: "No se pudo obtener el token de acceso. Por favor inicia sesión nuevamente.",
+          duration: 6000,
+        })
+        setLoading(false)
+        return
+      }
 
-      // Crear cita
-      const cita = await crearCita({
+      // Crear cita en la API
+      const citaData = {
+        cliente: parseInt(cliente.id),
+        vehiculo: parseInt(vehiculoSeleccionado.id),
+        tipo_servicio: parseInt(selectedServicio),
+        fecha_cita: selectedDate.toISOString().split("T")[0],
+        hora_cita: selectedHora,
+        observaciones: citaForm.getValues("observaciones") || undefined,
+      }
+
+      const citaResponse = await crearCitaAPI(citaData, token)
+
+      // Convertir respuesta de la API al formato Cita esperado con datos enriquecidos
+      const cita: Cita = {
+        id: citaResponse.numero_cita || citaResponse.id?.toString() || `CITA-${Date.now()}`,
         clienteId: cliente.id,
-        vehiculoPlaca: vehiculoSeleccionado.placa,
-        fecha: selectedDate.toISOString().split("T")[0],
-        hora: selectedHora,
-        servicio: data.servicio,
-        observaciones: data.observaciones,
-      })
+        vehiculoPlaca: citaResponse.vehiculo_detalle?.placa || vehiculoSeleccionado.placa,
+        fecha: citaResponse.fecha_cita,
+        hora: horariosDisponibles.find((h) => h.hora === selectedHora)?.hora_display || selectedHora,
+        servicio: citaResponse.tipo_servicio_detalle?.nombre || citaForm.getValues("servicio"),
+        observaciones: citaResponse.observaciones,
+        estado: citaResponse.estado_display || "confirmada",
+        sucursal: "Principal",
+        createdAt: citaResponse.created_at || new Date().toISOString(),
+        updatedAt: citaResponse.updated_at || new Date().toISOString(),
+      }
 
       setCitaCreada(cita)
 
-      // Enviar confirmaciones
-      await Promise.all([
-        sendEmailConfirm({ email: cliente.email, cita, cliente }),
-        sendWhatsAppConfirm({ telefono: cliente.telefono, cita, cliente }),
-      ])
-
-      toast({
-        title: "¡Cita confirmada!",
-        description: "Recibirás una confirmación por email y WhatsApp.",
+      sonnerToast.success("¡Cita agendada exitosamente!", {
+        description: `Tu cita ${citaResponse.numero_cita} ha sido confirmada.`,
+        duration: 5000,
       })
+    } catch (error: any) {
+      console.error("Error creando cita:", error)
 
-      setCurrentStep(3)
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "No se pudo crear la cita. Intenta nuevamente.",
-        variant: "destructive",
+      // Manejar diferentes tipos de errores
+      let errorMessage = "No se pudo crear la cita. Por favor intenta nuevamente."
+
+      if (error?.response?.data) {
+        const errorData = error.response.data
+        if (typeof errorData === "string") {
+          errorMessage = errorData
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail
+        } else if (errorData.error) {
+          errorMessage = errorData.error
+        } else if (errorData.message) {
+          errorMessage = errorData.message
+        }
+      } else if (error?.message) {
+        errorMessage = error.message
+      }
+
+      sonnerToast.error("Error al agendar la cita", {
+        description: errorMessage,
+        duration: 6000,
       })
     } finally {
       setLoading(false)
@@ -226,16 +323,14 @@ export default function NuevaCitaPage() {
   }
 
   const isDateDisabled = (date: Date) => {
-    const dateStr = date.toISOString().split("T")[0]
-    return disponibilidad.fechasNoDisponibles.includes(dateStr) || date < new Date()
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    return date < tomorrow
   }
 
-  const horariosDisponibles = selectedDate
-    ? horarios.filter((hora) => {
-        const dateStr = selectedDate.toISOString().split("T")[0]
-        return !disponibilidad.horariosOcupados[dateStr]?.includes(hora)
-      })
-    : horarios
+  const selectedServicioData = tiposServicio.find((s) => s.id.toString() === selectedServicio)
 
   if (!cliente) {
     return (
@@ -260,9 +355,13 @@ export default function NuevaCitaPage() {
                 <p className="text-xs text-gray-600">Nueva Cita</p>
               </div>
             </div>
-            <Button variant="ghost" onClick={() => router.push("/agendamiento")} className="text-gray-600">
+            <Button
+              variant="ghost"
+              onClick={() => router.push("/agendamiento")}
+              className="text-gray-600 hover:text-[#ED1C24] transition-colors"
+            >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
+              Volver al Inicio
             </Button>
           </div>
         </div>
@@ -466,42 +565,57 @@ export default function NuevaCitaPage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="max-w-4xl mx-auto"
+              className="max-w-5xl mx-auto"
             >
               <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
                 <h2 className="text-2xl font-bold text-[#202020] mb-6">Selecciona Fecha y Hora</h2>
 
-                <form onSubmit={citaForm.handleSubmit(handleCitaSubmit)} className="space-y-6">
+                <div className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <Label className="text-[#202020] font-medium mb-2 block">Fecha</Label>
-                      <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        disabled={isDateDisabled}
-                        className="rounded-lg border border-gray-200"
-                      />
+                    <div className="w-full">
+                      <Label className="text-[#202020] font-medium mb-3 block">Fecha</Label>
+                      <div className="flex justify-center">
+                        <Calendar
+                          mode="single"
+                          selected={selectedDate}
+                          onSelect={setSelectedDate}
+                          disabled={isDateDisabled}
+                          className="rounded-lg border border-gray-200"
+                        />
+                      </div>
                     </div>
 
-                    <div>
-                      <Label className="text-[#202020] font-medium mb-2 block">Hora Disponible</Label>
+                    <div className="w-full">
+                      <Label className="text-[#202020] font-medium mb-3 block">Hora Disponible</Label>
                       {!selectedDate ? (
-                        <p className="text-gray-500 text-sm">Primero selecciona una fecha</p>
+                        <div className="flex items-center justify-center h-full min-h-[200px] border border-gray-200 rounded-lg bg-gray-50">
+                          <p className="text-gray-500 text-sm">Primero selecciona una fecha</p>
+                        </div>
+                      ) : loadingHorarios ? (
+                        <div className="flex items-center justify-center h-full min-h-[200px] border border-gray-200 rounded-lg">
+                          <Loader2 className="h-6 w-6 animate-spin text-[#ED1C24]" />
+                        </div>
+                      ) : horariosDisponibles.length === 0 ? (
+                        <div className="flex items-center justify-center h-full min-h-[200px] border border-gray-200 rounded-lg bg-gray-50">
+                          <p className="text-gray-500 text-sm">No hay horarios disponibles para esta fecha</p>
+                        </div>
                       ) : (
-                        <div className="grid grid-cols-3 gap-2">
-                          {horariosDisponibles.map((hora) => (
+                        <div className="grid grid-cols-3 gap-2 max-h-[350px] overflow-y-auto pr-2">
+                          {horariosDisponibles.map((horario) => (
                             <button
-                              key={hora}
+                              key={horario.hora}
                               type="button"
-                              onClick={() => setSelectedHora(hora)}
+                              onClick={() => horario.disponible && setSelectedHora(horario.hora)}
+                              disabled={!horario.disponible}
                               className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
-                                selectedHora === hora
+                                selectedHora === horario.hora
                                   ? "border-[#ED1C24] bg-[#ED1C24] text-white"
-                                  : "border-gray-200 hover:border-[#ED1C24] text-[#202020]"
+                                  : horario.disponible
+                                  ? "border-gray-200 hover:border-[#ED1C24] text-[#202020]"
+                                  : "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
                               }`}
                             >
-                              {hora}
+                              {horario.hora_display}
                             </button>
                           ))}
                         </div>
@@ -510,39 +624,376 @@ export default function NuevaCitaPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="servicio">
+                    <Label htmlFor="servicio" className="text-[#202020] font-medium">
                       Servicio Requerido <span className="text-[#ED1C24]">*</span>
                     </Label>
-                    <Input
-                      id="servicio"
-                      {...citaForm.register("servicio")}
-                      placeholder="Ej: Mantenimiento preventivo, cambio de aceite..."
-                      className="mt-2"
-                    />
+                    {loadingServicios ? (
+                      <div className="mt-2 p-3 border border-gray-200 rounded-lg flex items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-[#ED1C24] mr-2" />
+                        <span className="text-sm text-gray-600">Cargando servicios...</span>
+                      </div>
+                    ) : (
+                      <Select value={selectedServicio} onValueChange={setSelectedServicio}>
+                        <SelectTrigger className="w-full mt-2 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                          <SelectValue placeholder="Selecciona un servicio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {tiposServicio.map((servicio) => (
+                            <SelectItem key={servicio.id} value={servicio.id.toString()}>
+                              {servicio.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                     {citaForm.formState.errors.servicio && (
                       <p className="text-sm text-[#ED1C24] mt-1">{citaForm.formState.errors.servicio.message}</p>
+                    )}
+
+                    {selectedServicioData && (
+                      <div className="mt-3 p-4 bg-[#ED1C24]/5 border-2 border-[#ED1C24]/20 rounded-lg">
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={selectedServicioData.id}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <p className="text-sm text-[#202020] mb-2">
+                              <strong className="text-[#ED1C24]">Descripción:</strong> {selectedServicioData.descripcion}
+                            </p>
+                            <p className="text-sm text-[#202020]">
+                              <strong className="text-[#ED1C24]">Duración Estimada:</strong>{" "}
+                              {selectedServicioData.duracion_estimada} minutos
+                            </p>
+                          </motion.div>
+                        </AnimatePresence>
+                      </div>
                     )}
                   </div>
 
                   <div>
-                    <Label htmlFor="observaciones">Observaciones (Opcional)</Label>
+                    <Label htmlFor="observaciones" className="text-[#202020] font-medium">
+                      Observaciones (Opcional)
+                    </Label>
                     <Textarea
                       id="observaciones"
                       {...citaForm.register("observaciones")}
                       placeholder="Describe cualquier detalle adicional..."
                       rows={4}
-                      className="mt-2"
+                      className="mt-2 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
                     />
                   </div>
 
                   <div className="flex justify-between pt-4">
-                    <Button type="button" variant="outline" onClick={() => setCurrentStep(1)}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCurrentStep(1)}
+                      className="cursor-pointer"
+                    >
                       <ArrowLeft className="mr-2 h-4 w-4" />
                       Atrás
                     </Button>
                     <Button
-                      type="submit"
-                      disabled={loading || !selectedDate || !selectedHora}
+                      type="button"
+                      onClick={handleCitaSubmit}
+                      disabled={loading || !selectedDate || !selectedHora || !selectedServicio}
+                      className="bg-[#ED1C24] hover:bg-[#c41820] active:scale-95 text-white px-8 cursor-pointer transition-all duration-150"
+                    >
+                      Revisar Datos
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Step 3: Confirmación */}
+          {currentStep === 3 && (
+            <motion.div
+              key="step3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="max-w-3xl mx-auto"
+            >
+              {citaCreada ? (
+                // Cita confirmada - mostrar resumen final con animación
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center"
+                >
+                  {/* Icono de éxito animado */}
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
+                    className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6"
+                  >
+                    <CheckCircle2 className="h-10 w-10 text-green-600" />
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <h2 className="text-3xl font-bold text-[#202020] mb-2">¡Cita Agendada!</h2>
+                    <p className="text-gray-600 mb-8">Tu cita ha sido confirmada exitosamente</p>
+                  </motion.div>
+
+                  {/* Número de referencia destacado */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="bg-[#ED1C24]/5 border-2 border-[#ED1C24]/20 rounded-xl p-6 mb-6"
+                  >
+                    <p className="text-sm text-gray-600 mb-2">Número de Referencia</p>
+                    <p className="font-mono font-bold text-[#ED1C24] text-2xl tracking-wider">{citaCreada.id}</p>
+                    <p className="text-xs text-gray-500 mt-2">Guarda este número para consultar tu cita</p>
+                  </motion.div>
+
+                  {/* Detalles de la cita */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="bg-gray-50 rounded-xl p-6 mb-6 text-left"
+                  >
+                    <h3 className="font-semibold text-[#202020] mb-4 text-center">Detalles de tu Cita</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center">
+                            <CalendarIcon className="h-5 w-5 text-[#ED1C24]" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Fecha</p>
+                            <p className="font-semibold text-[#202020]">
+                              {new Date(citaCreada.fecha).toLocaleDateString("es-EC", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center">
+                            <CheckCircle2 className="h-5 w-5 text-[#ED1C24]" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Hora</p>
+                            <p className="font-semibold text-[#202020]">{citaCreada.hora}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center">
+                            <Car className="h-5 w-5 text-[#ED1C24]" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Vehículo</p>
+                            <p className="font-semibold text-[#202020]">
+                              {vehiculoSeleccionado?.marca} {vehiculoSeleccionado?.modelo}
+                            </p>
+                            <p className="text-xs text-gray-500">Placa: {citaCreada.vehiculoPlaca}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center">
+                            <CheckCircle2 className="h-5 w-5 text-[#ED1C24]" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-gray-600">Servicio</p>
+                            <p className="font-semibold text-[#202020]">{citaCreada.servicio}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {citaCreada.observaciones && (
+                        <div className="p-3 bg-white rounded-lg">
+                          <p className="text-xs text-gray-600 mb-1">Observaciones</p>
+                          <p className="text-sm text-[#202020]">{citaCreada.observaciones}</p>
+                        </div>
+                      )}
+
+                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="text-xs text-green-700 mb-1">Estado</p>
+                        <p className="text-sm font-semibold text-green-700">{citaCreada.estado}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* Mensaje informativo */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left"
+                  >
+                    <p className="text-sm text-blue-900">
+                      <strong>📧 Confirmación enviada:</strong> Recibirás un email con los detalles de tu cita.
+                      También te contactaremos por WhatsApp para confirmar tu asistencia.
+                    </p>
+                  </motion.div>
+
+                  {/* Botones de acción */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className="flex flex-col sm:flex-row gap-3"
+                  >
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setCitaCreada(null)
+                        setCurrentStep(1)
+                        setSelectedDate(undefined)
+                        setSelectedHora("")
+                        setSelectedServicio("")
+                        citaForm.reset()
+                      }}
+                      className="flex-1 cursor-pointer"
+                    >
+                      Agendar Otra Cita
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        sessionStorage.clear()
+                        router.push("/agendamiento")
+                      }}
+                      className="flex-1 bg-[#ED1C24] hover:bg-[#c41820] text-white cursor-pointer"
+                    >
+                      Finalizar
+                    </Button>
+                  </motion.div>
+                </motion.div>
+              ) : (
+                // Revisión de datos antes de confirmar
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
+                  <h2 className="text-2xl font-bold text-[#202020] mb-2">Revisa tu Cita</h2>
+                  <p className="text-gray-600 mb-6">Verifica que todos los datos sean correctos antes de confirmar</p>
+
+                  <div className="space-y-6">
+                    {/* Información del Cliente */}
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <h3 className="font-semibold text-[#202020] mb-4 flex items-center">
+                        <div className="h-8 w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-3 text-sm">
+                          1
+                        </div>
+                        Información del Cliente
+                      </h3>
+                      <div className="ml-11 space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Nombre:</span>
+                          <span className="font-medium text-[#202020]">
+                            {cliente?.nombre} {cliente?.apellido}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Email:</span>
+                          <span className="font-medium text-[#202020]">{cliente?.email}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Teléfono:</span>
+                          <span className="font-medium text-[#202020]">{cliente?.telefono}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Información del Vehículo */}
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <h3 className="font-semibold text-[#202020] mb-4 flex items-center">
+                        <div className="h-8 w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-3 text-sm">
+                          2
+                        </div>
+                        Vehículo
+                      </h3>
+                      <div className="ml-11 space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Placa:</span>
+                          <span className="font-medium text-[#202020]">{vehiculoSeleccionado?.placa}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Vehículo:</span>
+                          <span className="font-medium text-[#202020]">
+                            {vehiculoSeleccionado?.marca} {vehiculoSeleccionado?.modelo} ({vehiculoSeleccionado?.anio})
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Color:</span>
+                          <span className="font-medium text-[#202020]">{vehiculoSeleccionado?.color}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Detalles de la Cita */}
+                    <div className="bg-gray-50 rounded-xl p-6">
+                      <h3 className="font-semibold text-[#202020] mb-4 flex items-center">
+                        <div className="h-8 w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-3 text-sm">
+                          3
+                        </div>
+                        Detalles de la Cita
+                      </h3>
+                      <div className="ml-11 space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Fecha:</span>
+                          <span className="font-medium text-[#202020]">
+                            {selectedDate?.toLocaleDateString("es-EC", {
+                              weekday: "long",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Hora:</span>
+                          <span className="font-medium text-[#202020]">
+                            {horariosDisponibles.find((h) => h.hora === selectedHora)?.hora_display || selectedHora}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Servicio:</span>
+                          <span className="font-medium text-[#202020]">{selectedServicioData?.nombre}</span>
+                        </div>
+                        {citaForm.getValues("observaciones") && (
+                          <div className="pt-2 border-t border-gray-200">
+                            <span className="text-gray-600 block mb-1">Observaciones:</span>
+                            <p className="font-medium text-[#202020] text-sm">
+                              {citaForm.getValues("observaciones")}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-6 mt-6 border-t border-gray-200">
+                    <Button type="button" variant="outline" onClick={() => setCurrentStep(2)} disabled={loading}>
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Modificar
+                    </Button>
+                    <Button
+                      onClick={handleConfirmarCita}
+                      disabled={loading}
                       className="bg-[#ED1C24] hover:bg-[#c41820] text-white px-8"
                     >
                       {loading ? (
@@ -558,76 +1009,8 @@ export default function NuevaCitaPage() {
                       )}
                     </Button>
                   </div>
-                </form>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Step 3: Confirmación */}
-          {currentStep === 3 && citaCreada && (
-            <motion.div
-              key="step3"
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="max-w-2xl mx-auto"
-            >
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center">
-                <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
-                  <CheckCircle2 className="h-8 w-8 text-green-600" />
                 </div>
-
-                <h2 className="text-3xl font-bold text-[#202020] mb-4">¡Cita Confirmada!</h2>
-                <p className="text-gray-600 mb-8">Tu cita ha sido agendada exitosamente</p>
-
-                <div className="bg-gray-50 rounded-xl p-6 mb-6 text-left">
-                  <div className="grid gap-4">
-                    <div>
-                      <p className="text-sm text-gray-600">Referencia</p>
-                      <p className="font-mono font-bold text-[#ED1C24] text-lg">{citaCreada.id}</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-600">Fecha</p>
-                        <p className="font-semibold text-[#202020]">{citaCreada.fecha}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Hora</p>
-                        <p className="font-semibold text-[#202020]">{citaCreada.hora}</p>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Vehículo</p>
-                      <p className="font-semibold text-[#202020]">{citaCreada.vehiculoPlaca}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600">Servicio</p>
-                      <p className="font-semibold text-[#202020]">{citaCreada.servicio}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-blue-900">
-                    <strong>Importante:</strong> Guarda tu número de referencia para consultar o cancelar tu cita.
-                    Recibirás una confirmación por email y WhatsApp.
-                  </p>
-                </div>
-
-                <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => router.push("/agendamiento")} className="flex-1">
-                    Agendar Otra Cita
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      sessionStorage.clear()
-                      router.push("/agendamiento")
-                    }}
-                    className="flex-1 bg-[#ED1C24] hover:bg-[#c41820] text-white"
-                  >
-                    Finalizar
-                  </Button>
-                </div>
-              </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

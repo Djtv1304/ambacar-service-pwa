@@ -17,15 +17,15 @@ interface StepsIndicatorProps {
 export function StepsIndicator({ steps, currentStep }: StepsIndicatorProps) {
   return (
     <div className="w-full max-w-3xl mx-auto mb-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-center">
         {steps.map((step, index) => {
           const isCompleted = currentStep > step.number
           const isCurrent = currentStep === step.number
           const isLast = index === steps.length - 1
 
           return (
-            <div key={step.number} className="flex items-center flex-1">
-              <div className="flex flex-col items-center">
+            <div key={step.number} className="flex items-center">
+              <div className="flex flex-col items-center min-w-[120px]">
                 <motion.div
                   initial={false}
                   animate={{
@@ -40,14 +40,17 @@ export function StepsIndicator({ steps, currentStep }: StepsIndicatorProps) {
                   {isCompleted ? <Check className="h-5 w-5" /> : step.number}
                 </motion.div>
                 <p
-                  className={cn("text-sm mt-2 font-medium text-center", isCurrent ? "text-[#ED1C24]" : "text-gray-600")}
+                  className={cn(
+                    "text-sm mt-2 font-medium text-center whitespace-nowrap",
+                    isCurrent ? "text-[#ED1C24]" : "text-gray-600"
+                  )}
                 >
                   {step.title}
                 </p>
               </div>
 
               {!isLast && (
-                <div className="flex-1 h-0.5 mx-4 bg-gray-200 relative overflow-hidden">
+                <div className="w-24 h-0.5 mx-4 bg-gray-200 relative overflow-hidden">
                   <motion.div
                     initial={false}
                     animate={{

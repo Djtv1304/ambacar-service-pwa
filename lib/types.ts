@@ -360,6 +360,32 @@ export interface VehiculoAgendamientoAPI {
   modelo: number
 }
 
+// Citas - Horarios Disponibles
+export interface HorarioDisponible {
+  hora: string
+  hora_display: string
+  disponible: boolean
+}
+
+export interface HorariosDisponiblesResponse {
+  fecha: string
+  horarios_disponibles: HorarioDisponible[]
+  total_horarios: number
+  horarios_disponibles_count: number
+}
+
+// Citas - Tipos de Servicio
+export interface TipoServicio {
+  id: number
+  nombre: string
+  descripcion: string
+  duracion_estimada: number
+  orden: number
+  estado: string
+  created_at: string
+  updated_at: string
+}
+
 // Detailed OT types
 export interface OrdenTrabajoDetalle {
   id: number

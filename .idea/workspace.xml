@@ -4,14 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ed939dfd-494f-4ab6-b368-b8545f69e227" name="Changes" comment="Implementación de la página para crear nuevas órdenes de trabajo y funciones API relacionadas">
+    <list default="true" id="ed939dfd-494f-4ab6-b368-b8545f69e227" name="Changes" comment="Integración de API para verificar detalles de las OT">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/agendamiento/layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/agendamiento/layout.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/app/agendamiento/nueva/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/agendamiento/nueva/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/agendamiento/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/agendamiento/page.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/dashboard/ot/[id]/page.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/dashboard/ot/[id]/page.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/api/agendamiento.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/api/agendamiento.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/api/ordenes-trabajo.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/api/ordenes-trabajo.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/lib/types.ts" beforeDir="false" afterPath="$PROJECT_DIR$/lib/types.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -111,7 +107,7 @@
       <workItem from="1761017567982" duration="3760000" />
       <workItem from="1761666253402" duration="26798000" />
       <workItem from="1762819604228" duration="12403000" />
-      <workItem from="1763143025230" duration="9428000" />
+      <workItem from="1763143025230" duration="18632000" />
     </task>
     <task id="LOCAL-00001" summary="Adición de archivos de configuración (Vitest y Playwright) y tests para la autenticación y el componente sidebar">
       <option name="closed" value="true" />
@@ -121,7 +117,15 @@
       <option name="project" value="LOCAL" />
       <updated>1760742390590</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Integración de API para verificar detalles de las OT">
+      <option name="closed" value="true" />
+      <created>1763172177737</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1763172177737</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -142,7 +146,8 @@
     <MESSAGE value="First commit" />
     <MESSAGE value="add initial configuration files and tests for authentication and sidebar components" />
     <MESSAGE value="Adición de archivos de configuración (Vitest y Playwright) y tests para la autenticación y el componente sidebar" />
-    <option name="LAST_COMMIT_MESSAGE" value="Adición de archivos de configuración (Vitest y Playwright) y tests para la autenticación y el componente sidebar" />
+    <MESSAGE value="Integración de API para verificar detalles de las OT" />
+    <option name="LAST_COMMIT_MESSAGE" value="Integración de API para verificar detalles de las OT" />
   </component>
   <component name="github-copilot-workspace">
     <instructionFileLocations>

@@ -291,3 +291,44 @@ export async function sendWhatsAppCancel(payload: {
   console.log("[v0] WhatsApp cancellation stub called:", payload)
   await new Promise((resolve) => setTimeout(resolve, 300))
 }
+
+/**
+ * Obtiene los horarios disponibles para una fecha específica
+ */
+export async function getHorariosDisponibles(fecha: string): Promise<any> {
+  return apiRequest<any>("/api/citas/horarios-disponibles/", {
+    method: "POST",
+    body: JSON.stringify({ fecha }),
+  })
+}
+
+/**
+ * Obtiene los tipos de servicio disponibles
+ */
+export async function getTiposServicio(): Promise<any[]> {
+  return apiRequest<any[]>("/api/citas/tipos-servicio/", {
+    method: "GET",
+  })
+}
+
+/**
+ * Crea una nueva cita en el sistema
+ */
+export async function crearCitaAPI(
+  data: {
+    cliente: number
+    vehiculo: number
+    tipo_servicio: number
+    fecha_cita: string
+    hora_cita: string
+    observaciones?: string
+  },
+  token: string
+): Promise<any> {
+  return apiRequest<any>("/api/citas/", {
+    method: "POST",
+    body: JSON.stringify(data),
+    token,
+  })
+}
+
