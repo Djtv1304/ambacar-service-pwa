@@ -16,7 +16,7 @@ interface StepsIndicatorProps {
 
 export function StepsIndicator({ steps, currentStep }: StepsIndicatorProps) {
   return (
-    <div className="w-full max-w-3xl mx-auto mb-8">
+    <div className="w-full max-w-3xl mx-auto mb-6 sm:mb-8 px-2 sm:px-0">
       <div className="flex items-center justify-center">
         {steps.map((step, index) => {
           const isCompleted = currentStep > step.number
@@ -25,7 +25,7 @@ export function StepsIndicator({ steps, currentStep }: StepsIndicatorProps) {
 
           return (
             <div key={step.number} className="flex items-center">
-              <div className="flex flex-col items-center min-w-[120px]">
+              <div className="flex flex-col items-center min-w-[80px] sm:min-w-[100px] md:min-w-[120px]">
                 <motion.div
                   initial={false}
                   animate={{
@@ -33,15 +33,15 @@ export function StepsIndicator({ steps, currentStep }: StepsIndicatorProps) {
                     backgroundColor: isCompleted || isCurrent ? "#ED1C24" : "#e5e7eb",
                   }}
                   className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-colors",
+                    "w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-semibold transition-colors text-sm sm:text-base",
                     isCompleted || isCurrent ? "text-white" : "text-gray-500",
                   )}
                 >
-                  {isCompleted ? <Check className="h-5 w-5" /> : step.number}
+                  {isCompleted ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : step.number}
                 </motion.div>
                 <p
                   className={cn(
-                    "text-sm mt-2 font-medium text-center whitespace-nowrap",
+                    "text-xs sm:text-sm mt-1 sm:mt-2 font-medium text-center whitespace-nowrap px-1",
                     isCurrent ? "text-[#ED1C24]" : "text-gray-600"
                   )}
                 >
@@ -50,7 +50,7 @@ export function StepsIndicator({ steps, currentStep }: StepsIndicatorProps) {
               </div>
 
               {!isLast && (
-                <div className="w-24 h-0.5 mx-4 bg-gray-200 relative overflow-hidden">
+                <div className="w-12 sm:w-16 md:w-24 h-0.5 mx-2 sm:mx-3 md:mx-4 bg-gray-200 relative overflow-hidden">
                   <motion.div
                     initial={false}
                     animate={{

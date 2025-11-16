@@ -343,31 +343,31 @@ export default function NuevaCitaPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white">
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-[#ED1C24] flex items-center justify-center">
-                <Car className="h-6 w-6 text-white" />
+      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-[#ED1C24] flex items-center justify-center flex-shrink-0">
+                <Car className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-[#202020]">Ambacar</h1>
-                <p className="text-xs text-gray-600">Nueva Cita</p>
+                <h1 className="text-base sm:text-xl font-bold text-[#202020]">Ambacar</h1>
+                <p className="text-xs text-gray-600 hidden sm:block">Nueva Cita</p>
               </div>
             </div>
             <Button
               variant="ghost"
               onClick={() => router.push("/agendamiento")}
-              className="text-gray-600 hover:text-[#ED1C24] transition-colors"
+              className="text-gray-600 hover:text-[#ED1C24] transition-colors text-sm sm:text-base px-2 sm:px-4"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver al Inicio
+              <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
+              <span className="hidden xs:inline">Volver al</span> Inicio
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
         <StepsIndicator steps={steps} currentStep={currentStep} />
 
         <AnimatePresence mode="wait">
@@ -380,8 +380,8 @@ export default function NuevaCitaPage() {
               exit={{ opacity: 0, x: -20 }}
               className="max-w-2xl mx-auto"
             >
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-                <h2 className="text-2xl font-bold text-[#202020] mb-6">Selecciona tu Vehículo</h2>
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 md:p-8">
+                <h2 className="text-xl sm:text-2xl font-bold text-[#202020] mb-4 sm:mb-6">Selecciona tu Vehículo</h2>
 
                 {loadingVehiculos ? (
                   <div className="flex justify-center py-8">
@@ -567,26 +567,26 @@ export default function NuevaCitaPage() {
               exit={{ opacity: 0, x: -20 }}
               className="max-w-5xl mx-auto"
             >
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-                <h2 className="text-2xl font-bold text-[#202020] mb-6">Selecciona Fecha y Hora</h2>
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 md:p-8">
+                <h2 className="text-xl sm:text-2xl font-bold text-[#202020] mb-4 sm:mb-6">Selecciona Fecha y Hora</h2>
 
-                <div className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-4 sm:space-y-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div className="w-full">
-                      <Label className="text-[#202020] font-medium mb-3 block">Fecha</Label>
+                      <Label className="text-[#202020] font-medium mb-2 sm:mb-3 block text-sm sm:text-base">Fecha</Label>
                       <div className="flex justify-center">
                         <Calendar
                           mode="single"
                           selected={selectedDate}
                           onSelect={setSelectedDate}
                           disabled={isDateDisabled}
-                          className="rounded-lg border border-gray-200"
+                          className="rounded-lg border border-gray-200 scale-90 sm:scale-100"
                         />
                       </div>
                     </div>
 
                     <div className="w-full">
-                      <Label className="text-[#202020] font-medium mb-3 block">Hora Disponible</Label>
+                      <Label className="text-[#202020] font-medium mb-2 sm:mb-3 block text-sm sm:text-base">Hora Disponible</Label>
                       {!selectedDate ? (
                         <div className="flex items-center justify-center h-full min-h-[200px] border border-gray-200 rounded-lg bg-gray-50">
                           <p className="text-gray-500 text-sm">Primero selecciona una fecha</p>
@@ -596,18 +596,18 @@ export default function NuevaCitaPage() {
                           <Loader2 className="h-6 w-6 animate-spin text-[#ED1C24]" />
                         </div>
                       ) : horariosDisponibles.length === 0 ? (
-                        <div className="flex items-center justify-center h-full min-h-[200px] border border-gray-200 rounded-lg bg-gray-50">
-                          <p className="text-gray-500 text-sm">No hay horarios disponibles para esta fecha</p>
+                        <div className="flex items-center justify-center h-full min-h-[150px] sm:min-h-[200px] border border-gray-200 rounded-lg bg-gray-50">
+                          <p className="text-gray-500 text-xs sm:text-sm text-center px-4">No hay horarios disponibles para esta fecha</p>
                         </div>
                       ) : (
-                        <div className="grid grid-cols-3 gap-2 max-h-[350px] overflow-y-auto pr-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[300px] sm:max-h-[350px] overflow-y-auto pr-1 sm:pr-2">
                           {horariosDisponibles.map((horario) => (
                             <button
                               key={horario.hora}
                               type="button"
                               onClick={() => horario.disponible && setSelectedHora(horario.hora)}
                               disabled={!horario.disponible}
-                              className={`p-3 rounded-lg border-2 text-sm font-medium transition-all ${
+                              className={`p-2 sm:p-3 rounded-lg border-2 text-xs sm:text-sm font-medium transition-all ${
                                 selectedHora === horario.hora
                                   ? "border-[#ED1C24] bg-[#ED1C24] text-white"
                                   : horario.disponible
@@ -686,12 +686,12 @@ export default function NuevaCitaPage() {
                     />
                   </div>
 
-                  <div className="flex justify-between pt-4">
+                  <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-0 pt-4">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => setCurrentStep(1)}
-                      className="cursor-pointer"
+                      className="cursor-pointer w-full sm:w-auto"
                     >
                       <ArrowLeft className="mr-2 h-4 w-4" />
                       Atrás
@@ -700,7 +700,7 @@ export default function NuevaCitaPage() {
                       type="button"
                       onClick={handleCitaSubmit}
                       disabled={loading || !selectedDate || !selectedHora || !selectedServicio}
-                      className="bg-[#ED1C24] hover:bg-[#c41820] active:scale-95 text-white px-8 cursor-pointer transition-all duration-150"
+                      className="bg-[#ED1C24] hover:bg-[#c41820] active:scale-95 text-white px-6 sm:px-8 cursor-pointer transition-all duration-150 w-full sm:w-auto"
                     >
                       Revisar Datos
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -726,16 +726,16 @@ export default function NuevaCitaPage() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center"
+                  className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 md:p-8 text-center"
                 >
                   {/* Icono de éxito animado */}
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
-                    className="h-20 w-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6"
+                    className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4 sm:mb-6"
                   >
-                    <CheckCircle2 className="h-10 w-10 text-green-600" />
+                    <CheckCircle2 className="h-8 w-8 sm:h-10 sm:w-10 text-green-600" />
                   </motion.div>
 
                   <motion.div
@@ -743,8 +743,8 @@ export default function NuevaCitaPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                   >
-                    <h2 className="text-3xl font-bold text-[#202020] mb-2">¡Cita Agendada!</h2>
-                    <p className="text-gray-600 mb-8">Tu cita ha sido confirmada exitosamente</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-[#202020] mb-2">¡Cita Agendada!</h2>
+                    <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Tu cita ha sido confirmada exitosamente</p>
                   </motion.div>
 
                   {/* Número de referencia destacado */}
@@ -752,10 +752,10 @@ export default function NuevaCitaPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="bg-[#ED1C24]/5 border-2 border-[#ED1C24]/20 rounded-xl p-6 mb-6"
+                    className="bg-[#ED1C24]/5 border-2 border-[#ED1C24]/20 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6"
                   >
-                    <p className="text-sm text-gray-600 mb-2">Número de Referencia</p>
-                    <p className="font-mono font-bold text-[#ED1C24] text-2xl tracking-wider">{citaCreada.id}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-2">Número de Referencia</p>
+                    <p className="font-mono font-bold text-[#ED1C24] text-lg sm:text-2xl tracking-wider break-all">{citaCreada.id}</p>
                     <p className="text-xs text-gray-500 mt-2">Guarda este número para consultar tu cita</p>
                   </motion.div>
 
@@ -764,18 +764,18 @@ export default function NuevaCitaPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="bg-gray-50 rounded-xl p-6 mb-6 text-left"
+                    className="bg-gray-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 text-left"
                   >
-                    <h3 className="font-semibold text-[#202020] mb-4 text-center">Detalles de tu Cita</h3>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center">
-                            <CalendarIcon className="h-5 w-5 text-[#ED1C24]" />
+                    <h3 className="font-semibold text-[#202020] mb-3 sm:mb-4 text-center text-sm sm:text-base">Detalles de tu Cita</h3>
+                    <div className="space-y-3 sm:space-y-4">
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center flex-shrink-0">
+                            <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-[#ED1C24]" />
                           </div>
                           <div>
                             <p className="text-xs text-gray-600">Fecha</p>
-                            <p className="font-semibold text-[#202020]">
+                            <p className="font-semibold text-[#202020] text-xs sm:text-sm">
                               {new Date(citaCreada.fecha).toLocaleDateString("es-EC", {
                                 weekday: "long",
                                 year: "numeric",
@@ -787,26 +787,26 @@ export default function NuevaCitaPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center">
-                            <CheckCircle2 className="h-5 w-5 text-[#ED1C24]" />
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center flex-shrink-0">
+                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-[#ED1C24]" />
                           </div>
                           <div>
                             <p className="text-xs text-gray-600">Hora</p>
-                            <p className="font-semibold text-[#202020]">{citaCreada.hora}</p>
+                            <p className="font-semibold text-[#202020] text-xs sm:text-sm">{citaCreada.hora}</p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center">
-                            <Car className="h-5 w-5 text-[#ED1C24]" />
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center flex-shrink-0">
+                            <Car className="h-4 w-4 sm:h-5 sm:w-5 text-[#ED1C24]" />
                           </div>
                           <div>
                             <p className="text-xs text-gray-600">Vehículo</p>
-                            <p className="font-semibold text-[#202020]">
+                            <p className="font-semibold text-[#202020] text-xs sm:text-sm">
                               {vehiculoSeleccionado?.marca} {vehiculoSeleccionado?.modelo}
                             </p>
                             <p className="text-xs text-gray-500">Placa: {citaCreada.vehiculoPlaca}</p>
@@ -814,28 +814,28 @@ export default function NuevaCitaPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between p-3 bg-white rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center">
-                            <CheckCircle2 className="h-5 w-5 text-[#ED1C24]" />
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center flex-shrink-0">
+                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-[#ED1C24]" />
                           </div>
                           <div>
                             <p className="text-xs text-gray-600">Servicio</p>
-                            <p className="font-semibold text-[#202020]">{citaCreada.servicio}</p>
+                            <p className="font-semibold text-[#202020] text-xs sm:text-sm">{citaCreada.servicio}</p>
                           </div>
                         </div>
                       </div>
 
                       {citaCreada.observaciones && (
-                        <div className="p-3 bg-white rounded-lg">
+                        <div className="p-2 sm:p-3 bg-white rounded-lg">
                           <p className="text-xs text-gray-600 mb-1">Observaciones</p>
-                          <p className="text-sm text-[#202020]">{citaCreada.observaciones}</p>
+                          <p className="text-xs sm:text-sm text-[#202020]">{citaCreada.observaciones}</p>
                         </div>
                       )}
 
-                      <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="p-2 sm:p-3 bg-green-50 border border-green-200 rounded-lg">
                         <p className="text-xs text-green-700 mb-1">Estado</p>
-                        <p className="text-sm font-semibold text-green-700">{citaCreada.estado}</p>
+                        <p className="text-xs sm:text-sm font-semibold text-green-700">{citaCreada.estado}</p>
                       </div>
                     </div>
                   </motion.div>
@@ -870,7 +870,7 @@ export default function NuevaCitaPage() {
                         setSelectedServicio("")
                         citaForm.reset()
                       }}
-                      className="flex-1 cursor-pointer"
+                      className="flex-1 cursor-pointer text-sm sm:text-base"
                     >
                       Agendar Otra Cita
                     </Button>
@@ -879,7 +879,7 @@ export default function NuevaCitaPage() {
                         sessionStorage.clear()
                         router.push("/agendamiento")
                       }}
-                      className="flex-1 bg-[#ED1C24] hover:bg-[#c41820] text-white cursor-pointer"
+                      className="flex-1 bg-[#ED1C24] hover:bg-[#c41820] text-white cursor-pointer text-sm sm:text-base"
                     >
                       Finalizar
                     </Button>
@@ -887,75 +887,75 @@ export default function NuevaCitaPage() {
                 </motion.div>
               ) : (
                 // Revisión de datos antes de confirmar
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8">
-                  <h2 className="text-2xl font-bold text-[#202020] mb-2">Revisa tu Cita</h2>
-                  <p className="text-gray-600 mb-6">Verifica que todos los datos sean correctos antes de confirmar</p>
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 md:p-8">
+                  <h2 className="text-xl sm:text-2xl font-bold text-[#202020] mb-2">Revisa tu Cita</h2>
+                  <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Verifica que todos los datos sean correctos antes de confirmar</p>
 
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     {/* Información del Cliente */}
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h3 className="font-semibold text-[#202020] mb-4 flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-3 text-sm">
+                    <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                      <h3 className="font-semibold text-[#202020] mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
+                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-2 sm:mr-3 text-sm flex-shrink-0">
                           1
                         </div>
                         Información del Cliente
                       </h3>
-                      <div className="ml-11 space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Nombre:</span>
-                          <span className="font-medium text-[#202020]">
+                      <div className="ml-9 sm:ml-11 space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-gray-600 text-xs sm:text-sm">Nombre:</span>
+                          <span className="font-medium text-[#202020] text-sm sm:text-base">
                             {cliente?.nombre} {cliente?.apellido}
                           </span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Email:</span>
-                          <span className="font-medium text-[#202020]">{cliente?.email}</span>
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-gray-600 text-xs sm:text-sm">Email:</span>
+                          <span className="font-medium text-[#202020] text-sm sm:text-base break-all">{cliente?.email}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Teléfono:</span>
-                          <span className="font-medium text-[#202020]">{cliente?.telefono}</span>
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-gray-600 text-xs sm:text-sm">Teléfono:</span>
+                          <span className="font-medium text-[#202020] text-sm sm:text-base">{cliente?.telefono}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Información del Vehículo */}
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h3 className="font-semibold text-[#202020] mb-4 flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-3 text-sm">
+                    <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                      <h3 className="font-semibold text-[#202020] mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
+                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-2 sm:mr-3 text-sm flex-shrink-0">
                           2
                         </div>
                         Vehículo
                       </h3>
-                      <div className="ml-11 space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Placa:</span>
-                          <span className="font-medium text-[#202020]">{vehiculoSeleccionado?.placa}</span>
+                      <div className="ml-9 sm:ml-11 space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-gray-600 text-xs sm:text-sm">Placa:</span>
+                          <span className="font-medium text-[#202020] text-sm sm:text-base">{vehiculoSeleccionado?.placa}</span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Vehículo:</span>
-                          <span className="font-medium text-[#202020]">
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-gray-600 text-xs sm:text-sm">Vehículo:</span>
+                          <span className="font-medium text-[#202020] text-sm sm:text-base">
                             {vehiculoSeleccionado?.marca} {vehiculoSeleccionado?.modelo} ({vehiculoSeleccionado?.anio})
                           </span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Color:</span>
-                          <span className="font-medium text-[#202020]">{vehiculoSeleccionado?.color}</span>
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-gray-600 text-xs sm:text-sm">Color:</span>
+                          <span className="font-medium text-[#202020] text-sm sm:text-base">{vehiculoSeleccionado?.color}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Detalles de la Cita */}
-                    <div className="bg-gray-50 rounded-xl p-6">
-                      <h3 className="font-semibold text-[#202020] mb-4 flex items-center">
-                        <div className="h-8 w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-3 text-sm">
+                    <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
+                      <h3 className="font-semibold text-[#202020] mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
+                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-2 sm:mr-3 text-sm flex-shrink-0">
                           3
                         </div>
                         Detalles de la Cita
                       </h3>
-                      <div className="ml-11 space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Fecha:</span>
-                          <span className="font-medium text-[#202020]">
+                      <div className="ml-9 sm:ml-11 space-y-2">
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-gray-600 text-xs sm:text-sm">Fecha:</span>
+                          <span className="font-medium text-[#202020] text-sm sm:text-base text-right">
                             {selectedDate?.toLocaleDateString("es-EC", {
                               weekday: "long",
                               year: "numeric",
@@ -964,20 +964,20 @@ export default function NuevaCitaPage() {
                             })}
                           </span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Hora:</span>
-                          <span className="font-medium text-[#202020]">
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-gray-600 text-xs sm:text-sm">Hora:</span>
+                          <span className="font-medium text-[#202020] text-sm sm:text-base">
                             {horariosDisponibles.find((h) => h.hora === selectedHora)?.hora_display || selectedHora}
                           </span>
                         </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Servicio:</span>
-                          <span className="font-medium text-[#202020]">{selectedServicioData?.nombre}</span>
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-gray-600 text-xs sm:text-sm">Servicio:</span>
+                          <span className="font-medium text-[#202020] text-sm sm:text-base text-right">{selectedServicioData?.nombre}</span>
                         </div>
                         {citaForm.getValues("observaciones") && (
                           <div className="pt-2 border-t border-gray-200">
-                            <span className="text-gray-600 block mb-1">Observaciones:</span>
-                            <p className="font-medium text-[#202020] text-sm">
+                            <span className="text-gray-600 block mb-1 text-xs sm:text-sm">Observaciones:</span>
+                            <p className="font-medium text-[#202020] text-xs sm:text-sm">
                               {citaForm.getValues("observaciones")}
                             </p>
                           </div>
@@ -986,15 +986,21 @@ export default function NuevaCitaPage() {
                     </div>
                   </div>
 
-                  <div className="flex justify-between pt-6 mt-6 border-t border-gray-200">
-                    <Button type="button" variant="outline" onClick={() => setCurrentStep(2)} disabled={loading}>
+                  <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6 mt-4 sm:mt-6 border-t border-gray-200">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCurrentStep(2)}
+                      disabled={loading}
+                      className="w-full sm:w-auto"
+                    >
                       <ArrowLeft className="mr-2 h-4 w-4" />
                       Modificar
                     </Button>
                     <Button
                       onClick={handleConfirmarCita}
                       disabled={loading}
-                      className="bg-[#ED1C24] hover:bg-[#c41820] text-white px-8"
+                      className="bg-[#ED1C24] hover:bg-[#c41820] text-white px-6 sm:px-8 w-full sm:w-auto"
                     >
                       {loading ? (
                         <>
