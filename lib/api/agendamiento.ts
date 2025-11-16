@@ -1,20 +1,46 @@
-import type { Cliente, Vehiculo, Cita } from "../types"
-import { clientes } from "../fixtures/clientes"
+import type { Cliente, Vehiculo, Cita, VerificarUsuarioResponse, VehiculoAgendamientoAPI } from "../types"
+import { apiRequest } from "./client"
 import { citas, disponibilidadTaller } from "../fixtures/citas"
+import { clientes } from "../fixtures/clientes"
 
 // ============================================================================
-// API STUBS - TODO: Replace with actual API calls
+// API Integration
 // ============================================================================
 
 /**
- * Busca un cliente por cédula
+ * Verifica si un usuario existe por cédula
+ */
+export async function verificarUsuarioPorCedula(cedula: string): Promise<VerificarUsuarioResponse> {
+  return apiRequest<VerificarUsuarioResponse>("/api/citas/verificar-usuario/", {
+    method: "POST",
+    body: JSON.stringify({ cedula }),
+  })
+}
+
+/**
+ * Busca un cliente por cédula (wrapper para mantener compatibilidad)
  */
 export async function buscarClientePorCedula(cedula: string): Promise<Cliente | null> {
-  // TODO: Integrar con API real
-  await new Promise((resolve) => setTimeout(resolve, 500)) // Simular latencia
+  const response = await verificarUsuarioPorCedula(cedula)
 
-  const cliente = clientes.find((c) => c.cedula === cedula)
-  return cliente || null
+  if (response.existe && response.usuario) {
+    // Convertir el formato de la API al formato Cliente usado en el frontend
+    return {
+      id: response.usuario.id.toString(),
+      cedula: response.usuario.cedula,
+      nombre: response.usuario.first_name,
+      apellido: response.usuario.last_name,
+      email: response.usuario.email,
+      telefono: response.usuario.phone,
+      direccion: "",
+      ciudad: "",
+      vehiculos: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
+  }
+
+  return null
 }
 
 /**
@@ -44,14 +70,47 @@ export async function registrarCliente(data: {
 }
 
 /**
- * Obtiene los vehículos de un cliente por cédula
+ * Obtiene los vehículos de un cliente por ID
+ */
+export async function fetchVehiculosByClienteId(clienteId: number, token: string): Promise<Vehiculo[]> {
+  const vehiculos = await apiRequest<VehiculoAgendamientoAPI[]>(
+    `/api/citas/vehiculos/?cliente=${clienteId}`,
+    {
+      method: "GET",
+      token,
+    }
+  )
+
+  // Convertir formato de API a formato Vehiculo del frontend
+  return vehiculos.map((veh) => ({
+    id: veh.id.toString(),
+    clienteId: veh.cliente.toString(),
+    placa: veh.placa,
+    marca: veh.marca_display,
+    modelo: veh.modelo_display,
+    anio: veh.anio_fabricacion,
+    color: veh.color || "",
+    vin: veh.vin || "",
+    kilometraje: veh.kilometraje_actual,
+    createdAt: new Date(veh.created_at),
+    updatedAt: new Date(veh.updated_at),
+  }))
+}
+
+/**
+ * Obtiene los vehículos de un cliente por cédula (wrapper para mantener compatibilidad)
  */
 export async function fetchVehiculosByCedula(cedula: string): Promise<Vehiculo[]> {
-  // TODO: Integrar con API real
-  await new Promise((resolve) => setTimeout(resolve, 500))
+  // Primero verificar el usuario para obtener su ID
+  const response = await verificarUsuarioPorCedula(cedula)
 
-  const cliente = clientes.find((c) => c.cedula === cedula)
-  return cliente?.vehiculos || []
+  if (!response.existe || !response.usuario) {
+    return []
+  }
+
+  // Obtener token del usuario (necesitamos hacer login primero)
+  // Por ahora retornamos array vacío, se manejará en el componente
+  return []
 }
 
 /**
@@ -232,3 +291,44 @@ export async function sendWhatsAppCancel(payload: {
   console.log("[v0] WhatsApp cancellation stub called:", payload)
   await new Promise((resolve) => setTimeout(resolve, 300))
 }
+
+/**
+ * Obtiene los horarios disponibles para una fecha específica
+ */
+export async function getHorariosDisponibles(fecha: string): Promise<any> {
+  return apiRequest<any>("/api/citas/horarios-disponibles/", {
+    method: "POST",
+    body: JSON.stringify({ fecha }),
+  })
+}
+
+/**
+ * Obtiene los tipos de servicio disponibles
+ */
+export async function getTiposServicio(): Promise<any[]> {
+  return apiRequest<any[]>("/api/citas/tipos-servicio/", {
+    method: "GET",
+  })
+}
+
+/**
+ * Crea una nueva cita en el sistema
+ */
+export async function crearCitaAPI(
+  data: {
+    cliente: number
+    vehiculo: number
+    tipo_servicio: number
+    fecha_cita: string
+    hora_cita: string
+    observaciones?: string
+  },
+  token: string
+): Promise<any> {
+  return apiRequest<any>("/api/citas/", {
+    method: "POST",
+    body: JSON.stringify(data),
+    token,
+  })
+}
+
