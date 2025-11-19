@@ -106,10 +106,10 @@ export async function getVehiculosByCliente(clienteId: number, token: string): P
 }
 
 /**
- * Obtiene la lista de asesores
+ * Obtiene la lista de Operadores o Asesores de Servicio
  */
 export async function getAsesores(token: string): Promise<User[]> {
-  return apiRequest<User[]>("/api/usuarios/?role=asesor", {
+  return apiRequest<User[]>("/api/usuarios/?role=operator", {
     method: "GET",
     token,
   })

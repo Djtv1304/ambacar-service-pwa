@@ -1,7 +1,6 @@
 "use client"
 
 import { Bell, LogOut, User } from "lucide-react"
-import { useRouter } from "next/navigation"
 import { useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -20,14 +19,13 @@ import type { UserRole } from "@/lib/types"
 
 const roleLabels: Record<UserRole, string> = {
   admin: "Administrador",
-  receptionist: "Recepcionista",
-  mechanic: "Mecánico",
-  workshop_manager: "Jefe de Taller",
+  operator: "Operador de Servicio",
+  technician: "Técnico",
+  manager: "Jefe de Taller",
   customer: "Cliente",
 }
 
 export function Topbar() {
-  const router = useRouter()
   const { user } = useAuth()
   const { toast } = useToast()
   const [isPending, startTransition] = useTransition()
@@ -36,15 +34,33 @@ export function Topbar() {
     startTransition(async () => {
       try {
         await logoutAction()
+
+        // This line only executes if logout succeeds but doesn't redirect
+        // In normal cases, redirect() throws NEXT_REDIRECT and this never runs
         toast({
           title: "Sesión cerrada",
           description: "Has cerrado sesión correctamente",
         })
-      } catch (error) {
+      } catch (error: any) {
+        // Filter out NEXT_REDIRECT - it's not an error, it's Next.js redirecting
+        if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+          // Success! Logout worked and is redirecting
+          // Show success toast BEFORE re-throwing
+          toast({
+            title: "Sesión cerrada",
+            description: "Has cerrado sesión correctamente",
+          })
+
+          // Re-throw to let Next.js handle the redirect
+          throw error
+        }
+
+        // Only handle real errors (network issues, server errors, etc.)
+        console.error('Logout error:', error)
         toast({
           variant: "destructive",
-          title: "Error",
-          description: "No se pudo cerrar la sesión",
+          title: "Error al cerrar sesión",
+          description: error instanceof Error ? error.message : "No se pudo cerrar la sesión. Por favor, intenta de nuevo.",
         })
       }
     })

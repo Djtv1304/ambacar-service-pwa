@@ -16,7 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { getClientAccessToken } from "@/lib/auth/actions"
+import { useAuthToken } from "@/hooks/use-auth-token"
 import {
   getTestData,
   createOrdenTrabajo,
@@ -26,6 +26,7 @@ import { toast } from "sonner"
 
 export default function NuevaOrdenTrabajoPage() {
   const router = useRouter()
+  const { getToken } = useAuthToken()
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -58,7 +59,7 @@ export default function NuevaOrdenTrabajoPage() {
   // Load initial data
   useEffect(() => {
     const loadData = async () => {
-      const token = await getClientAccessToken()
+      const token = await getToken()
       if (!token) {
         toast.error("No se encontró token de autenticación")
         router.push("/login")
@@ -82,7 +83,7 @@ export default function NuevaOrdenTrabajoPage() {
     }
 
     loadData()
-  }, [router])
+  }, [router, getToken])
 
   // Filter subtipos when tipo changes
   useEffect(() => {
@@ -140,7 +141,7 @@ export default function NuevaOrdenTrabajoPage() {
       return
     }
 
-    const token = await getClientAccessToken()
+    const token = await getToken()
     if (!token) {
       toast.error("No se encontró token de autenticación")
       setLoading(false)

@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { getOrdenTrabajoDetalle } from "@/lib/api/ordenes-trabajo"
-import { getClientAccessToken } from "@/lib/auth/actions"
+import { useAuthToken } from "@/hooks/use-auth-token"
 import type { OrdenTrabajoDetalle } from "@/lib/types"
 import { toast } from "sonner"
 
@@ -39,6 +39,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
   const [ot, setOt] = useState<OrdenTrabajoDetalle | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentEstado, setCurrentEstado] = useState<string>("")
+  const { getToken } = useAuthToken()
 
   // Fetch OT details
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
 
     const fetchOTDetails = async () => {
       try {
-        const token = await getClientAccessToken()
+        const token = await getToken()
         if (!token) {
           toast.error("No se encontró token de autenticación")
           setLoading(false)
@@ -75,7 +76,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
     return () => {
       isMounted = false
     }
-  }, [otId])
+  }, [otId, getToken])
 
   const handleEstadoChange = (newEstado: string) => {
     setCurrentEstado(newEstado)
