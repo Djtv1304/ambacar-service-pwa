@@ -1,6 +1,6 @@
 // Core entity types for the Ambacar system
 
-export type UserRole = "admin" | "receptionist" | "mechanic" | "workshop_manager" | "customer"
+export type UserRole = "admin" | "operator" | "technician" | "manager" | "customer"
 
 export interface User {
   id: number

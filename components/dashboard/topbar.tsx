@@ -19,9 +19,9 @@ import type { UserRole } from "@/lib/types"
 
 const roleLabels: Record<UserRole, string> = {
   admin: "Administrador",
-  receptionist: "Recepcionista",
-  mechanic: "Mecánico",
-  workshop_manager: "Jefe de Taller",
+  operator: "Operador de Servicio",
+  technician: "Técnico",
+  manager: "Jefe de Taller",
   customer: "Cliente",
 }
 
