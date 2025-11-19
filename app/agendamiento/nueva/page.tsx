@@ -21,7 +21,7 @@ import {
   getTiposServicio,
   crearCitaAPI,
 } from "@/lib/api/agendamiento"
-import { getClientAccessToken } from "@/lib/auth/actions"
+import { useAuthToken } from "@/hooks/use-auth-token"
 import type { Cliente, Vehiculo, Cita, HorarioDisponible, TipoServicio } from "@/lib/types"
 import { toast as sonnerToast } from "sonner"
 
@@ -33,6 +33,7 @@ const steps = [
 
 export default function NuevaCitaPage() {
   const router = useRouter()
+  const { getToken } = useAuthToken()
   const [currentStep, setCurrentStep] = useState(1)
   const [cliente, setCliente] = useState<Cliente | null>(null)
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([])
@@ -91,7 +92,7 @@ export default function NuevaCitaPage() {
 
       try {
         // Obtener token de autenticación
-        const token = await getClientAccessToken()
+        const token = await getToken()
         if (!token) {
           sonnerToast.error("Error de autenticación", {
             description: "No se pudo obtener el token de acceso",
@@ -249,7 +250,7 @@ export default function NuevaCitaPage() {
     setLoading(true)
     try {
       // Obtener token de autenticación
-      const token = await getClientAccessToken()
+      const token = await getToken()
       if (!token) {
         sonnerToast.error("Error de autenticación", {
           description: "No se pudo obtener el token de acceso. Por favor inicia sesión nuevamente.",
@@ -776,12 +777,17 @@ export default function NuevaCitaPage() {
                           <div>
                             <p className="text-xs text-gray-600">Fecha</p>
                             <p className="font-semibold text-[#202020] text-xs sm:text-sm">
-                              {new Date(citaCreada.fecha).toLocaleDateString("es-EC", {
-                                weekday: "long",
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })}
+                              {(() => {
+                                // Parse date as YYYY-MM-DD and create date in local timezone
+                                const [year, month, day] = citaCreada.fecha.split('-').map(Number)
+                                const localDate = new Date(year, month - 1, day)
+                                return localDate.toLocaleDateString("es-EC", {
+                                  weekday: "long",
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                })
+                              })()}
                             </p>
                           </div>
                         </div>

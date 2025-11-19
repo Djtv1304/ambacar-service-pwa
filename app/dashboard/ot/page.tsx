@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Spinner } from "@/components/ui/spinner"
 import { getOrdenesTrabajo, type OrdenTrabajoAPI } from "@/lib/api/ordenes-trabajo"
-import { getClientAccessToken } from "@/lib/auth/actions"
+import { useAuthToken } from "@/hooks/use-auth-token"
 import { toast } from "sonner"
 
 // Estado colors mapping
@@ -48,14 +48,15 @@ export default function OrdenesTrabajoPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterEstado, setFilterEstado] = useState<string>("todas")
   const [filterTipo, setFilterTipo] = useState<string>("todas")
+  const { getToken } = useAuthToken()
 
   // Fetch ordenes de trabajo
   useEffect(() => {
     let isMounted = true
 
     const fetchOrdenes = async () => {
-      // Get token from httpOnly cookies via server action
-      const token = await getClientAccessToken()
+      // Get token using the auth hook (handles refresh automatically)
+      const token = await getToken()
 
       if (!token) {
         toast.error("No se encontró token de autenticación")

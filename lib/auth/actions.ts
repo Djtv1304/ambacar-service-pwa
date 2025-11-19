@@ -90,29 +90,44 @@ export async function logoutAction() {
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const accessToken = await getAccessToken()
-    if (!accessToken) {
-      return null
-    }
+    let accessToken = await getAccessToken()
 
-    const user = await getMeApi(accessToken)
-    return user
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
-      // Try to refresh token
+    // If no access token, try to refresh
+    if (!accessToken) {
       const refreshed = await refreshAccessToken()
-      if (refreshed) {
-        const accessToken = await getAccessToken()
-        if (accessToken) {
-          try {
-            const user = await getMeApi(accessToken)
-            return user
-          } catch {
-            return null
-          }
-        }
+      if (!refreshed) {
+        return null
+      }
+      accessToken = await getAccessToken()
+      if (!accessToken) {
+        return null
       }
     }
+
+    try {
+      const user = await getMeApi(accessToken)
+      return user
+    } catch (error) {
+      // If 401, try to refresh once
+      if (error instanceof ApiError && error.status === 401) {
+        const refreshed = await refreshAccessToken()
+        if (refreshed) {
+          const newAccessToken = await getAccessToken()
+          if (newAccessToken) {
+            try {
+              const user = await getMeApi(newAccessToken)
+              return user
+            } catch {
+              await clearTokens()
+              return null
+            }
+          }
+        }
+        await clearTokens()
+      }
+      return null
+    }
+  } catch (error) {
     return null
   }
 }
@@ -125,7 +140,7 @@ export async function refreshAccessToken(): Promise<boolean> {
     }
 
     const response = await refreshTokenApi(refreshToken)
-    await setAccessToken(response.access)
+    await setAccessToken(response.access, 15 * 60) // 15 minutes
     return true
   } catch (error) {
     // Refresh token is invalid or expired
@@ -137,16 +152,33 @@ export async function refreshAccessToken(): Promise<boolean> {
 /**
  * Get the access token for client components
  * This is a server action that can be called from client components
+ * Automatically refreshes if token is missing or expired
  */
 export async function getClientAccessToken(): Promise<string | null> {
   try {
-    const accessToken = await getAccessToken()
+    let accessToken = await getAccessToken()
+
+    // If no access token, try to refresh
     if (!accessToken) {
-      return null
+      const refreshed = await refreshAccessToken()
+      if (!refreshed) {
+        return null
+      }
+      accessToken = await getAccessToken()
     }
-    return accessToken
+
+    return accessToken ?? null
   } catch (error) {
     return null
   }
+}
+
+/**
+ * Logout from client components
+ * Clears all authentication tokens
+ * This is a server action that can be called from client components
+ */
+export async function logoutClient(): Promise<void> {
+  await clearTokens()
 }
 

@@ -4,6 +4,7 @@ import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import type { User, LoginCredentials, RegisterData } from "@/lib/types"
 import { getCurrentUser, loginAction, registerAction } from "@/lib/auth/actions"
+import { useActivityDetection } from "@/hooks/use-auth-token"
 
 interface AuthContextType {
   user: User | null
@@ -19,6 +20,9 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  // Setup activity detection for automatic token refresh
+  useActivityDetection()
 
   const refreshUser = async () => {
     try {
