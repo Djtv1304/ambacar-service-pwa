@@ -4,13 +4,20 @@ import { apiRequest, ApiError } from "@/lib/api/client"
 import { getAccessToken } from "@/lib/auth/cookies"
 
 export interface CitaResponse {
-    id: number
-    numero_referencia: string
+    cita: {
+        id: number
+        numero_cita: string
+        fecha_cita: string
+        hora_cita: string
+        estado: string
+        // TODO [RECEPCIÓN]: Cuando la API devuelva el campo 'observaciones' en la cita, mapearlo
+        // para usarlo en observaciones_cliente al iniciar recepción
+        observaciones?: string
+    }
     cliente: {
         id: number
+        nombre_completo: string
         cedula: string
-        nombre: string
-        apellido: string
         email: string
         telefono: string
     }
@@ -20,38 +27,71 @@ export interface CitaResponse {
         marca: string
         modelo: string
         anio: number
-        vin?: string
+        color: string
         kilometraje_actual: number
+        // TODO [RECEPCIÓN]: Cuando la API devuelva el VIN del vehículo, agregarlo aquí
+        vin?: string
     }
-    fecha: string
-    hora: string
-    servicio: {
+    tipo_servicio: {
         id: number
-        detalle: string
+        nombre: string
+        // TODO [RECEPCIÓN]: Cuando la API devuelva el campo 'descripcion' en tipo_servicio,
+        // mapearlo para mostrarlo en la UI del resumen de cita
+        descripcion?: string
+        // TODO [RECEPCIÓN]: Cuando la API devuelva 'duracion_estimada' en tipo_servicio,
+        // mapearlo para mostrarlo en la UI del resumen de cita
+        duracion_estimada?: number
     }
-    observaciones?: string
-    estado: string
 }
 
 export interface RecepcionResponse {
     id: number
     numero_recepcion: string
-    cita_id: number
-    cliente_id: number
-    vehiculo_id: number
+    fecha_hora_recepcion: string
+    estado: string
+    estado_display: string
+    cita: number
+    vehiculo: number
+    cliente: number
+    asesor_recepcion: number
+    orden_trabajo: number | null
+    cliente_info: {
+        id: number
+        nombre_completo: string
+        cedula: string
+        email: string
+        telefono: string
+    }
+    vehiculo_info: {
+        id: number
+        placa: string
+        marca: string
+        modelo: string
+        anio: number
+        color: string
+    }
+    asesor_info: {
+        id: number
+        nombre_completo: string
+    }
+    cita_info: {
+        id: number
+        numero_cita: string
+        tipo_servicio: string
+        fecha_cita: string
+        hora_cita: string
+    }
+    orden_trabajo_info: any | null
     kilometraje_ingreso: number
     nivel_combustible: string
     motivo_visita: string
-    observaciones_cliente?: string
+    observaciones_cliente: string
     tiene_danos_previos: boolean
-    estado: string
-    asesor: {
-        id: number
-        nombre: string
-        apellido: string
-    }
-    fotos_requeridas: string[]
-    fotos_capturadas: string[]
+    descripcion_danos: string
+    fotos: any[]
+    fotos_completas: boolean
+    cantidad_fotos: number
+    fecha_completada: string | null
 }
 
 export interface FotoUploadResponse {

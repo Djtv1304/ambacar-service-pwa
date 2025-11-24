@@ -59,20 +59,10 @@ export async function middleware(request: NextRequest) {
   let accessToken = request.cookies.get("access_token")?.value
   const refreshToken = request.cookies.get("refresh_token")?.value
 
-  console.log("[Middleware] 🔍", {
-    pathname,
-    isProtected: isProtectedRoute,
-    isAuthRoute,
-    hasAccessToken: !!accessToken,
-    hasRefreshToken: !!refreshToken,
-    accessTokenExpired: accessToken ? isTokenExpired(accessToken) : "N/A"
-  })
-
   // If accessing protected route
   if (isProtectedRoute) {
     // No tokens at all
     if (!accessToken && !refreshToken) {
-      console.log("[Middleware] ❌ No tokens found, redirecting to login")
       const loginUrl = new URL("/login", request.url)
       loginUrl.searchParams.set("redirect", pathname)
       return NextResponse.redirect(loginUrl)
@@ -80,11 +70,9 @@ export async function middleware(request: NextRequest) {
 
     // Access token expired or missing, try to refresh
     if ((!accessToken || isTokenExpired(accessToken)) && refreshToken) {
-      console.log("[Middleware] 🔄 Attempting to refresh access token")
       const newAccessToken = await refreshAccessToken(refreshToken)
 
       if (newAccessToken) {
-        console.log("[Middleware] ✅ Token refreshed successfully")
         // Create response and set new access token
         const response = NextResponse.next()
         response.cookies.set("access_token", newAccessToken, {
@@ -97,7 +85,6 @@ export async function middleware(request: NextRequest) {
         response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate")
         return response
       } else {
-        console.log("[Middleware] ⚠️ Refresh failed - clearing cookies and redirecting to login")
         // Refresh token is invalid, clear cookies and redirect to login
         const loginUrl = new URL("/login", request.url)
         loginUrl.searchParams.set("redirect", pathname)
@@ -110,14 +97,12 @@ export async function middleware(request: NextRequest) {
 
     // Both tokens are valid or access token is still valid
     if (accessToken && !isTokenExpired(accessToken)) {
-      console.log("[Middleware] ✅ Access token valid, allowing access")
       const response = NextResponse.next()
       response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate")
       return response
     }
 
     // If we reach here, something went wrong, redirect to login
-    console.log("[Middleware] ⚠️ Unexpected state, redirecting to login")
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("redirect", pathname)
     return NextResponse.redirect(loginUrl)
@@ -125,11 +110,9 @@ export async function middleware(request: NextRequest) {
 
   // If accessing auth route with valid token, redirect to dashboard
   if (isAuthRoute && accessToken && !isTokenExpired(accessToken)) {
-    console.log("[Middleware] 🔄 Already authenticated, redirecting to dashboard")
     return NextResponse.redirect(new URL("/dashboard", request.url))
   }
 
-  console.log("[Middleware] ➡️ Public route, allowing access")
   return NextResponse.next()
 }
 

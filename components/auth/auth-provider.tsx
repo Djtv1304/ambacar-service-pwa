@@ -28,23 +28,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      console.log("[AuthProvider] 🔍 refreshUser - Getting token from server...")
       // Get token from server (secure httpOnly cookies)
       const token = await getClientAccessToken()
 
       if (!token) {
-        console.log("[AuthProvider] ⚠️ No token available")
         setUser(null)
         return
       }
 
-      console.log("[AuthProvider] ✅ Token obtained, calling Django from browser...")
       // Call Django directly from the browser (WSGI will handle headers correctly)
       const currentUser = await getMeApi(token)
-      console.log("[AuthProvider] ✅ User fetched successfully:", currentUser?.email)
       setUser(currentUser)
     } catch (error) {
-      console.error("[AuthProvider] ❌ Error fetching user:", error)
+      console.error("[AuthProvider] Error fetching user:", error)
       setUser(null)
     }
   }

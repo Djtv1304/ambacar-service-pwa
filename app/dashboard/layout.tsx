@@ -20,8 +20,6 @@ export default function DashboardLayout({
   const [mounted, setMounted] = useState(false)
   const [canRedirect, setCanRedirect] = useState(false)
 
-  console.log("[v0] DashboardLayout - user:", user, "isLoading:", isLoading, "mounted:", mounted)
-
   // Mount the component (client-side only)
   useEffect(() => {
     setMounted(true)
@@ -37,7 +35,6 @@ export default function DashboardLayout({
   // Only redirect if we're mounted, not loading, no user, and grace period passed
   useEffect(() => {
     if (mounted && canRedirect && !isLoading && !user) {
-      console.log("[v0] No user found after grace period, redirecting to login")
       // Use window.location for a hard redirect to avoid React Router issues
       window.location.href = "/login"
     }

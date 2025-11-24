@@ -49,9 +49,7 @@ export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
             <CardTitle className="text-lg">Información del Cliente</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p className="font-medium text-lg">
-              {cita.cliente.nombre} {cita.cliente.apellido}
-            </p>
+            <p className="font-medium text-lg">{cita.cliente.nombre_completo}</p>
             <p className="text-sm text-muted-foreground">
               <span className="font-medium">Cédula:</span> {cita.cliente.cedula}
             </p>
@@ -142,12 +140,18 @@ export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
           </CardHeader>
           <CardContent className="space-y-3">
             <div>
-              <Badge className="bg-[#ED1C24]/10 text-[#ED1C24] border-[#ED1C24]/20">{cita.servicio.detalle}</Badge>
+              <p className="text-xs text-muted-foreground mb-1">Tipo de Servicio</p>
+              <Badge className="bg-[#ED1C24]/10 text-[#ED1C24] border-[#ED1C24]/20">
+                {cita.tipo_servicio.nombre}
+              </Badge>
             </div>
-            {cita.observaciones && (
+            {/* TODO [RECEPCIÓN]: Cuando la API devuelva tipo_servicio.descripcion, mostrarlo aquí */}
+            {(cita.tipo_servicio.descripcion || cita.cita.observaciones) && (
               <div className="pt-2 border-t">
-                <p className="text-xs text-muted-foreground">Observaciones</p>
-                <p className="text-sm">{cita.observaciones}</p>
+                <p className="text-xs text-muted-foreground">
+                  {cita.tipo_servicio.descripcion ? "Descripción" : "Observaciones"}
+                </p>
+                <p className="text-sm">{cita.tipo_servicio.descripcion || cita.cita.observaciones}</p>
               </div>
             )}
           </CardContent>
@@ -160,14 +164,20 @@ export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg">Datos de la Cita</CardTitle>
           </CardHeader>
-          <CardContent className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>{new Date(cita.fecha).toLocaleDateString("es-EC")}</span>
+          <CardContent className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-xs text-muted-foreground">Fecha Agendada</p>
+              <div className="flex items-center gap-2 mt-1">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium text-sm">{new Date(cita.cita.fecha_cita).toLocaleDateString("es-EC")}</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
-              <span>{cita.hora}</span>
+            <div>
+              <p className="text-xs text-muted-foreground">Hora</p>
+              <div className="flex items-center gap-2 mt-1">
+                <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium text-sm">{cita.cita.hora_cita}</span>
+              </div>
             </div>
           </CardContent>
         </Card>

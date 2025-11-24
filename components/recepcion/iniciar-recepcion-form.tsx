@@ -39,14 +39,21 @@ export function IniciarRecepcionForm({ cita, kmIngreso, onRecepcionInitiated }: 
     async function onSubmit(data: IniciarRecepcionFormData) {
         setIsLoading(true)
         try {
+            // Mapeo del motivo de visita desde tipo_servicio.nombre
+            const motivoVisita = cita.tipo_servicio.nombre || "Servicio de mantenimiento"
+
+            // TODO [RECEPCIÓN]: Cuando la API devuelva cita.observaciones, usar ese valor aquí
+            // Las observaciones del formulario tienen prioridad sobre las de la cita
+            const observacionesCliente = data.observaciones_cliente || cita.cita.observaciones || undefined
+
             const recepcion = await iniciarRecepcion({
-                cita_id: cita.id,
+                cita_id: cita.cita.id,
                 cliente_id: cita.cliente.id,
                 vehiculo_id: cita.vehiculo.id,
                 kilometraje_ingreso: data.kilometraje_ingreso,
                 nivel_combustible: data.nivel_combustible,
-                motivo_visita: cita.servicio.detalle,
-                observaciones_cliente: data.observaciones_cliente,
+                motivo_visita: motivoVisita,
+                observaciones_cliente: observacionesCliente,
                 tiene_danos_previos: data.tiene_danos_previos ?? false,
             })
 
