@@ -3,7 +3,8 @@
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import type { User, LoginCredentials, RegisterData } from "@/lib/types"
-import { getCurrentUser, loginAction, registerAction } from "@/lib/auth/actions"
+import { loginAction, registerAction, getClientAccessToken } from "@/lib/auth/actions"
+import { getMeApi } from "@/lib/auth/api"
 import { useActivityDetection } from "@/hooks/use-auth-token"
 
 interface AuthContextType {
@@ -11,6 +12,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   refreshUser: () => Promise<void>
+  setUser: (user: User | null) => void
   login: (credentials: LoginCredentials) => Promise<{ success: boolean; user?: User; error?: string; errors?: Record<string, string[]> }>
   register: (data: RegisterData) => Promise<{ success: boolean; user?: User; error?: string; errors?: Record<string, string[]> }>
 }
@@ -26,10 +28,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
-      const currentUser = await getCurrentUser()
+      console.log("[AuthProvider] 🔍 refreshUser - Getting token from server...")
+      // Get token from server (secure httpOnly cookies)
+      const token = await getClientAccessToken()
+
+      if (!token) {
+        console.log("[AuthProvider] ⚠️ No token available")
+        setUser(null)
+        return
+      }
+
+      console.log("[AuthProvider] ✅ Token obtained, calling Django from browser...")
+      // Call Django directly from the browser (WSGI will handle headers correctly)
+      const currentUser = await getMeApi(token)
+      console.log("[AuthProvider] ✅ User fetched successfully:", currentUser?.email)
       setUser(currentUser)
     } catch (error) {
-      console.error("[v0] Error fetching user:", error)
+      console.error("[AuthProvider] ❌ Error fetching user:", error)
       setUser(null)
     }
   }
@@ -79,6 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         refreshUser,
+        setUser,
         login,
         register,
       }}

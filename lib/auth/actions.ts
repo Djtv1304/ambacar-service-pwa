@@ -90,44 +90,61 @@ export async function logoutAction() {
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
+    console.log("[getCurrentUser] 🔍 Starting...")
     let accessToken = await getAccessToken()
 
     // If no access token, try to refresh
     if (!accessToken) {
+      console.log("[getCurrentUser] ⚠️ No access token, attempting refresh...")
       const refreshed = await refreshAccessToken()
       if (!refreshed) {
+        console.log("[getCurrentUser] ❌ Refresh failed, returning null")
         return null
       }
       accessToken = await getAccessToken()
       if (!accessToken) {
+        console.log("[getCurrentUser] ❌ No access token after refresh, returning null")
         return null
       }
+      console.log("[getCurrentUser] ✅ Token refreshed successfully")
+    } else {
+      console.log("[getCurrentUser] ✅ Access token found")
     }
 
     try {
+      console.log("[getCurrentUser] 📡 Calling getMeApi...")
       const user = await getMeApi(accessToken)
+      console.log("[getCurrentUser] ✅ User retrieved successfully:", user?.email)
       return user
     } catch (error) {
+      console.log("[getCurrentUser] ⚠️ getMeApi failed:", error)
       // If 401, try to refresh once
       if (error instanceof ApiError && error.status === 401) {
+        console.log("[getCurrentUser] 🔄 Got 401, attempting refresh...")
         const refreshed = await refreshAccessToken()
         if (refreshed) {
           const newAccessToken = await getAccessToken()
           if (newAccessToken) {
             try {
+              console.log("[getCurrentUser] 📡 Retrying getMeApi with new token...")
               const user = await getMeApi(newAccessToken)
+              console.log("[getCurrentUser] ✅ User retrieved after refresh:", user?.email)
               return user
-            } catch {
-              await clearTokens()
+            } catch (retryError) {
+              console.log("[getCurrentUser] ❌ getMeApi failed after refresh:", retryError)
+              // Don't clear tokens here - let middleware handle it
               return null
             }
           }
         }
-        await clearTokens()
+        console.log("[getCurrentUser] ❌ Refresh failed on 401, returning null")
+        // Don't clear tokens here - let middleware handle it
       }
+      console.log("[getCurrentUser] ❌ Returning null due to error")
       return null
     }
   } catch (error) {
+    console.log("[getCurrentUser] ❌ Unexpected error:", error)
     return null
   }
 }
@@ -143,8 +160,7 @@ export async function refreshAccessToken(): Promise<boolean> {
     await setAccessToken(response.access, 15 * 60) // 15 minutes
     return true
   } catch (error) {
-    // Refresh token is invalid or expired
-    await clearTokens()
+    // Refresh token is invalid or expired - don't clear tokens here, let middleware handle it
     return false
   }
 }
@@ -156,19 +172,26 @@ export async function refreshAccessToken(): Promise<boolean> {
  */
 export async function getClientAccessToken(): Promise<string | null> {
   try {
+    console.log("[getClientAccessToken] 🔍 Starting...")
     let accessToken = await getAccessToken()
 
     // If no access token, try to refresh
     if (!accessToken) {
+      console.log("[getClientAccessToken] ⚠️ No access token, attempting refresh...")
       const refreshed = await refreshAccessToken()
       if (!refreshed) {
+        console.log("[getClientAccessToken] ❌ Refresh failed")
         return null
       }
       accessToken = await getAccessToken()
+      console.log("[getClientAccessToken] ✅ Token refreshed")
+    } else {
+      console.log("[getClientAccessToken] ✅ Access token found")
     }
 
     return accessToken ?? null
   } catch (error) {
+    console.log("[getClientAccessToken] ❌ Error:", error)
     return null
   }
 }
