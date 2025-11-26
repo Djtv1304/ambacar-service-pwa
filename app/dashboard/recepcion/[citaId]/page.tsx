@@ -11,7 +11,7 @@ import { CitaResumen } from "@/components/recepcion/cita-resumen"
 import { IniciarRecepcionForm } from "@/components/recepcion/iniciar-recepcion-form"
 import { CameraDialog } from "@/components/recepcion/camera-dialog"
 import { RecepcionCompletada } from "@/components/recepcion/recepcion-completada"
-import { completarRecepcion, subirFoto } from "@/lib/recepcion/api"
+import { completarRecepcion, subirFoto, RecepcionCompletadaResponse } from "@/lib/recepcion/api"
 import { FOTOS_REQUERIDAS } from "@/lib/recepcion/constants"
 
 interface FotoCapturada {
@@ -31,7 +31,7 @@ export default function RecepcionDetailPage() {
     const [kmIngreso, setKmIngreso] = useState(0)
     const [fotosCapturadas, setFotosCapturadas] = useState<FotoCapturada[]>([])
     const [isUploadingPhotos, setIsUploadingPhotos] = useState(false)
-    const [ot, setOt] = useState<any>(null)
+    const [recepcionCompletada, setRecepcionCompletada] = useState<RecepcionCompletadaResponse | null>(null)
     const [showCamera, setShowCamera] = useState(false)
 
     useEffect(() => {
@@ -57,23 +57,21 @@ export default function RecepcionDetailPage() {
 
     const handleFotosCapturadas = async (fotos: FotoCapturada[]) => {
         setIsUploadingPhotos(true)
+        setShowCamera(false)
         try {
-            for (let i = 0; i < fotos.length; i++) {
-                const foto = fotos[i]
-                await subirFoto(recepcion.id, foto.tipo, foto.archivo, i + 1)
+            for (const foto of fotos) {
+                await subirFoto(recepcion.id, foto.tipo, foto.archivo, foto.orden)
             }
 
             setFotosCapturadas(fotos)
             toast({
                 title: "¡Fotos subidas!",
-                description: "Todas las fotos han sido capturadas exitosamente.",
+                description: `${fotos.length} fotos han sido subidas exitosamente.`,
             })
-
-            setTimeout(() => setStep(4), 500)
         } catch (error: any) {
             toast({
-                title: "Error",
-                description: error.message || "Error al subir fotos",
+                title: "Error al subir fotos",
+                description: error.message || "Hubo un problema al subir las fotos. Intenta nuevamente.",
                 variant: "destructive",
             })
         } finally {
@@ -84,17 +82,17 @@ export default function RecepcionDetailPage() {
     const handleCompletarRecepcion = async () => {
         setIsUploadingPhotos(true)
         try {
-            const otData = await completarRecepcion(recepcion.id)
-            setOt(otData)
+            const response = await completarRecepcion(recepcion.id)
+            setRecepcionCompletada(response)
             toast({
                 title: "¡Recepción completada!",
-                description: "La Orden de Trabajo ha sido generada automáticamente.",
+                description: response.mensaje || "La Orden de Trabajo ha sido generada automáticamente.",
             })
-            setStep(5)
+            setStep(4)
         } catch (error: any) {
             toast({
-                title: "Error",
-                description: error.message || "Error al completar recepción",
+                title: "Error al completar recepción",
+                description: error.message || "Hubo un problema al completar la recepción. Verifica que todas las fotos estén subidas.",
                 variant: "destructive",
             })
         } finally {
@@ -110,7 +108,7 @@ export default function RecepcionDetailPage() {
             {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Recepción Digital</h1>
-                <p className="text-muted-foreground mt-1">{step < 5 ? stepLabels[step] : "Recepción Completada"}</p>
+                <p className="text-muted-foreground mt-1">{step <= 4 ? stepLabels[step] : "Recepción Completada"}</p>
             </div>
 
             {/* Progreso */}
@@ -200,7 +198,7 @@ export default function RecepcionDetailPage() {
                     </Card>
                 )}
 
-                {step === 5 && ot && <RecepcionCompletada ot={ot} />}
+                {step === 4 && recepcionCompletada && <RecepcionCompletada data={recepcionCompletada} />}
             </motion.div>
         </div>
     )
