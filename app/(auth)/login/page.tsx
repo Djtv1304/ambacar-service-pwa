@@ -22,7 +22,7 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
-  const { refreshUser } = useAuth()
+  const { setUser } = useAuth()
   const [isPending, startTransition] = useTransition()
   const [serverError, setServerError] = useState<string | null>(null)
 
@@ -55,8 +55,10 @@ export default function LoginPage() {
       const result = await loginAction(formData)
 
       if (result.success) {
-        // Refresh user in context
-        await refreshUser()
+        // Set user in context immediately before navigation
+        if (result.user) {
+          setUser(result.user)
+        }
 
         toast({
           title: "¡Inicio de sesión exitoso!",

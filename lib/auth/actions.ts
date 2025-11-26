@@ -118,12 +118,12 @@ export async function getCurrentUser(): Promise<User | null> {
               const user = await getMeApi(newAccessToken)
               return user
             } catch {
-              await clearTokens()
+              // Don't clear tokens here - let middleware handle it
               return null
             }
           }
         }
-        await clearTokens()
+        // Don't clear tokens here - let middleware handle it
       }
       return null
     }
@@ -143,8 +143,7 @@ export async function refreshAccessToken(): Promise<boolean> {
     await setAccessToken(response.access, 15 * 60) // 15 minutes
     return true
   } catch (error) {
-    // Refresh token is invalid or expired
-    await clearTokens()
+    // Refresh token is invalid or expired - don't clear tokens here, let middleware handle it
     return false
   }
 }

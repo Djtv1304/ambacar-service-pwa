@@ -82,6 +82,7 @@ export async function middleware(request: NextRequest) {
           path: "/",
           maxAge: 15 * 60, // 15 minutes
         })
+        response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate")
         return response
       } else {
         // Refresh token is invalid, clear cookies and redirect to login
@@ -96,7 +97,9 @@ export async function middleware(request: NextRequest) {
 
     // Both tokens are valid or access token is still valid
     if (accessToken && !isTokenExpired(accessToken)) {
-      return NextResponse.next()
+      const response = NextResponse.next()
+      response.headers.set("Cache-Control", "no-cache, no-store, must-revalidate")
+      return response
     }
 
     // If we reach here, something went wrong, redirect to login

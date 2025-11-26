@@ -18,21 +18,30 @@ export default function DashboardLayout({
   const router = useRouter()
   const { user, isLoading } = useAuth()
   const [mounted, setMounted] = useState(false)
+  const [canRedirect, setCanRedirect] = useState(false)
 
-  console.log("[v0] DashboardLayout - user:", user, "isLoading:", isLoading, "mounted:", mounted)
-
+  // Mount the component (client-side only)
   useEffect(() => {
     setMounted(true)
+
+    // Give getCurrentUser() time to complete before allowing redirect
+    const timer = setTimeout(() => {
+      setCanRedirect(true)
+    }, 1000) // 1 second grace period
+
+    return () => clearTimeout(timer)
   }, [])
 
+  // Only redirect if we're mounted, not loading, no user, and grace period passed
   useEffect(() => {
-    if (mounted && !isLoading && !user) {
-      console.log("[v0] No user found, redirecting to login")
-      router.replace("/login")
+    if (mounted && canRedirect && !isLoading && !user) {
+      // Use window.location for a hard redirect to avoid React Router issues
+      window.location.href = "/login"
     }
-  }, [mounted, user, isLoading, router])
+  }, [mounted, canRedirect, user, isLoading])
 
-  if (!mounted || isLoading) {
+  // Show loading state until mounted and initial loading is complete
+  if (!mounted || isLoading || (mounted && !canRedirect)) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -43,6 +52,7 @@ export default function DashboardLayout({
     )
   }
 
+  // If still no user after grace period, show redirecting message
   if (!user) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -54,6 +64,7 @@ export default function DashboardLayout({
     )
   }
 
+  // User is authenticated, render dashboard
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
