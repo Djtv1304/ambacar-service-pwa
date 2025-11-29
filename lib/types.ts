@@ -651,3 +651,39 @@ export interface HallazgoOT {
   updated_at?: string
 }
 
+// Multimedia Gallery Types
+export type MediaType = "RECEPCION" | "DIAGNOSTICO" | "REPARACION" | "ENTREGA" | "INSPECCION"
+
+export interface MediaItem {
+  media_id: number
+  media_type: MediaType
+  orden_trabajo_id: number
+  tipo_foto: string
+  imagen_url: string
+  fase_ot: string | null
+  punto_inspeccion: string | null
+  estado_inspeccion: string | null
+  usuario_id: number
+  usuario_nombre?: string
+  fecha_captura: string
+  tamano_bytes: number
+  formato: string
+  ancho_px: number
+  alto_px: number
+  nombre_archivo_original: string
+  total_anotaciones: number
+  tiene_anotaciones: boolean
+  imagen_url_firmada: string
+}
+
+export interface GaleriaOTResponse {
+  orden_trabajo_id: number
+  total_fotos: number
+  total_con_anotaciones: number
+  recepcion: MediaItem[]
+  diagnostico: MediaItem[]
+  reparacion: MediaItem[]
+  entrega: MediaItem[]
+  inspecciones: MediaItem[]
+}
+

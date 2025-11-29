@@ -20,6 +20,7 @@ import {
   Stethoscope,
   CalendarCheck,
   ClipboardCheck,
+  Images,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -62,6 +63,12 @@ const navItems: NavItem[] = [
     href: "/dashboard/inspecciones",
     icon: ClipboardCheck,
     roles: ["admin", "technician", "manager"],
+  },
+  {
+    title: "Registro Multimedia",
+    href: "/dashboard/multimedia",
+    icon: Images,
+    roles: ["admin", "technician", "manager", "operator"],
   },
   {
     title: "Órdenes de Trabajo",
