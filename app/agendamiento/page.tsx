@@ -133,10 +133,21 @@ export default function AgendamientoPage() {
     setUsuarioVerificado(null)
   }
 
-  const handleRegistroComplete = async (cliente: Cliente) => {
-    sessionStorage.setItem("agendamiento_cliente", JSON.stringify(cliente))
+  const handleRegistroComplete = async (usuarioId: number, email: string) => {
+    // Después del registro, crear objeto usuario verificado y avanzar al paso de contraseña
+    setUsuarioVerificado({
+      id: usuarioId,
+      first_name: "",
+      last_name: "",
+      email: email,
+      cedula: cedula,
+      phone: "",
+    })
     setShowRegistro(false)
-    router.push("/agendamiento/nueva")
+    setStep("password")
+    sonnerToast.success("Registro exitoso", {
+      description: "Revisa tu correo para obtener la contraseña temporal y luego ingrésala aquí.",
+    })
   }
 
   return (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
-import { ArrowLeft, Circle, Plus } from "lucide-react"
+import { ArrowLeft, Circle, Plus, ClipboardCheck, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Spinner } from "@/components/ui/spinner"
 import { getOrdenTrabajoDetalle } from "@/lib/api/ordenes-trabajo"
 import { useAuthToken } from "@/hooks/use-auth-token"
-import type { OrdenTrabajoDetalle } from "@/lib/types"
+import type { OrdenTrabajoDetalle, HallazgoOT } from "@/lib/types"
 import { toast } from "sonner"
+import { RegistroHallazgoDialog } from "@/components/hallazgos/registro-hallazgo-dialog"
 
 const estadoColors: Record<string, string> = {
   creada: "bg-gray-500/10 text-gray-500 border-gray-500/20",
@@ -39,6 +40,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
   const [ot, setOt] = useState<OrdenTrabajoDetalle | null>(null)
   const [loading, setLoading] = useState(true)
   const [currentEstado, setCurrentEstado] = useState<string>("")
+  const [hallazgoDialogOpen, setHallazgoDialogOpen] = useState(false)
   const { getToken } = useAuthToken()
 
   // Fetch OT details
@@ -83,6 +85,21 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
     toast.success("Estado actualizado", {
       description: `La orden de trabajo ahora está en estado: ${newEstado}`,
     })
+  }
+
+  const handleGuardarHallazgo = async (hallazgo: HallazgoOT) => {
+    try {
+      // TODO: Replace with actual API call
+      console.log("Guardando hallazgo:", hallazgo)
+      await new Promise((resolve) => setTimeout(resolve, 1000))
+
+      toast.success("Hallazgo registrado", {
+        description: "El hallazgo ha sido guardado y se notificará al cliente",
+      })
+    } catch (error) {
+      console.error("Error al guardar hallazgo:", error)
+      throw error
+    }
   }
 
   if (loading) {
@@ -131,22 +148,36 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
             {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name} - {ot.vehiculo_detalle.modelo_tecnico_detalle.marca} {ot.vehiculo_detalle.modelo_tecnico_detalle.modelo}
           </p>
         </div>
-        <Select value={currentEstado} onValueChange={handleEstadoChange}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ABIERTA">Abierta</SelectItem>
-            <SelectItem value="DIAGNOST">En Diagnóstico</SelectItem>
-            <SelectItem value="APROB-CLI">Pendiente Aprobación</SelectItem>
-            <SelectItem value="PROCESO">En Proceso</SelectItem>
-            <SelectItem value="PAUSADA">Pausada</SelectItem>
-            <SelectItem value="CTRL-CAL">Control de Calidad</SelectItem>
-            <SelectItem value="COMPLETA">Completada</SelectItem>
-            <SelectItem value="CERRADA">Cerrada</SelectItem>
-            <SelectItem value="CANCELADA">Cancelada</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2">
+          <Button onClick={() => setHallazgoDialogOpen(true)} variant="outline" className="border-orange-500 text-orange-600 hover:bg-orange-50">
+            <AlertTriangle className="mr-2 h-4 w-4" />
+            Registrar Hallazgos
+          </Button>
+          {currentEstado === "CTRL-CAL" && (
+            <Button asChild className="bg-blue-600 hover:bg-blue-700">
+              <Link href={`/dashboard/inspeccion/${ot.id}`}>
+                <ClipboardCheck className="mr-2 h-4 w-4" />
+                Iniciar Inspección
+              </Link>
+            </Button>
+          )}
+          <Select value={currentEstado} onValueChange={handleEstadoChange}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ABIERTA">Abierta</SelectItem>
+              <SelectItem value="DIAGNOST">En Diagnóstico</SelectItem>
+              <SelectItem value="APROB-CLI">Pendiente Aprobación</SelectItem>
+              <SelectItem value="PROCESO">En Proceso</SelectItem>
+              <SelectItem value="PAUSADA">Pausada</SelectItem>
+              <SelectItem value="CTRL-CAL">Control de Calidad</SelectItem>
+              <SelectItem value="COMPLETA">Completada</SelectItem>
+              <SelectItem value="CERRADA">Cerrada</SelectItem>
+              <SelectItem value="CANCELADA">Cancelada</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -350,6 +381,15 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
           </Card>
         </div>
       </div>
+
+      {/* Registro de Hallazgos Dialog */}
+      <RegistroHallazgoDialog
+        open={hallazgoDialogOpen}
+        onOpenChange={setHallazgoDialogOpen}
+        ordenTrabajoId={ot.id}
+        onGuardar={handleGuardarHallazgo}
+        clienteNombre={`${ot.cliente_detalle.first_name} ${ot.cliente_detalle.last_name}`}
+      />
     </div>
   )
 }

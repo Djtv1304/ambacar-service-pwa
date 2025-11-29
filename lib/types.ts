@@ -487,3 +487,167 @@ export interface OrdenTrabajoDetalle {
   asesor: number | null
 }
 
+// Inspección Types
+export interface FotoInspeccion {
+  id?: string
+  archivo: File
+  preview: string
+  orden: number
+}
+
+export interface CampoMedicionNumber {
+  tipo: "number"
+  min: number
+  max: number
+  unidad: string
+}
+
+export interface CampoMedicionSelect {
+  tipo: "select"
+  opciones: string[]
+}
+
+export type CampoMedicion = CampoMedicionNumber | CampoMedicionSelect
+
+export interface CamposMedicion {
+  [key: string]: CampoMedicion
+}
+
+export interface PuntoInspeccionCatalogo {
+  id: number
+  codigo: string
+  nombre: string
+  descripcion: string
+  categoria: string
+  categoria_display: string
+  requiere_mediciones: boolean
+  campos_medicion: CamposMedicion | null
+  orden_visualizacion: number
+}
+
+export interface Mediciones {
+  [key: string]: string | number
+}
+
+export interface PuntoInspeccionEvaluado {
+  punto_id: number
+  nombre: string
+  estado: "verde" | "amarillo" | "rojo" | "na"
+  observaciones?: string
+  fotos: FotoInspeccion[]
+  mediciones?: Mediciones
+  completado: boolean
+}
+
+export interface Inspeccion {
+  id?: number
+  orden_trabajo: number
+  tecnico: number
+  fecha: string
+  puntos_evaluados: PuntoInspeccionEvaluado[]
+  completada: boolean
+  created_at?: string
+  updated_at?: string
+}
+
+// API Inspecciones Types
+export interface InspeccionListItem {
+  id: number
+  numero_inspeccion: string
+  orden_trabajo: number
+  orden_trabajo_info: {
+    id: number
+    numero_orden: string
+    cliente_nombre: string
+    vehiculo_placa: string
+  }
+  inspector_nombre: string
+  fecha_inspeccion: string
+  estado: "PENDIENTE" | "EN_PROCESO" | "COMPLETADA"
+  estado_display: string
+  porcentaje_completado: number
+}
+
+export interface FotoInspeccionAPI {
+  id: number
+  item_inspeccion: number
+  imagen: string
+  url_imagen: string
+  descripcion: string
+  usuario_captura: number
+  usuario_nombre: string
+  fecha_captura: string
+  nombre_archivo_original: string
+  formato_original: string
+  tamano_mb: number
+  ancho_imagen: number
+  alto_imagen: number
+}
+
+export interface ItemInspeccion {
+  id: number
+  inspeccion: number
+  item_catalogo: number
+  item_catalogo_info: {
+    id: number
+    codigo: string
+    nombre: string
+    requiere_mediciones: boolean
+  }
+  estado: "VERDE" | "AMARILLO" | "ROJO" | "N/A"
+  estado_display: string
+  aplica: boolean
+  observacion: string | null
+  mediciones: Mediciones | null
+  fotos: FotoInspeccionAPI[]
+  requiere_foto_obligatoria: boolean
+}
+
+export interface InspeccionDetalle {
+  id: number
+  numero_inspeccion: string
+  orden_trabajo: number
+  orden_trabajo_info: {
+    id: number
+    numero_orden: string
+    cliente_nombre: string
+    vehiculo_placa: string
+    kilometraje_ingreso: number
+  }
+  inspector: number
+  inspector_info: {
+    id: number
+    nombre_completo: string
+    role: string
+  }
+  fecha_inspeccion: string
+  estado: "PENDIENTE" | "EN_PROCESO" | "COMPLETADA"
+  estado_display: string
+  observaciones_generales: string | null
+  fecha_completada: string | null
+  items: ItemInspeccion[]
+  resumen: {
+    total_items: number
+    items_verde: number
+    items_amarillo: number
+    items_rojo: number
+    items_na: number
+  }
+  items_completados: number
+  items_totales: number
+  porcentaje_completado: number
+}
+
+export interface HallazgoOT {
+  id?: number
+  orden_trabajo: number
+  descripcion: string
+  urgencia: "inmediato" | "puede-esperar" | "preventivo"
+  costo_estimado?: number
+  fotos: FotoInspeccion[]
+  notificar_whatsapp: boolean
+  notificar_email: boolean
+  created_at?: string
+  updated_at?: string
+}
+

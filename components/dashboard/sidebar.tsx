@@ -19,6 +19,7 @@ import {
   LayoutDashboard,
   Stethoscope,
   CalendarCheck,
+  ClipboardCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -54,6 +55,12 @@ const navItems: NavItem[] = [
     title: "Diagnóstico",
     href: "/dashboard/diagnostico",
     icon: Stethoscope,
+    roles: ["admin", "technician", "manager"],
+  },
+  {
+    title: "Inspecciones",
+    href: "/dashboard/inspecciones",
+    icon: ClipboardCheck,
     roles: ["admin", "technician", "manager"],
   },
   {
