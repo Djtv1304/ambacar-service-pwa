@@ -687,3 +687,31 @@ export interface GaleriaOTResponse {
   inspecciones: MediaItem[]
 }
 
+// Anotaciones Types
+export type TipoAnotacion = "TEXT_NOTE" | "VOICE_NOTE"
+
+export interface CreateTextNoteData {
+  media_type: MediaType
+  media_id: number
+  tipo_anotacion: "TEXT_NOTE"
+  content_text: string
+}
+
+export interface CreateVoiceNoteData {
+  media_type: MediaType
+  media_id: number
+  tipo_anotacion: "VOICE_NOTE"
+  content_file: File
+}
+
+export interface Anotacion {
+  id: number
+  media_type: MediaType
+  media_id: number
+  tipo_anotacion: TipoAnotacion
+  content_text?: string
+  content_file?: string
+  usuario_id: number
+  fecha_creacion: string
+}
+

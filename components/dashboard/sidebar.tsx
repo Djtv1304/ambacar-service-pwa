@@ -44,7 +44,7 @@ const navItems: NavItem[] = [
     title: "Citas",
     href: "/dashboard/citas",
     icon: Calendar,
-    roles: ["admin", "operator", "manager", "customer"],
+    roles: [],
   },
   {
     title: "Recepción",
@@ -56,7 +56,7 @@ const navItems: NavItem[] = [
     title: "Diagnóstico",
     href: "/dashboard/diagnostico",
     icon: Stethoscope,
-    roles: ["admin", "technician", "manager"],
+    roles: [],
   },
   {
     title: "Inspecciones",
@@ -92,7 +92,7 @@ const navItems: NavItem[] = [
     title: "Facturación",
     href: "/dashboard/facturacion",
     icon: CreditCard,
-    roles: ["admin", "operator", "manager"],
+    roles: [],
   },
   {
     title: "Clientes",
@@ -104,7 +104,7 @@ const navItems: NavItem[] = [
     title: "Reportes",
     href: "/dashboard/reportes",
     icon: BarChart3,
-    roles: ["admin", "manager"],
+    roles: [],
   },
   {
     title: "Configuración",

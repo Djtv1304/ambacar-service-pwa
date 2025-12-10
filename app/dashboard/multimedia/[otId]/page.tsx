@@ -13,7 +13,7 @@ import {
   Filter,
   X,
 } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,8 @@ import { getGaleriaByOT, getUserById } from "@/lib/api/galeria"
 import type { OrdenTrabajoDetalle, GaleriaOTResponse, MediaItem, MediaType, User as UserType } from "@/lib/types"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { AddTextNote } from "@/components/multimedia/add-text-note"
+import { AddVoiceNote } from "@/components/multimedia/add-voice-note"
 
 type FilterOption = MediaType | "TODAS"
 
@@ -558,6 +560,36 @@ export default function MultimediaDetailPage() {
                     </p>
                   </div>
                 )}
+
+                {/* Anotaciones Section */}
+                <div className="border-t border-gray-200 pt-6 space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-[#202020] text-lg mb-1">Agregar Anotaciones</h4>
+                    <p className="text-sm text-gray-600">
+                      Documenta hallazgos o detalles importantes sobre esta fotografía
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <AddTextNote
+                      mediaType={imagenSeleccionada.media_type}
+                      mediaId={imagenSeleccionada.media_id}
+                      onSuccess={() => {
+                        // Opcional: recargar datos de la galería si es necesario
+                        loadData()
+                      }}
+                    />
+
+                    <AddVoiceNote
+                      mediaType={imagenSeleccionada.media_type}
+                      mediaId={imagenSeleccionada.media_id}
+                      onSuccess={() => {
+                        // Opcional: recargar datos de la galería si es necesario
+                        loadData()
+                      }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
