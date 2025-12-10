@@ -5,10 +5,12 @@ import type React from "react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Sidebar } from "@/components/dashboard/sidebar"
+import { SidebarProvider, useSidebar } from "@/components/dashboard/sidebar-context"
 import { Topbar } from "@/components/dashboard/topbar"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { useAuth } from "@/components/auth/auth-provider"
 import { Loader2 } from "lucide-react"
+import { motion } from "framer-motion"
 
 export default function DashboardLayout({
   children,
@@ -66,15 +68,30 @@ export default function DashboardLayout({
 
   // User is authenticated, render dashboard
   return (
+    <SidebarProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </SidebarProvider>
+  )
+}
+
+function DashboardContent({ children }: { children: React.ReactNode }) {
+  const { collapsed } = useSidebar()
+
+  return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden pl-20 lg:pl-64">
+      <motion.div
+        initial={false}
+        animate={{ paddingLeft: collapsed ? 80 : 256 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="flex flex-1 flex-col overflow-hidden"
+      >
         <Topbar />
         <main className="flex-1 overflow-y-auto p-6">
           <Breadcrumbs />
           {children}
         </main>
-      </div>
+      </motion.div>
     </div>
   )
 }

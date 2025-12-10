@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Calendar, ClipboardList, Wrench, CreditCard, Clock, AlertCircle, Car } from "lucide-react"
+import { Calendar, ClipboardList, Wrench, ClipboardCheck, Clock, AlertCircle, Car } from "lucide-react"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -92,7 +92,7 @@ export default function DashboardPage() {
           <StatCard
             title="OTs Abiertas"
             value={otAbiertas.length}
-            description={`${otAbiertas.filter((ot) => ot.prioridad === "alta" || ot.prioridad === "urgente").length} prioritarias`}
+            description="Requieren atención"
             icon={ClipboardList}
             trend={{ value: 8, isPositive: false }}
           />
@@ -109,11 +109,10 @@ export default function DashboardPage() {
 
         <motion.div variants={item}>
           <StatCard
-            title="Facturación Pendiente"
-            value="$1,247"
-            description="3 facturas por cobrar"
-            icon={CreditCard}
-            trend={{ value: 15, isPositive: true }}
+            title="Inspecciones Completadas"
+            value={mockOrdenesTrabajoData.filter((ot) => ot.estado === "completada").length}
+            description="Este mes"
+            icon={ClipboardCheck}
           />
         </motion.div>
       </motion.div>
