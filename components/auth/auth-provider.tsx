@@ -3,13 +3,16 @@
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 import type { User, LoginCredentials, RegisterData } from "@/lib/types"
-import { getCurrentUser, loginAction, registerAction } from "@/lib/auth/actions"
+import { loginAction, registerAction, getClientAccessToken } from "@/lib/auth/actions"
+import { getMeApi } from "@/lib/auth/api"
+import { useActivityDetection } from "@/hooks/use-auth-token"
 
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
   refreshUser: () => Promise<void>
+  setUser: (user: User | null) => void
   login: (credentials: LoginCredentials) => Promise<{ success: boolean; user?: User; error?: string; errors?: Record<string, string[]> }>
   register: (data: RegisterData) => Promise<{ success: boolean; user?: User; error?: string; errors?: Record<string, string[]> }>
 }
@@ -20,12 +23,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
+  // Setup activity detection for automatic token refresh
+  useActivityDetection()
+
   const refreshUser = async () => {
     try {
-      const currentUser = await getCurrentUser()
+      // Get token from server (secure httpOnly cookies)
+      const token = await getClientAccessToken()
+
+      if (!token) {
+        setUser(null)
+        return
+      }
+
+      // Call Django directly from the browser (WSGI will handle headers correctly)
+      const currentUser = await getMeApi(token)
       setUser(currentUser)
     } catch (error) {
-      console.error("[v0] Error fetching user:", error)
+      console.error("[AuthProvider] Error fetching user:", error)
       setUser(null)
     }
   }
@@ -75,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         isLoading,
         refreshUser,
+        setUser,
         login,
         register,
       }}

@@ -27,7 +27,6 @@ export async function setRefreshToken(token: string, maxAge: number = 7 * 24 * 6
   const cookieStore = await cookies()
   cookieStore.set(REFRESH_TOKEN_KEY, token, {
     ...COOKIE_OPTIONS,
-    sameSite: "strict",
     maxAge,
   })
 }

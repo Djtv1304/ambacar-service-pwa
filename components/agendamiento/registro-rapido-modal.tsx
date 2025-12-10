@@ -1,23 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle, Mail } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { clienteSchema, type ClienteFormData } from "@/lib/validations/agendamiento"
-import { registrarCliente } from "@/lib/api/agendamiento"
-import type { Cliente } from "@/lib/types"
+import { registroRapido } from "@/lib/api/agendamiento"
 
 interface RegistroRapidoModalProps {
   open: boolean
   onClose: () => void
   cedula: string
-  onComplete: (cliente: Cliente) => void
+  onComplete: (usuarioId: number, email: string) => void
 }
 
 export function RegistroRapidoModal({ open, onClose, cedula, onComplete }: RegistroRapidoModalProps) {
@@ -29,34 +29,51 @@ export function RegistroRapidoModal({ open, onClose, cedula, onComplete }: Regis
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm<ClienteFormData>({
     resolver: zodResolver(clienteSchema),
     defaultValues: {
-      cedula,
+      cedula: "",
       nombre: "",
       apellido: "",
       telefono: "",
       email: "",
-      ciudad: "",
     },
   })
+
+  // Actualizar cédula cuando el modal se abre
+  useEffect(() => {
+    if (open && cedula) {
+      setValue("cedula", cedula)
+    }
+  }, [open, cedula, setValue])
 
   const onSubmit = async (data: ClienteFormData) => {
     setLoading(true)
     try {
-      const nuevoCliente = await registrarCliente(data)
+      const response = await registroRapido({
+        cedula: data.cedula,
+        first_name: data.nombre,
+        last_name: data.apellido,
+        email: data.email,
+        phone: data.telefono,
+      })
 
       toast({
         title: "¡Registro exitoso!",
-        description: "Tu información ha sido guardada correctamente.",
+        description: response.email_enviado
+          ? `Se ha enviado una contraseña temporal a ${data.email}`
+          : "Tu cuenta ha sido creada exitosamente",
       })
 
-      onComplete(nuevoCliente)
+      // Pasar el ID del usuario y el email al componente padre
+      onComplete(response.usuario.id, response.usuario.email)
       reset()
-    } catch (error) {
+      onClose()
+    } catch (error: any) {
       toast({
         title: "Error al registrar",
-        description: "No se pudo completar el registro. Intenta nuevamente.",
+        description: error?.message || "No se pudo completar el registro. Intenta nuevamente.",
         variant: "destructive",
       })
     } finally {
@@ -72,6 +89,15 @@ export function RegistroRapidoModal({ open, onClose, cedula, onComplete }: Regis
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
+          {/* Alert sobre el correo */}
+          <Alert className="border-blue-200 bg-blue-50">
+            <Mail className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-900 text-sm">
+              <strong>Importante:</strong> Asegúrate de ingresar correctamente tu correo electrónico. Se enviará una
+              contraseña temporal a esta dirección.
+            </AlertDescription>
+          </Alert>
+
           <div>
             <Label htmlFor="cedula" className="text-[#202020]">
               Cédula
@@ -102,7 +128,7 @@ export function RegistroRapidoModal({ open, onClose, cedula, onComplete }: Regis
             <Label htmlFor="telefono" className="text-[#202020]">
               Teléfono <span className="text-[#ED1C24]">*</span>
             </Label>
-            <Input id="telefono" {...register("telefono")} placeholder="0999999999" className="mt-1" />
+            <Input id="telefono" {...register("telefono")} placeholder="+593987654321" className="mt-1" />
             {errors.telefono && <p className="text-sm text-[#ED1C24] mt-1">{errors.telefono.message}</p>}
           </div>
 
@@ -112,14 +138,6 @@ export function RegistroRapidoModal({ open, onClose, cedula, onComplete }: Regis
             </Label>
             <Input id="email" type="email" {...register("email")} placeholder="juan.perez@email.com" className="mt-1" />
             {errors.email && <p className="text-sm text-[#ED1C24] mt-1">{errors.email.message}</p>}
-          </div>
-
-          <div>
-            <Label htmlFor="ciudad" className="text-[#202020]">
-              Ciudad <span className="text-[#ED1C24]">*</span>
-            </Label>
-            <Input id="ciudad" {...register("ciudad")} placeholder="Quito" className="mt-1" />
-            {errors.ciudad && <p className="text-sm text-[#ED1C24] mt-1">{errors.ciudad.message}</p>}
           </div>
 
           <div className="flex gap-3 pt-4">

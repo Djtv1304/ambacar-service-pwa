@@ -15,14 +15,40 @@ export class ApiError extends Error {
 
 interface RequestOptions extends RequestInit {
   token?: string
+  skipAuth?: boolean // Skip authentication retry logic
+}
+
+/**
+ * Check if a JWT token is expired or about to expire
+ * @param token - JWT token to check
+ * @param bufferSeconds - Buffer time in seconds before actual expiration (default 60s)
+ * @returns true if token is expired or about to expire
+ */
+export function isTokenExpired(token: string, bufferSeconds: number = 60): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]))
+    const expirationTime = payload.exp * 1000 // Convert to milliseconds
+    const currentTime = Date.now()
+    const bufferTime = bufferSeconds * 1000
+
+    return currentTime >= expirationTime - bufferTime
+  } catch (error) {
+    // If we can't parse the token, assume it's expired
+    return true
+  }
 }
 
 export async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { token, ...fetchOptions } = options
+  const { token, skipAuth = false, ...fetchOptions } = options
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(fetchOptions.headers as Record<string, string>),
+  }
+
+  // Only set Content-Type for JSON if body is not FormData
+  const isFormData = fetchOptions.body instanceof FormData
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json"
   }
 
   if (token) {

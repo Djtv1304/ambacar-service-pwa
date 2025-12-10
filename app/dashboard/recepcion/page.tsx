@@ -41,6 +41,17 @@ export default function RecepcionPage() {
           <h1 className="text-3xl font-bold tracking-tight">Recepción Digital</h1>
           <p className="text-muted-foreground mt-1">Gestiona la recepción de vehículos</p>
         </div>
+        <div className="flex flex-col items-end gap-2">
+          <Button asChild>
+            <Link href="/dashboard/recepcion/nueva">
+              <ClipboardCheck className="mr-2 h-4 w-4" />
+              Crear Recepción
+            </Link>
+          </Button>
+          <p className="text-xs text-muted-foreground italic">
+            Para clientes sin cita previa
+          </p>
+        </div>
       </div>
 
       {/* Filters */}
@@ -100,7 +111,7 @@ export default function RecepcionPage() {
                               Confirmada
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">{cita.servicioSolicitado}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{cita.servicio}</p>
                         </div>
                       </div>
 

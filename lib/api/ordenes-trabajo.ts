@@ -1,6 +1,7 @@
 // API functions for Ordenes de Trabajo
 
 import { apiRequest } from "./client"
+import type { User, TipoOT, ClienteAPI, VehiculoAPI, CreateOrdenTrabajoData, OrdenTrabajoDetalle } from "@/lib/types"
 
 export interface OrdenTrabajoAPI {
   id: number
@@ -58,6 +59,81 @@ export async function getOrdenesTrabajo(token: string): Promise<OrdenTrabajoAPI[
  */
 export async function getOrdenTrabajoById(id: number, token: string): Promise<OrdenTrabajoAPI> {
   return apiRequest<OrdenTrabajoAPI>(`/api/ordenes-trabajo/${id}/`, {
+    method: "GET",
+    token,
+  })
+}
+
+/**
+ * Obtiene el detalle completo de una orden de trabajo por ID
+ */
+export async function getOrdenTrabajoDetalle(id: number, token: string): Promise<OrdenTrabajoDetalle> {
+  return apiRequest<OrdenTrabajoDetalle>(`/api/ordenes-trabajo/${id}/`, {
+    method: "GET",
+    token,
+  })
+}
+
+
+/**
+ * Obtiene la lista de tipos de OT
+ */
+export async function getTiposOT(token: string): Promise<TipoOT[]> {
+  return apiRequest<TipoOT[]>("/api/tipos-ot/", {
+    method: "GET",
+    token,
+  })
+}
+
+/**
+ * Obtiene la lista de clientes
+ */
+export async function getClientes(token: string): Promise<ClienteAPI[]> {
+  return apiRequest<ClienteAPI[]>("/api/clientes/", {
+    method: "GET",
+    token,
+  })
+}
+
+/**
+ * Obtiene los vehículos de un cliente
+ */
+export async function getVehiculosByCliente(clienteId: number, token: string): Promise<VehiculoAPI[]> {
+  return apiRequest<VehiculoAPI[]>(`/api/clientes/${clienteId}/vehiculos/`, {
+    method: "GET",
+    token,
+  })
+}
+
+/**
+ * Obtiene la lista de Operadores o Asesores de Servicio
+ */
+export async function getAsesores(token: string): Promise<User[]> {
+  return apiRequest<User[]>("/api/usuarios/?role=operator", {
+    method: "GET",
+    token,
+  })
+}
+
+/**
+ * Crea una nueva orden de trabajo
+ */
+export async function createOrdenTrabajo(
+  data: CreateOrdenTrabajoData,
+  token: string
+): Promise<OrdenTrabajoAPI> {
+  return apiRequest<OrdenTrabajoAPI>("/api/ordenes-trabajo/", {
+    method: "POST",
+    token,
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Obtiene los datos de prueba para formularios
+ */
+export async function getTestData(token: string) {
+  return apiRequest<any>("/api/test-data/", {
     method: "GET",
     token,
   })
