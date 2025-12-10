@@ -20,10 +20,13 @@ import {
   getHorariosDisponibles,
   getTiposServicio,
   crearCitaAPI,
+  getCatalogo,
+  registrarVehiculoAPI,
 } from "@/lib/api/agendamiento"
 import { useAuthToken } from "@/hooks/use-auth-token"
 import type { Cliente, Vehiculo, Cita, HorarioDisponible, TipoServicio } from "@/lib/types"
 import { toast as sonnerToast } from "sonner"
+import { logoutClient } from "@/lib/auth/actions"
 
 const steps = [
   { number: 1, title: "Vehículo" },
@@ -54,6 +57,24 @@ export default function NuevaCitaPage() {
   const [selectedServicio, setSelectedServicio] = useState<string>("")
   const [loadingServicios, setLoadingServicios] = useState(false)
 
+  // Catalog state for vehicle brands and models
+  const [catalogoMarcas, setCatalogoMarcas] = useState<
+    Array<{
+      id: number | string
+      nombre: string
+      logo: string | null
+      orden: number
+      modelos: Array<{
+        id: number | string
+        nombre: string
+        orden: number
+      }>
+    }>
+  >([])
+  const [selectedMarca, setSelectedMarca] = useState<string>("")
+  const [selectedModelo, setSelectedModelo] = useState<string>("")
+  const [loadingCatalogo, setLoadingCatalogo] = useState(false)
+
   // Forms
   const vehiculoForm = useForm<VehiculoFormData>({
     resolver: zodResolver(vehiculoSchema),
@@ -62,8 +83,6 @@ export default function NuevaCitaPage() {
       marca: "",
       modelo: "",
       anio: new Date().getFullYear(),
-      color: "",
-      vin: "",
       kilometraje: 0,
     },
   })
@@ -123,7 +142,41 @@ export default function NuevaCitaPage() {
     }
 
     loadClienteAndVehicles()
-  }, [router])
+  }, [router, getToken])
+
+  // Load catalog for vehicle brands and models
+  useEffect(() => {
+    const loadCatalogo = async () => {
+      setLoadingCatalogo(true)
+      try {
+        const catalogoData = await getCatalogo()
+        setCatalogoMarcas(catalogoData.marcas)
+      } catch (error) {
+        console.error("Error cargando catálogo:", error)
+        sonnerToast.error("Error", {
+          description: "No se pudo cargar el catálogo de vehículos",
+        })
+      } finally {
+        setLoadingCatalogo(false)
+      }
+    }
+
+    loadCatalogo()
+  }, [])
+
+  // Sync selected marca with form field
+  useEffect(() => {
+    if (selectedMarca) {
+      vehiculoForm.setValue("marca", selectedMarca)
+    }
+  }, [selectedMarca, vehiculoForm])
+
+  // Sync selected modelo with form field
+  useEffect(() => {
+    if (selectedModelo) {
+      vehiculoForm.setValue("modelo", selectedModelo)
+    }
+  }, [selectedModelo, vehiculoForm])
 
   // Fetch service types when step 2 is reached
   useEffect(() => {
@@ -190,16 +243,63 @@ export default function NuevaCitaPage() {
     if (nuevoVehiculo) {
       setLoading(true)
       try {
-        const nuevoVeh = await registrarVehiculo(cliente.id, data)
+        // Obtener token de autenticación
+        const token = await getToken()
+        if (!token) {
+          sonnerToast.error("Error de autenticación", {
+            description: "No se pudo obtener el token de acceso",
+          })
+          setLoading(false)
+          return
+        }
+
+        // Validar que se hayan seleccionado marca y modelo
+        if (!selectedMarca || !selectedModelo) {
+          sonnerToast.error("Error", {
+            description: "Por favor selecciona la marca y el modelo del vehículo",
+          })
+          setLoading(false)
+          return
+        }
+
+        // Registrar vehículo usando la API
+        const vehiculoData = {
+          cliente: parseInt(cliente.id),
+          placa: data.placa,
+          marca: parseInt(selectedMarca),
+          modelo: parseInt(selectedModelo),
+          anio_fabricacion: data.anio,
+          kilometraje_actual: data.kilometraje,
+        }
+
+        const vehiculoResponse = await registrarVehiculoAPI(vehiculoData, token)
+
+        // Convertir respuesta de la API al formato Vehiculo esperado
+        const nuevoVeh: Vehiculo = {
+          id: vehiculoResponse.id.toString(),
+          clienteId: cliente.id,
+          placa: vehiculoResponse.placa,
+          marca: vehiculoResponse.marca_display || catalogoMarcas.find((m) => m.id.toString() === selectedMarca)?.nombre || "",
+          modelo: vehiculoResponse.modelo_display || catalogoMarcas.find((m) => m.id.toString() === selectedMarca)?.modelos.find((mod) => mod.id.toString() === selectedModelo)?.nombre || "",
+          anio: vehiculoResponse.anio_fabricacion,
+          color: "",
+          vin: "",
+          kilometraje: vehiculoResponse.kilometraje_actual,
+          createdAt: new Date(vehiculoResponse.created_at || Date.now()),
+          updatedAt: new Date(vehiculoResponse.updated_at || Date.now()),
+        }
+
         setVehiculoSeleccionado(nuevoVeh)
         setVehiculos([...vehiculos, nuevoVeh])
         sonnerToast.success("Vehículo registrado", {
           description: "Tu vehículo ha sido guardado correctamente.",
         })
         setCurrentStep(2)
-      } catch (error) {
+      } catch (error: any) {
+        console.error("Error registrando vehículo:", error)
+        const errorMessage = error?.message || "No se pudo registrar el vehículo."
         sonnerToast.error("Error", {
-          description: "No se pudo registrar el vehículo.",
+          description: errorMessage,
         })
       } finally {
         setLoading(false)
@@ -426,7 +526,7 @@ export default function NuevaCitaPage() {
                     )}
 
                     {nuevoVehiculo && (
-                      <div className="space-y-4">
+                      <div className="space-y-5">
                         <div className="flex items-center justify-between">
                           <Label className="text-[#202020] font-medium">Nuevo Vehículo</Label>
                           {vehiculos.length > 0 && (
@@ -444,7 +544,7 @@ export default function NuevaCitaPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="placa">
+                            <Label htmlFor="placa" className="mb-2 block">
                               Placa <span className="text-[#ED1C24]">*</span>
                             </Label>
                             <Input id="placa" {...vehiculoForm.register("placa")} placeholder="ABC-1234" />
@@ -456,10 +556,33 @@ export default function NuevaCitaPage() {
                           </div>
 
                           <div>
-                            <Label htmlFor="marca">
+                            <Label htmlFor="marca" className="mb-2 block">
                               Marca <span className="text-[#ED1C24]">*</span>
                             </Label>
-                            <Input id="marca" {...vehiculoForm.register("marca")} placeholder="Toyota" />
+                            {loadingCatalogo ? (
+                              <div className="flex items-center justify-center h-10 border border-gray-200 rounded-lg">
+                                <Loader2 className="h-4 w-4 animate-spin text-[#ED1C24]" />
+                              </div>
+                            ) : (
+                              <Select
+                                value={selectedMarca}
+                                onValueChange={(value) => {
+                                  setSelectedMarca(value)
+                                  setSelectedModelo("") // Reset modelo when marca changes
+                                }}
+                              >
+                                <SelectTrigger className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                                  <SelectValue placeholder="Selecciona una marca" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {catalogoMarcas.map((marca) => (
+                                    <SelectItem key={marca.id} value={marca.id.toString()}>
+                                      {marca.nombre}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            )}
                             {vehiculoForm.formState.errors.marca && (
                               <p className="text-sm text-[#ED1C24] mt-1">
                                 {vehiculoForm.formState.errors.marca.message}
@@ -468,10 +591,35 @@ export default function NuevaCitaPage() {
                           </div>
 
                           <div>
-                            <Label htmlFor="modelo">
+                            <Label htmlFor="modelo" className="mb-2 block">
                               Modelo <span className="text-[#ED1C24]">*</span>
                             </Label>
-                            <Input id="modelo" {...vehiculoForm.register("modelo")} placeholder="Corolla" />
+                            {loadingCatalogo ? (
+                              <div className="flex items-center justify-center h-10 border border-gray-200 rounded-lg">
+                                <Loader2 className="h-4 w-4 animate-spin text-[#ED1C24]" />
+                              </div>
+                            ) : !selectedMarca ? (
+                              <Select disabled>
+                                <SelectTrigger className="border-gray-300">
+                                  <SelectValue placeholder="Primero selecciona una marca" />
+                                </SelectTrigger>
+                              </Select>
+                            ) : (
+                              <Select value={selectedModelo} onValueChange={setSelectedModelo}>
+                                <SelectTrigger className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                                  <SelectValue placeholder="Selecciona un modelo" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {catalogoMarcas
+                                    .find((m) => m.id.toString() === selectedMarca)
+                                    ?.modelos.map((modelo) => (
+                                      <SelectItem key={modelo.id} value={modelo.id.toString()}>
+                                        {modelo.nombre}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            )}
                             {vehiculoForm.formState.errors.modelo && (
                               <p className="text-sm text-[#ED1C24] mt-1">
                                 {vehiculoForm.formState.errors.modelo.message}
@@ -480,7 +628,7 @@ export default function NuevaCitaPage() {
                           </div>
 
                           <div>
-                            <Label htmlFor="anio">
+                            <Label htmlFor="anio" className="mb-2 block">
                               Año <span className="text-[#ED1C24]">*</span>
                             </Label>
                             <Input
@@ -497,19 +645,7 @@ export default function NuevaCitaPage() {
                           </div>
 
                           <div>
-                            <Label htmlFor="color">
-                              Color <span className="text-[#ED1C24]">*</span>
-                            </Label>
-                            <Input id="color" {...vehiculoForm.register("color")} placeholder="Blanco" />
-                            {vehiculoForm.formState.errors.color && (
-                              <p className="text-sm text-[#ED1C24] mt-1">
-                                {vehiculoForm.formState.errors.color.message}
-                              </p>
-                            )}
-                          </div>
-
-                          <div>
-                            <Label htmlFor="kilometraje">
+                            <Label htmlFor="kilometraje" className="mb-2 block">
                               Kilometraje <span className="text-[#ED1C24]">*</span>
                             </Label>
                             <Input
@@ -524,11 +660,6 @@ export default function NuevaCitaPage() {
                               </p>
                             )}
                           </div>
-                        </div>
-
-                        <div>
-                          <Label htmlFor="vin">VIN (Opcional)</Label>
-                          <Input id="vin" {...vehiculoForm.register("vin")} placeholder="1HGBH41JXMN109186" />
                         </div>
                       </div>
                     )}
@@ -881,8 +1012,12 @@ export default function NuevaCitaPage() {
                       Agendar Otra Cita
                     </Button>
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
+                        // Clear session storage
                         sessionStorage.clear()
+                        // Logout user
+                        await logoutClient()
+                        // Redirect to agendamiento page
                         router.push("/agendamiento")
                       }}
                       className="flex-1 bg-[#ED1C24] hover:bg-[#c41820] text-white cursor-pointer text-sm sm:text-base"

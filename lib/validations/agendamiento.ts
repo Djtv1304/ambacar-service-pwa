@@ -19,7 +19,6 @@ export const clienteSchema = z.object({
     .min(10, "El teléfono debe tener al menos 10 dígitos")
     .regex(/^[0-9+\s()-]+$/, "Formato de teléfono inválido"),
   email: z.string().email("Email inválido").min(5, "El email es muy corto"),
-  ciudad: z.string().min(2, "La ciudad debe tener al menos 2 caracteres"),
 })
 
 export const vehiculoSchema = z.object({
@@ -28,14 +27,16 @@ export const vehiculoSchema = z.object({
     .min(6, "La placa debe tener al menos 6 caracteres")
     .max(10, "La placa no puede exceder 10 caracteres")
     .regex(/^[A-Z0-9-]+$/i, "Formato de placa inválido"),
-  marca: z.string().min(2, "La marca debe tener al menos 2 caracteres"),
-  modelo: z.string().min(1, "El modelo es requerido"),
+  marca: z.union([z.string(), z.number()]).refine((val) => val !== "" && val !== 0, {
+    message: "La marca es requerida",
+  }),
+  modelo: z.union([z.string(), z.number()]).refine((val) => val !== "" && val !== 0, {
+    message: "El modelo es requerido",
+  }),
   anio: z
     .number()
     .min(1990, "El año debe ser mayor a 1990")
     .max(new Date().getFullYear() + 1, "El año no puede ser futuro"),
-  color: z.string().min(2, "El color debe tener al menos 2 caracteres"),
-  vin: z.string().optional(),
   kilometraje: z.number().min(0, "El kilometraje no puede ser negativo").max(999999, "El kilometraje es muy alto"),
 })
 

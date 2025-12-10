@@ -42,8 +42,13 @@ export async function apiRequest<T>(endpoint: string, options: RequestOptions = 
   const { token, skipAuth = false, ...fetchOptions } = options
 
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
     ...(fetchOptions.headers as Record<string, string>),
+  }
+
+  // Only set Content-Type for JSON if body is not FormData
+  const isFormData = fetchOptions.body instanceof FormData
+  if (!isFormData) {
+    headers["Content-Type"] = "application/json"
   }
 
   if (token) {

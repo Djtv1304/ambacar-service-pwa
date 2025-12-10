@@ -211,10 +211,10 @@ export async function buscarCita(numeroReferencia: string): Promise<CitaResponse
 }
 
 /**
- * Iniciar recepción para una cita
+ * Iniciar recepción para una cita o walk-in
  */
 export async function iniciarRecepcion(payload: {
-    cita_id: number
+    cita_id?: number
     cliente_id: number
     vehiculo_id: number
     kilometraje_ingreso: number

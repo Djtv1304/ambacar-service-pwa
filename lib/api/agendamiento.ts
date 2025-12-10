@@ -332,3 +332,82 @@ export async function crearCitaAPI(
   })
 }
 
+/**
+ * Registra un nuevo usuario mediante registro rápido
+ */
+export async function registroRapido(data: {
+  cedula: string
+  first_name: string
+  last_name: string
+  email: string
+  phone: string
+}): Promise<{
+  mensaje: string
+  usuario: {
+    id: number
+    username: string
+    first_name: string
+    last_name: string
+    email: string
+    cedula: string
+    phone: string
+    password_temporal: string
+    nota: string
+  }
+  email_enviado: boolean
+}> {
+  return apiRequest("/api/citas/registro-rapido/", {
+    method: "POST",
+    body: JSON.stringify(data),
+  })
+}
+
+/**
+ * Obtiene el catálogo de marcas y modelos de vehículos
+ */
+export async function getCatalogo(): Promise<{
+  marcas: Array<{
+    id: number | string
+    nombre: string
+    logo: string | null
+    orden: number
+    modelos: Array<{
+      id: number | string
+      nombre: string
+      orden: number
+    }>
+  }>
+  tipos_servicio: Array<{
+    id: number
+    nombre: string
+    descripcion: string
+    duracion_estimada: number
+    orden: number
+  }>
+}> {
+  return apiRequest("/api/citas/catalogo/", {
+    method: "GET",
+  })
+}
+
+/**
+ * Registra un nuevo vehículo en el sistema
+ */
+export async function registrarVehiculoAPI(
+  data: {
+    cliente: number
+    placa: string
+    marca: number
+    modelo: number
+    anio_fabricacion: number
+    kilometraje_actual: number
+  },
+  token: string
+): Promise<any> {
+  return apiRequest("/api/vehiculos/", {
+    method: "POST",
+    body: JSON.stringify(data),
+    token,
+  })
+}
+
