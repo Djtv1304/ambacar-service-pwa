@@ -14,11 +14,8 @@ export interface OrdenTrabajoAPI {
   vehiculo_detalle: {
     id: number
     placa: string
-    modelo_tecnico_detalle: {
-      id: number
-      marca: string
-      modelo: string
-    }
+    marca: string
+    modelo: string
   }
   tipo_detalle: {
     id: number

@@ -165,8 +165,8 @@ export default function MultimediaPage() {
                       <div className="flex items-center gap-2">
                         <Car className="h-4 w-4 text-gray-400" />
                         <span className="truncate">
-                          {ot.vehiculo_detalle.placa} - {ot.vehiculo_detalle.modelo_tecnico_detalle.marca}{" "}
-                          {ot.vehiculo_detalle.modelo_tecnico_detalle.modelo}
+                          {ot.vehiculo_detalle.placa} - {ot.vehiculo_detalle.marca}{" "}
+                          {ot.vehiculo_detalle.modelo}
                         </span>
                       </div>
 
