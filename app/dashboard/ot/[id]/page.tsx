@@ -200,7 +200,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Vehículo</p>
                   <p className="text-base">
-                    {ot.vehiculo_detalle.modelo_tecnico_detalle.marca} {ot.vehiculo_detalle.modelo_tecnico_detalle.modelo} ({ot.vehiculo_detalle.modelo_tecnico_detalle.anio})
+                    {ot.vehiculo_detalle.marca} {ot.vehiculo_detalle.modelo} {/*({ot.vehiculo_detalle.anio})*/}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {ot.vehiculo_detalle.placa} - {ot.vehiculo_detalle.color}

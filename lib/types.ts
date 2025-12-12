@@ -402,15 +402,8 @@ export interface OrdenTrabajoDetalle {
     color: string
     vin: string
     kilometraje_actual: number
-    modelo_tecnico_detalle: {
-      id: number
-      tipo_vehiculo_display: string
-      combustible_display: string
-      transmision_display: string
-      marca: string
-      modelo: string
-      anio: number
-    }
+    marca: string
+    modelo: string
   }
   asesor_detalle: {
     first_name: string
