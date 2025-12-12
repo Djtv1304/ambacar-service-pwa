@@ -145,7 +145,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
             </Badge>
           </div>
           <p className="text-muted-foreground mt-1">
-            {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name} - {ot.vehiculo_detalle.modelo_tecnico_detalle.marca} {ot.vehiculo_detalle.modelo_tecnico_detalle.modelo}
+            {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name} - {ot.vehiculo_detalle.marca} {ot.vehiculo_detalle.modelo}
           </p>
         </div>
         <div className="flex gap-2">
