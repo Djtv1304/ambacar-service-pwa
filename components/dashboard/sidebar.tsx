@@ -2,7 +2,6 @@
 
 import type React from "react"
 
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
@@ -24,6 +23,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
+import { useSidebar } from "@/components/dashboard/sidebar-context"
 import { Button } from "@/components/ui/button"
 import type { UserRole } from "@/lib/types"
 
@@ -115,7 +115,7 @@ const navItems: NavItem[] = [
 ]
 
 export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false)
+  const { collapsed, toggle } = useSidebar()
   const pathname = usePathname()
   const { user } = useAuth()
 
@@ -173,7 +173,7 @@ export function Sidebar() {
 
         {/* Collapse Toggle */}
         <div className="border-t border-border p-3">
-          <Button variant="ghost" size="sm" onClick={() => setCollapsed(!collapsed)} className="w-full justify-center">
+          <Button variant="ghost" size="sm" onClick={toggle} className="w-full justify-center">
             <ChevronLeft className={cn("h-5 w-5 transition-transform", collapsed && "rotate-180")} />
           </Button>
         </div>

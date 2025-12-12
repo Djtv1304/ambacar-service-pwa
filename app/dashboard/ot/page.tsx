@@ -240,8 +240,8 @@ export default function OrdenesTrabajoPage() {
                           <div className="flex items-center gap-2 text-sm">
                             <span className="font-medium">Vehículo:</span>
                             <span>
-                              {ot.vehiculo_detalle.modelo_tecnico_detalle.marca}{" "}
-                              {ot.vehiculo_detalle.modelo_tecnico_detalle.modelo}
+                              {ot.vehiculo_detalle.marca}{" "}
+                              {ot.vehiculo_detalle.modelo}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 text-sm">

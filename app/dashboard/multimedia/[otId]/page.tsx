@@ -26,6 +26,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { AddTextNote } from "@/components/multimedia/add-text-note"
 import { AddVoiceNote } from "@/components/multimedia/add-voice-note"
+import { AnnotationEditor } from "@/components/multimedia/annotation-editor"
 
 type FilterOption = MediaType | "TODAS"
 
@@ -60,6 +61,7 @@ export default function MultimediaDetailPage() {
   const [imagenSeleccionada, setImagenSeleccionada] = useState<MediaItem | null>(null)
   const [usuariosCache, setUsuariosCache] = useState<Record<number, UserType>>({})
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const [showAnnotationEditor, setShowAnnotationEditor] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -467,32 +469,50 @@ export default function MultimediaDetailPage() {
       </div>
 
       {/* Image Modal */}
-      <Dialog open={!!imagenSeleccionada} onOpenChange={() => setImagenSeleccionada(null)}>
-        <DialogContent className="max-w-5xl p-0">
+      <Dialog open={!!imagenSeleccionada} onOpenChange={() => {
+        setImagenSeleccionada(null)
+        setShowAnnotationEditor(false)
+      }}>
+        <DialogContent className="max-w-4xl p-0 max-h-[95vh] overflow-y-auto gap-0">
           {imagenSeleccionada && (
-            <div className="relative">
-              <img
-                src={imagenSeleccionada.imagen_url_firmada}
-                alt={imagenSeleccionada.tipo_foto}
-                className="w-full h-auto max-h-[80vh] object-contain bg-black"
-              />
+            <div className="flex flex-col">
+              {/* Vista de imagen o Editor de anotaciones */}
+              {showAnnotationEditor ? (
+                <AnnotationEditor
+                  imageUrl={imagenSeleccionada.imagen_url_firmada}
+                  imageId={imagenSeleccionada.media_id.toString()}
+                  onSave={(data) => {
+                    console.log("Anotaciones guardadas:", data)
+                    setShowAnnotationEditor(false)
+                    // Aquí se podría llamar a una API para guardar las anotaciones
+                  }}
+                />
+              ) : (
+                <img
+                  src={imagenSeleccionada.imagen_url_firmada}
+                  alt={imagenSeleccionada.tipo_foto}
+                  className="w-full h-auto max-h-[60vh] object-contain bg-black"
+                />
+              )}
 
-              <div className="p-6 space-y-4">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <DialogTitle className="text-xl font-bold text-[#202020] mb-2">
+              <div className="p-4 md:p-6 space-y-4">
+                {/* Header con título y acciones */}
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div className="min-w-0">
+                    <DialogTitle className="text-lg font-bold text-[#202020] mb-2 truncate">
                       {imagenSeleccionada.tipo_foto}
                     </DialogTitle>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <Badge className={FILTER_COLORS[imagenSeleccionada.media_type]}>
                         {FILTER_LABELS[imagenSeleccionada.media_type]}
                       </Badge>
                       {imagenSeleccionada.punto_inspeccion && (
                         <>
-                          <Badge variant="outline">{imagenSeleccionada.punto_inspeccion}</Badge>
+                          <Badge variant="outline" className="text-xs">{imagenSeleccionada.punto_inspeccion}</Badge>
                           {imagenSeleccionada.estado_inspeccion && (
                             <Badge
                               className={cn(
+                                "text-xs",
                                 imagenSeleccionada.estado_inspeccion === "VERDE" && "bg-green-500",
                                 imagenSeleccionada.estado_inspeccion === "AMARILLO" && "bg-yellow-500",
                                 imagenSeleccionada.estado_inspeccion === "ROJO" && "bg-red-500"
@@ -506,30 +526,42 @@ export default function MultimediaDetailPage() {
                     </div>
                   </div>
 
-                  <Button
-                    onClick={() => window.open(imagenSeleccionada.imagen_url_firmada, "_blank")}
-                    variant="outline"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-2" />
-                    Abrir original
-                  </Button>
+                  <div className="flex gap-2 shrink-0">
+                    <Button
+                      onClick={() => setShowAnnotationEditor(!showAnnotationEditor)}
+                      variant={showAnnotationEditor ? "default" : "outline"}
+                      size="sm"
+                      className={cn(
+                        showAnnotationEditor && "bg-[#ED1C24] hover:bg-[#c41820]"
+                      )}
+                    >
+                      {showAnnotationEditor ? "Ver imagen" : "Anotar imagen"}
+                    </Button>
+                    <Button
+                      onClick={() => window.open(imagenSeleccionada.imagen_url_firmada, "_blank")}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <ExternalLink className="h-4 w-4 sm:mr-1.5" />
+                      <span className="hidden sm:inline">Abrir</span>
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                {/* Metadata - Compact grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm bg-gray-50 rounded-lg p-3">
                   <div>
-                    <span className="text-gray-500">Capturada por:</span>
-                    <p className="font-medium">
+                    <span className="text-gray-500 text-xs">Capturada por</span>
+                    <p className="font-medium text-sm truncate">
                       {usuariosCache[imagenSeleccionada.usuario_id]
                         ? `${usuariosCache[imagenSeleccionada.usuario_id].first_name} ${usuariosCache[imagenSeleccionada.usuario_id].last_name}`
                         : `Usuario #${imagenSeleccionada.usuario_id}`}
                     </p>
                   </div>
-
                   <div>
-                    <span className="text-gray-500">Fecha:</span>
-                    <p className="font-medium">
+                    <span className="text-gray-500 text-xs">Fecha</span>
+                    <p className="font-medium text-sm">
                       {new Date(imagenSeleccionada.fecha_captura).toLocaleString("es-EC", {
-                        year: "numeric",
                         month: "short",
                         day: "numeric",
                         hour: "2-digit",
@@ -537,24 +569,22 @@ export default function MultimediaDetailPage() {
                       })}
                     </p>
                   </div>
-
                   <div>
-                    <span className="text-gray-500">Dimensiones:</span>
-                    <p className="font-medium">
-                      {imagenSeleccionada.ancho_px} x {imagenSeleccionada.alto_px} px
+                    <span className="text-gray-500 text-xs">Dimensiones</span>
+                    <p className="font-medium text-sm">
+                      {imagenSeleccionada.ancho_px} x {imagenSeleccionada.alto_px}
                     </p>
                   </div>
-
                   <div>
-                    <span className="text-gray-500">Tamaño:</span>
-                    <p className="font-medium">
-                      {formatBytes(imagenSeleccionada.tamano_bytes)} ({imagenSeleccionada.formato})
+                    <span className="text-gray-500 text-xs">Tamaño</span>
+                    <p className="font-medium text-sm">
+                      {formatBytes(imagenSeleccionada.tamano_bytes)}
                     </p>
                   </div>
                 </div>
 
                 {imagenSeleccionada.tiene_anotaciones && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                     <p className="text-sm text-blue-900">
                       Esta imagen tiene {imagenSeleccionada.total_anotaciones} anotaciones
                     </p>
@@ -562,31 +592,24 @@ export default function MultimediaDetailPage() {
                 )}
 
                 {/* Anotaciones Section */}
-                <div className="border-t border-gray-200 pt-6 space-y-4">
+                <div className="border-t border-gray-200 pt-4 space-y-3">
                   <div>
-                    <h4 className="font-semibold text-[#202020] text-lg mb-1">Agregar Anotaciones</h4>
-                    <p className="text-sm text-gray-600">
-                      Documenta hallazgos o detalles importantes sobre esta fotografía
+                    <h4 className="font-semibold text-[#202020] text-base">Agregar Anotaciones</h4>
+                    <p className="text-xs text-gray-500">
+                      Documenta hallazgos sobre esta fotografía
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <AddTextNote
                       mediaType={imagenSeleccionada.media_type}
                       mediaId={imagenSeleccionada.media_id}
-                      onSuccess={() => {
-                        // Opcional: recargar datos de la galería si es necesario
-                        loadData()
-                      }}
+                      onSuccess={() => loadData()}
                     />
-
                     <AddVoiceNote
                       mediaType={imagenSeleccionada.media_type}
                       mediaId={imagenSeleccionada.media_id}
-                      onSuccess={() => {
-                        // Opcional: recargar datos de la galería si es necesario
-                        loadData()
-                      }}
+                      onSuccess={() => loadData()}
                     />
                   </div>
                 </div>
