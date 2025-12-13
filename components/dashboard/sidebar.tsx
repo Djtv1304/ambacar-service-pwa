@@ -20,6 +20,7 @@ import {
   CalendarCheck,
   ClipboardCheck,
   Images,
+  CarFront,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -39,6 +40,12 @@ const navItems: NavItem[] = [
     title: "Dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+  },
+  {
+    title: "Mis Servicios",
+    href: "/dashboard/mis-servicios",
+    icon: CarFront,
+    roles: ["customer", "admin", "manager", "operator"],
   },
   {
     title: "Citas",
