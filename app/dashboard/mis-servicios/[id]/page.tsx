@@ -10,32 +10,32 @@ import {
   Clock,
   AlertCircle,
   FileText,
-  ChevronDown,
   User,
   Fuel,
-  Gauge
+  Gauge,
+  Receipt,
+  CheckCircle
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Separator } from "@/components/ui/separator"
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TimelineVertical } from "@/components/mis-servicios/timeline-vertical"
 import { AdditionalWorkManager } from "@/components/mis-servicios/additional-work-manager"
-import { DigitalProforma } from "@/components/mis-servicios/digital-proforma"
+import { ProformaSheet } from "@/components/mis-servicios/proforma-sheet"
 import { ServiceCompletionReport } from "@/components/mis-servicios/service-completion-report"
 import { useServiceData } from "@/hooks/use-service-data"
 import { SERVICE_STATUS_MAP } from "@/lib/mis-servicios/types"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
+import { useSidebar } from "@/components/dashboard/sidebar-context"
 
 export default function ServiceDetailPage({
   params
@@ -47,8 +47,10 @@ export default function ServiceDetailPage({
 
   const { service, isLoading, error, approveWork, rejectWork } = useServiceData(serviceId)
   const { user } = useAuth()
+  const { collapsed } = useSidebar()
   const approvalsRef = useRef<HTMLDivElement>(null)
   const [showCompletionReport, setShowCompletionReport] = useState(false)
+  const [showProformaSheet, setShowProformaSheet] = useState(false)
 
   // Check if user is a customer (simplified view) or staff (detailed view)
   const isCustomer = user?.role === "customer"
@@ -90,184 +92,132 @@ export default function ServiceDetailPage({
   const isFinished = service.estado === "listo" || service.estado === "entregado"
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* Back button */}
-      <Button variant="ghost" size="sm" asChild className="-ml-2">
-        <Link href="/dashboard/mis-servicios">
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver
-        </Link>
-      </Button>
+    <>
+      {/* Main content with bottom padding for sticky footer */}
+      <div className="space-y-6 pb-28 lg:pb-8">
+        {/* Back button */}
+        <Button variant="ghost" size="sm" asChild className="-ml-2">
+          <Link href="/dashboard/mis-servicios">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver
+          </Link>
+        </Button>
 
-      {/* A. Hero Header */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-xl border bg-card"
-      >
-        <div className="flex flex-col md:flex-row">
-          {/* Vehicle image */}
-          <div className="relative w-full md:w-64 h-48 md:h-auto shrink-0 bg-muted">
-            <Image
-              src={service.vehiculo.imagen || "/placeholder.svg"}
-              alt={`${service.vehiculo.marca} ${service.vehiculo.modelo}`}
-              fill
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent md:hidden" />
-            <div className="absolute bottom-3 left-3 md:hidden">
-              <Badge
-                variant="outline"
-                className={cn(
-                  "backdrop-blur-sm bg-background/80",
-                  statusInfo.color
-                )}
-              >
-                {statusInfo.label}
-              </Badge>
-            </div>
-          </div>
-
-          {/* Info section */}
-          <div className="flex-1 p-5 md:p-6">
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <h1 className="text-xl sm:text-2xl font-bold">
-                    {service.vehiculo.marca} {service.vehiculo.modelo}
-                  </h1>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "hidden md:inline-flex",
-                      statusInfo.bgColor,
-                      statusInfo.color,
-                      statusInfo.borderColor
-                    )}
-                  >
-                    {statusInfo.label}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {service.vehiculo.placa} • {service.numeroOrden}
-                </p>
-                <div className="flex items-center gap-1.5 mt-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span>{service.taller.nombre}</span>
-                </div>
-              </div>
-
-              <div className="flex flex-col items-start md:items-end gap-1">
-                <p className="text-2xl font-bold text-primary">
-                  ${service.total.toFixed(2)}
-                </p>
-                <p className="text-xs text-muted-foreground">Total estimado</p>
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            <div className="mt-5">
-              <div className="flex items-center justify-between text-sm mb-2">
-                <span className="text-muted-foreground">Progreso del servicio</span>
-                <span className="font-medium">{service.progreso}%</span>
-              </div>
-              <Progress value={service.progreso} className="h-2" />
-              {service.fechaEstimadaEntrega && (
-                <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5" />
-                  Entrega estimada: {formatDate(service.fechaEstimadaEntrega)}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* B. Pending Approvals Alert */}
-      {service.pendingApprovals > 0 && (
+        {/* A. Hero Header - Compact version */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border-2 border-orange-500/30 bg-orange-500/5 p-4"
+          className="relative overflow-hidden rounded-xl border bg-card"
         >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-3">
-              <div className="shrink-0 h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
-                <AlertCircle className="h-5 w-5 text-orange-500" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-orange-600 dark:text-orange-400">
-                  Aprobaciones Requeridas
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Hay {service.pendingApprovals} trabajo
-                  {service.pendingApprovals > 1 ? "s" : ""} adicional
-                  {service.pendingApprovals > 1 ? "es" : ""} que requieren tu aprobación
-                </p>
+          <div className="flex flex-col sm:flex-row">
+            {/* Vehicle image */}
+            <div className="relative w-full aspect-video sm:w-48 md:w-56 sm:aspect-auto shrink-0 overflow-hidden">
+              <Image
+                src={service.vehiculo.imagen || "/placeholder.svg"}
+                alt={`${service.vehiculo.marca} ${service.vehiculo.modelo}`}
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent sm:hidden" />
+              <div className="absolute bottom-3 left-3 sm:hidden">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "backdrop-blur-sm bg-background/80",
+                    statusInfo.color
+                  )}
+                >
+                  {statusInfo.label}
+                </Badge>
               </div>
             </div>
-            <Button
-              onClick={scrollToApprovals}
-              className="bg-orange-500 hover:bg-orange-600 text-white shrink-0"
-            >
-              Revisar y Aprobar
-            </Button>
+
+            {/* Info section */}
+            <div className="flex-1 p-4 sm:p-5">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <h1 className="text-lg sm:text-xl font-bold">
+                      {service.vehiculo.marca} {service.vehiculo.modelo}
+                    </h1>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "hidden sm:inline-flex",
+                        statusInfo.bgColor,
+                        statusInfo.color,
+                        statusInfo.borderColor
+                      )}
+                    >
+                      {statusInfo.label}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {service.vehiculo.placa} • {service.numeroOrden}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+                    <MapPin className="h-3.5 w-3.5" />
+                    <span>{service.taller.nombre}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="text-muted-foreground">Progreso</span>
+                  <span className="font-medium">{service.progreso}%</span>
+                </div>
+                <Progress value={service.progreso} className="h-2" />
+                {service.fechaEstimadaEntrega && (
+                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" />
+                    Entrega: {formatDate(service.fechaEstimadaEntrega)}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </motion.div>
-      )}
 
-      {/* Main Content - Tabs for mobile, side-by-side for desktop */}
-      <Tabs defaultValue="timeline" className="space-y-4">
-        <TabsList className="w-full grid grid-cols-3 lg:hidden">
-          <TabsTrigger value="timeline">Progreso</TabsTrigger>
-          <TabsTrigger value="approvals" className="relative">
-            Trabajos
-            {service.pendingApprovals > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-orange-500 text-[10px] text-white flex items-center justify-center">
-                {service.pendingApprovals}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="proforma">Proforma</TabsTrigger>
-        </TabsList>
+        {/* B. Pending Approvals Alert - More compact */}
+        {service.pendingApprovals > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-lg border border-orange-500/30 bg-orange-500/5 p-3 sm:p-4"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="shrink-0 h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-orange-500" />
+                </div>
+                <div>
+                  <p className="font-medium text-sm text-orange-600 dark:text-orange-400">
+                    {service.pendingApprovals} trabajo{service.pendingApprovals > 1 ? "s" : ""} pendiente{service.pendingApprovals > 1 ? "s" : ""}
+                  </p>
+                  <p className="text-xs text-muted-foreground hidden sm:block">
+                    Requieren tu aprobación
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={scrollToApprovals}
+                size="sm"
+                className="bg-orange-500 hover:bg-orange-600 text-white shrink-0"
+              >
+                Revisar
+              </Button>
+            </div>
+          </motion.div>
+        )}
 
-        {/* Mobile tabs content */}
-        <TabsContent value="timeline" className="lg:hidden mt-0">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Línea de Tiempo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <TimelineVertical
-                events={service.timeline}
-                simplified={isCustomer}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="approvals" className="lg:hidden mt-0">
-          <div ref={approvalsRef}>
-            <AdditionalWorkManager
-              pendingWork={service.trabajosAdicionales}
-              approvedWork={service.trabajosAprobados}
-              rejectedWork={service.trabajosRechazados}
-              onApprove={approveWork}
-              onReject={rejectWork}
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="proforma" className="lg:hidden mt-0">
-          <DigitalProforma service={service} />
-        </TabsContent>
-
-        {/* Desktop layout - always visible */}
-        <div className="hidden lg:grid lg:grid-cols-5 gap-6">
-          {/* Left column - Timeline */}
+        {/* Main Content - Two column layout on desktop */}
+        <div className="grid lg:grid-cols-5 gap-6">
+          {/* Left column - Timeline (Primary Focus) */}
           <div className="lg:col-span-3 space-y-6">
             <Card>
-              <CardHeader>
+              <CardHeader className="pb-3">
                 <CardTitle className="text-lg">Línea de Tiempo</CardTitle>
               </CardHeader>
               <CardContent>
@@ -277,13 +227,11 @@ export default function ServiceDetailPage({
                 />
               </CardContent>
             </Card>
-
-            {/* Proforma */}
-            <DigitalProforma service={service} />
           </div>
 
           {/* Right column - Approvals and Details */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Additional Work Manager */}
             <div ref={approvalsRef}>
               <AdditionalWorkManager
                 pendingWork={service.trabajosAdicionales}
@@ -294,15 +242,15 @@ export default function ServiceDetailPage({
               />
             </div>
 
-            {/* D. Service Details Accordion */}
+            {/* Service Details Accordion */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Detalles del Servicio</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Detalles del Servicio</CardTitle>
               </CardHeader>
               <CardContent className="pt-0">
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="cliente">
-                    <AccordionTrigger>
+                    <AccordionTrigger className="text-sm py-3">
                       <div className="flex items-center gap-2">
                         <User className="h-4 w-4" />
                         Datos del Cliente
@@ -327,7 +275,7 @@ export default function ServiceDetailPage({
                   </AccordionItem>
 
                   <AccordionItem value="recepcion">
-                    <AccordionTrigger>
+                    <AccordionTrigger className="text-sm py-3">
                       <div className="flex items-center gap-2">
                         <Gauge className="h-4 w-4" />
                         Datos de Recepción
@@ -370,7 +318,7 @@ export default function ServiceDetailPage({
 
                   {service.tecnicoAsignado && (
                     <AccordionItem value="tecnico">
-                      <AccordionTrigger>
+                      <AccordionTrigger className="text-sm py-3">
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4" />
                           Técnico Asignado
@@ -396,10 +344,10 @@ export default function ServiceDetailPage({
               </CardContent>
             </Card>
 
-            {/* Completion Report Button */}
+            {/* Completion Report Button - Desktop only */}
             {isFinished && (
               <Button
-                className="w-full"
+                className="w-full hidden lg:flex"
                 size="lg"
                 onClick={() => setShowCompletionReport(true)}
               >
@@ -409,97 +357,84 @@ export default function ServiceDetailPage({
             )}
           </div>
         </div>
-      </Tabs>
+      </div>
 
-      {/* Mobile - Details Accordion (always visible) */}
-      <Card className="lg:hidden">
-        <CardHeader>
-          <CardTitle className="text-lg">Detalles del Servicio</CardTitle>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="cliente">
-              <AccordionTrigger>
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Datos del Cliente
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-2 text-sm">
-                  <p>
-                    <span className="text-muted-foreground">Nombre:</span>{" "}
-                    {service.cliente.nombre} {service.cliente.apellido}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Email:</span>{" "}
-                    {service.cliente.email}
-                  </p>
-                  <p>
-                    <span className="text-muted-foreground">Teléfono:</span>{" "}
-                    {service.cliente.telefono}
-                  </p>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
+      {/* STICKY FOOTER - Mobile/Tablet */}
+      <div
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t p-4 lg:hidden",
+          "transition-all duration-300",
+          collapsed ? "lg:left-20" : "lg:left-64"
+        )}
+      >
+        <div className="flex items-center justify-between gap-3 max-w-screen-xl mx-auto">
+          {/* Total estimado */}
+          <div className="flex flex-col">
+            <span className="text-xs text-muted-foreground">Total estimado</span>
+            <span className="text-xl font-bold text-primary">
+              ${service.total.toFixed(2)}
+            </span>
+          </div>
 
-            <AccordionItem value="recepcion">
-              <AccordionTrigger>
-                <div className="flex items-center gap-2">
-                  <Gauge className="h-4 w-4" />
-                  Datos de Recepción
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Kilometraje:</span>
-                    <span className="font-medium">
-                      {service.recepcion.kilometraje.toLocaleString()} km
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Fuel className="h-3.5 w-3.5" />
-                      Combustible:
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <Progress
-                        value={service.recepcion.nivelCombustible}
-                        className="w-20 h-2"
-                      />
-                      <span className="font-medium text-xs">
-                        {service.recepcion.nivelCombustible}%
-                      </span>
-                    </div>
-                  </div>
-                  {service.recepcion.observaciones && (
-                    <div>
-                      <p className="text-muted-foreground mb-1">Observaciones:</p>
-                      <p className="bg-muted/50 rounded p-2 text-xs">
-                        {service.recepcion.observaciones}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </CardContent>
-      </Card>
+          {/* Action buttons */}
+          <div className="flex items-center gap-2">
+            {/* Aprobar pendientes - only if there are pending */}
+            {service.pendingApprovals > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={scrollToApprovals}
+                className="border-orange-500/50 text-orange-600 hover:bg-orange-500/10"
+              >
+                <AlertCircle className="h-4 w-4 mr-1.5" />
+                <span className="hidden xs:inline">Aprobar</span>
+                <Badge variant="secondary" className="ml-1.5 h-5 w-5 p-0 justify-center text-xs">
+                  {service.pendingApprovals}
+                </Badge>
+              </Button>
+            )}
 
-      {/* Mobile - Completion Report Button */}
-      {isFinished && (
-        <div className="lg:hidden">
-          <Button
-            className="w-full"
-            size="lg"
-            onClick={() => setShowCompletionReport(true)}
-          >
-            <FileText className="mr-2 h-5 w-5" />
-            Ver Reporte de Servicio
-          </Button>
+            {/* Ver Proforma - Opens unified Sheet */}
+            <Button size="sm" onClick={() => setShowProformaSheet(true)}>
+              <Receipt className="h-4 w-4 mr-1.5" />
+              Ver Proforma
+            </Button>
+
+            {/* Reporte de cierre - if finished */}
+            {isFinished && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setShowCompletionReport(true)}
+              >
+                <CheckCircle className="h-4 w-4 mr-1.5" />
+                Reporte
+              </Button>
+            )}
+          </div>
         </div>
+      </div>
+
+      {/* Desktop - Floating action to open proforma */}
+      <div className="hidden lg:block fixed bottom-6 right-6 z-40">
+        <Button
+          size="lg"
+          className="shadow-lg gap-2"
+          onClick={() => setShowProformaSheet(true)}
+        >
+          <Receipt className="h-5 w-5" />
+          Ver Proforma
+          <span className="font-bold">${service.total.toFixed(2)}</span>
+        </Button>
+      </div>
+
+      {/* Unified Proforma Sheet - Single component for both mobile and desktop */}
+      {service && (
+        <ProformaSheet
+          service={service}
+          open={showProformaSheet}
+          onClose={() => setShowProformaSheet(false)}
+        />
       )}
 
       {/* Completion Report Modal */}
@@ -510,35 +445,28 @@ export default function ServiceDetailPage({
           onClose={() => setShowCompletionReport(false)}
         />
       )}
-    </div>
+    </>
   )
 }
 
 function ServiceDetailSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28 lg:pb-8">
       <Skeleton className="h-8 w-24" />
 
       {/* Hero skeleton */}
       <div className="rounded-xl border overflow-hidden">
-        <div className="flex flex-col md:flex-row">
-          <Skeleton className="w-full md:w-64 h-48" />
-          <div className="flex-1 p-6 space-y-4">
-            <div className="flex justify-between">
-              <div className="space-y-2">
-                <Skeleton className="h-7 w-48" />
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-4 w-40" />
-              </div>
-              <div className="text-right space-y-2">
-                <Skeleton className="h-8 w-24 ml-auto" />
-                <Skeleton className="h-3 w-20 ml-auto" />
-              </div>
+        <div className="flex flex-col sm:flex-row">
+          <Skeleton className="w-full aspect-video sm:w-56 sm:aspect-auto" />
+          <div className="flex-1 p-5 space-y-4">
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-40" />
             </div>
             <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-3 w-full" />
               <Skeleton className="h-2 w-full" />
-              <Skeleton className="h-3 w-48" />
             </div>
           </div>
         </div>
@@ -546,16 +474,25 @@ function ServiceDetailSkeleton() {
 
       {/* Content skeleton */}
       <div className="grid lg:grid-cols-5 gap-6">
-        <div className="lg:col-span-3 space-y-6">
+        <div className="lg:col-span-3">
           <Skeleton className="h-96 rounded-xl" />
-          <Skeleton className="h-64 rounded-xl" />
         </div>
         <div className="lg:col-span-2 space-y-6">
-          <Skeleton className="h-64 rounded-xl" />
           <Skeleton className="h-48 rounded-xl" />
+          <Skeleton className="h-32 rounded-xl" />
+        </div>
+      </div>
+
+      {/* Sticky footer skeleton - mobile */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 lg:hidden">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-24" />
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-9 w-28" />
+          </div>
         </div>
       </div>
     </div>
   )
 }
-

@@ -177,13 +177,29 @@ export function TimelineVertical({ events, simplified = true, className }: Timel
                     <Check className="h-3.5 w-3.5 text-primary-foreground" />
                   </motion.div>
                 ) : event.enProgreso ? (
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                    className="h-6 w-6 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center"
-                  >
-                    <Circle className="h-2 w-2 fill-primary text-primary" />
-                  </motion.div>
+                  <div className="relative">
+                    {/* Pulse ring animation */}
+                    <motion.div
+                      className="absolute inset-0 h-6 w-6 rounded-full bg-primary/30"
+                      animate={{
+                        scale: [1, 1.8, 1.8],
+                        opacity: [0.6, 0, 0]
+                      }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 2,
+                        ease: "easeOut"
+                      }}
+                    />
+                    {/* Main dot */}
+                    <motion.div
+                      animate={{ scale: [1, 1.05, 1] }}
+                      transition={{ repeat: Infinity, duration: 1.5 }}
+                      className="relative h-6 w-6 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center"
+                    >
+                      <Circle className="h-2 w-2 fill-primary text-primary" />
+                    </motion.div>
+                  </div>
                 ) : (
                   <div className="h-6 w-6 rounded-full bg-muted border-2 border-border flex items-center justify-center">
                     <Clock className="h-3 w-3 text-muted-foreground" />
