@@ -137,15 +137,23 @@ export function useServiceData(serviceId: string): UseServiceDataReturn {
 }
 
 /**
- * Hook to fetch all services for the current client
+ * Hook to fetch all services for a client
+ * @param clientId - Optional client ID. If not provided, fetches for current user.
+ *                   Pass undefined to skip fetching (useful for internal users before selecting a client).
  */
-export function useClientServices() {
+export function useClientServices(clientId?: string | null) {
   const [activeServices, setActiveServices] = useState<ClientService[]>([])
   const [completedServices, setCompletedServices] = useState<ClientService[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchServices = useCallback(async () => {
+    // If clientId is explicitly undefined (not null), skip fetching
+    if (clientId === undefined) {
+      setIsLoading(false)
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
@@ -155,7 +163,7 @@ export function useClientServices() {
 
       // TODO: Replace with actual API call
       // const token = await getToken()
-      // const data = await getClientServices(token)
+      // const data = await getClientServices(token, clientId)
 
       const data = getMockClientServices()
       setActiveServices(data.active)
@@ -166,7 +174,7 @@ export function useClientServices() {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [clientId])
 
   useEffect(() => {
     fetchServices()

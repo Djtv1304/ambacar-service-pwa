@@ -33,6 +33,7 @@ import { ProformaSheet } from "@/components/mis-servicios/proforma-sheet"
 import { ServiceCompletionReport } from "@/components/mis-servicios/service-completion-report"
 import { useServiceData } from "@/hooks/use-service-data"
 import { SERVICE_STATUS_MAP } from "@/lib/mis-servicios/types"
+import { isCustomer, isInternalUser } from "@/lib/auth/roles"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useSidebar } from "@/components/dashboard/sidebar-context"
@@ -52,8 +53,9 @@ export default function ServiceDetailPage({
   const [showCompletionReport, setShowCompletionReport] = useState(false)
   const [showProformaSheet, setShowProformaSheet] = useState(false)
 
-  // Check if user is a customer (simplified view) or staff (detailed view)
-  const isCustomer = user?.role === "customer"
+  // Use centralized role utilities
+  const userIsCustomer = isCustomer(user)
+  const userIsInternal = isInternalUser(user)
 
   const scrollToApprovals = () => {
     approvalsRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -180,8 +182,8 @@ export default function ServiceDetailPage({
           </div>
         </motion.div>
 
-        {/* B. Pending Approvals Alert - More compact */}
-        {service.pendingApprovals > 0 && (
+        {/* B. Pending Approvals Alert - Only show to clients, not internal users */}
+        {service.pendingApprovals > 0 && !userIsInternal && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -212,6 +214,17 @@ export default function ServiceDetailPage({
           </motion.div>
         )}
 
+        {/* Internal User Info Banner - Shows pending count but no action */}
+        {service.pendingApprovals > 0 && userIsInternal && (
+          <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+            <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{service.pendingApprovals} trabajo{service.pendingApprovals > 1 ? "s" : ""}</span>
+              {" "}pendiente{service.pendingApprovals > 1 ? "s" : ""} de aprobación por el cliente
+            </p>
+          </div>
+        )}
+
         {/* Main Content - Two column layout on desktop */}
         <div className="grid lg:grid-cols-5 gap-6">
           {/* Left column - Timeline (Primary Focus) */}
@@ -223,7 +236,7 @@ export default function ServiceDetailPage({
               <CardContent>
                 <TimelineVertical
                   events={service.timeline}
-                  simplified={isCustomer}
+                  simplified={userIsCustomer}
                 />
               </CardContent>
             </Card>
@@ -239,6 +252,7 @@ export default function ServiceDetailPage({
                 rejectedWork={service.trabajosRechazados}
                 onApprove={approveWork}
                 onReject={rejectWork}
+                readOnly={userIsInternal}
               />
             </div>
 
@@ -378,8 +392,8 @@ export default function ServiceDetailPage({
 
           {/* Action buttons */}
           <div className="flex items-center gap-2">
-            {/* Aprobar pendientes - only if there are pending */}
-            {service.pendingApprovals > 0 && (
+            {/* Aprobar pendientes - only for clients, not internal users */}
+            {service.pendingApprovals > 0 && !userIsInternal && (
               <Button
                 variant="outline"
                 size="sm"

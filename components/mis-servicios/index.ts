@@ -7,4 +7,5 @@ export { AdditionalWorkManager } from "./additional-work-manager"
 export { DigitalProforma } from "./digital-proforma"
 export { ProformaSheet } from "./proforma-sheet"
 export { ServiceCompletionReport } from "./service-completion-report"
+export { ClientSearchForm } from "./client-search-form"
 

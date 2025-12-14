@@ -28,6 +28,8 @@ interface AdditionalWorkManagerProps {
   onApprove: (workId: string) => Promise<void>
   onReject: (workId: string) => Promise<void>
   className?: string
+  /** When true, hides approve/reject buttons (for internal users viewing client data) */
+  readOnly?: boolean
 }
 
 const severityConfig = {
@@ -67,6 +69,8 @@ interface WorkItemCardProps {
   onReject?: (workId: string) => Promise<void>
   showActions?: boolean
   status?: "approved" | "rejected"
+  /** When true, shows a waiting badge instead of action buttons */
+  readOnly?: boolean
 }
 
 function WorkItemCard({
@@ -74,7 +78,8 @@ function WorkItemCard({
   onApprove,
   onReject,
   showActions = true,
-  status
+  status,
+  readOnly = false
 }: WorkItemCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isApproving, setIsApproving] = useState(false)
@@ -272,8 +277,8 @@ function WorkItemCard({
             </CollapsibleContent>
           </Collapsible>
 
-          {/* Action buttons */}
-          {showActions && !status && (
+          {/* Action buttons - Hidden in readOnly mode */}
+          {showActions && !status && !readOnly && (
             <div className="flex gap-3 mt-4 pt-4 border-t">
               <Button
                 onClick={handleReject}
@@ -302,6 +307,18 @@ function WorkItemCard({
               </Button>
             </div>
           )}
+
+          {/* Read-only mode - Show waiting status instead of buttons */}
+          {showActions && !status && readOnly && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+                <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
+                  Esperando respuesta del cliente
+                </span>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>
@@ -315,6 +332,7 @@ export function AdditionalWorkManager({
   onApprove,
   onReject,
   className,
+  readOnly = false,
 }: AdditionalWorkManagerProps) {
   const [showHistory, setShowHistory] = useState(false)
   const hasHistory = approvedWork.length > 0 || rejectedWork.length > 0
@@ -325,7 +343,7 @@ export function AdditionalWorkManager({
       {pendingWork.length > 0 && (
         <div>
           <h3 className="font-semibold text-lg mb-4">
-            Trabajos Pendientes de Aprobación
+            {readOnly ? "Trabajos Pendientes" : "Trabajos Pendientes de Aprobación"}
           </h3>
           <AnimatePresence mode="popLayout">
             <div className="space-y-4">
@@ -335,6 +353,7 @@ export function AdditionalWorkManager({
                   work={work}
                   onApprove={onApprove}
                   onReject={onReject}
+                  readOnly={readOnly}
                 />
               ))}
             </div>
