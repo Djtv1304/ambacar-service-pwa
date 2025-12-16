@@ -93,7 +93,7 @@ const navItems: NavItem[] = [
     title: "Taller",
     href: "/dashboard/taller",
     icon: Wrench,
-    roles: ["admin", "manager"],
+    roles: ["admin", "manager", "technician"],
   },
   {
     title: "Facturación",

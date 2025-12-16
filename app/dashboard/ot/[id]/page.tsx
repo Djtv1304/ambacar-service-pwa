@@ -2,13 +2,16 @@
 
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
-import { ArrowLeft, Circle, Plus, ClipboardCheck, AlertTriangle } from "lucide-react"
+import { ArrowLeft, ClipboardCheck, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
+import { OTInfoCard } from "@/components/ot/ot-info-card"
+import { OTPhasesStepper, type Phase } from "@/components/ot/ot-phases-stepper"
+import { RepuestosList, type Repuesto } from "@/components/ot/ot-repuestos-list"
 import { getOrdenTrabajoDetalle } from "@/lib/api/ordenes-trabajo"
 import { useAuthToken } from "@/hooks/use-auth-token"
 import type { OrdenTrabajoDetalle, HallazgoOT } from "@/lib/types"
@@ -32,6 +35,27 @@ const getEstadoColorClass = (codigo: string): string => {
   return estadoColors[codigoLower] || estadoColors.creada
 }
 
+// Mock phases for demonstration (will be replaced with real data)
+const getMockPhases = (estado: string): Phase[] => {
+  const phases: Phase[] = [
+    { id: "p1", nombre: "Recepción", estado: "completed", duracionMinutos: 30, observaciones: "Vehículo recibido sin daños" },
+    { id: "p2", nombre: "Diagnóstico", estado: "completed", duracionMinutos: 120 },
+    { id: "p3", nombre: "Reparación", estado: "in_progress", duracionMinutos: 180 },
+    { id: "p4", nombre: "Control de Calidad", estado: "pending" },
+    { id: "p5", nombre: "Entrega", estado: "pending" },
+  ]
+
+  // Adjust based on current state
+  if (estado === "CTRL-CAL") {
+    phases[2].estado = "completed"
+    phases[3].estado = "in_progress"
+  } else if (estado === "COMPLETA" || estado === "CERRADA") {
+    phases.forEach(p => p.estado = "completed")
+  }
+
+  return phases
+}
+
 export default function OTDetailPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap params using React.use()
   const resolvedParams = use(params)
@@ -41,6 +65,8 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
   const [loading, setLoading] = useState(true)
   const [currentEstado, setCurrentEstado] = useState<string>("")
   const [hallazgoDialogOpen, setHallazgoDialogOpen] = useState(false)
+  const [phases, setPhases] = useState<Phase[]>([])
+  const [repuestos, setRepuestos] = useState<Repuesto[]>([])
   const { getToken } = useAuthToken()
 
   // Fetch OT details
@@ -60,6 +86,19 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
         if (isMounted) {
           setOt(data)
           setCurrentEstado(data.estado_detalle.codigo)
+          setPhases(getMockPhases(data.estado_detalle.codigo))
+
+          // Transform repuestos data if available
+          if (data.repuestos && data.repuestos.length > 0) {
+            setRepuestos(data.repuestos.map((r: any, idx: number) => ({
+              id: `r-${idx}`,
+              codigo: r.codigo || `REP-${idx}`,
+              descripcion: r.descripcion || r.nombre || "Repuesto",
+              cantidad: r.cantidad || 1,
+              unidad: r.unidad || "Unidad",
+              precioUnitario: parseFloat(r.precio_unitario) || 0,
+            })))
+          }
         }
       } catch (error) {
         console.error("Error fetching OT details:", error)
@@ -82,9 +121,37 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
 
   const handleEstadoChange = (newEstado: string) => {
     setCurrentEstado(newEstado)
+    setPhases(getMockPhases(newEstado))
     toast.success("Estado actualizado", {
       description: `La orden de trabajo ahora está en estado: ${newEstado}`,
     })
+  }
+
+  const handleCompletePhase = async (phaseId: string, data: { observaciones: string; evidencia: File[] }) => {
+    // TODO: API call to complete phase
+    await new Promise(resolve => setTimeout(resolve, 1000))
+
+    setPhases(prev => {
+      const updated = [...prev]
+      const idx = updated.findIndex(p => p.id === phaseId)
+      if (idx !== -1) {
+        updated[idx] = { ...updated[idx], estado: "completed", observaciones: data.observaciones }
+        if (idx + 1 < updated.length) {
+          updated[idx + 1] = { ...updated[idx + 1], estado: "in_progress" }
+        }
+      }
+      return updated
+    })
+
+    toast.success("Fase completada exitosamente")
+  }
+
+  const handleAddRepuesto = async (repuesto: Omit<Repuesto, "id">) => {
+    // TODO: API call to add part
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    setRepuestos(prev => [...prev, { ...repuesto, id: `r-${Date.now()}` }])
+    toast.success("Repuesto agregado")
   }
 
   const handleGuardarHallazgo = async (hallazgo: HallazgoOT) => {
@@ -124,45 +191,50 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
     )
   }
 
-  // Default values for tasks/repuestos (to be implemented later)
-  const completedTasks = 0
-  const totalTasks = 0
-
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link href="/dashboard/ot">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-3xl font-bold tracking-tight">{ot.numero_orden}</h1>
-            <Badge variant="outline" className={getEstadoColorClass(currentEstado)}>
-              {ot.estado_detalle.nombre.toUpperCase()}
-            </Badge>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex items-center gap-4 flex-1">
+          <Button variant="ghost" size="icon" asChild className="shrink-0">
+            <Link href="/dashboard/ot">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
+          <div className="min-w-0">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{ot.numero_orden}</h1>
+              <Badge variant="outline" className={getEstadoColorClass(currentEstado)}>
+                {ot.estado_detalle.nombre.toUpperCase()}
+              </Badge>
+            </div>
+            <p className="text-muted-foreground mt-1 text-sm truncate">
+              {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name} - {ot.vehiculo_detalle.marca} {ot.vehiculo_detalle.modelo}
+            </p>
           </div>
-          <p className="text-muted-foreground mt-1">
-            {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name} - {ot.vehiculo_detalle.marca} {ot.vehiculo_detalle.modelo}
-          </p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setHallazgoDialogOpen(true)} variant="outline" className="border-orange-500 text-orange-600 hover:bg-orange-50">
+
+        {/* Actions - Responsive */}
+        <div className="flex flex-wrap gap-2 sm:shrink-0">
+          <Button
+            onClick={() => setHallazgoDialogOpen(true)}
+            variant="outline"
+            size="sm"
+            className="border-orange-500 text-orange-600 hover:bg-orange-50"
+          >
             <AlertTriangle className="mr-2 h-4 w-4" />
-            Registrar Hallazgos
+            <span className="hidden xs:inline">Registrar</span> Hallazgos
           </Button>
           {currentEstado === "CTRL-CAL" && (
-            <Button asChild className="bg-blue-600 hover:bg-blue-700">
+            <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
               <Link href={`/dashboard/inspeccion/${ot.id}`}>
                 <ClipboardCheck className="mr-2 h-4 w-4" />
-                Iniciar Inspección
+                Inspección
               </Link>
             </Button>
           )}
           <Select value={currentEstado} onValueChange={handleEstadoChange}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="w-[160px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -174,7 +246,6 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
               <SelectItem value="CTRL-CAL">Control de Calidad</SelectItem>
               <SelectItem value="COMPLETA">Completada</SelectItem>
               <SelectItem value="CERRADA">Cerrada</SelectItem>
-              <SelectItem value="CANCELADA">Cancelada</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -183,83 +254,33 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Content */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Vehicle & Client Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Información General</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Cliente</p>
-                  <p className="text-base">
-                    {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Cédula: {ot.cliente_detalle.cedula}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Vehículo</p>
-                  <p className="text-base">
-                    {ot.vehiculo_detalle.marca} {ot.vehiculo_detalle.modelo} {/*({ot.vehiculo_detalle.anio})*/}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {ot.vehiculo_detalle.placa} - {ot.vehiculo_detalle.color}
-                  </p>
-                </div>
-                {ot.asesor_detalle && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Asesor Asignado</p>
-                    <p className="text-base">
-                      {ot.asesor_detalle.first_name} {ot.asesor_detalle.last_name}
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Tipo de Orden</p>
-                  <p className="text-base">{ot.tipo_detalle.nombre}</p>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div className="grid gap-4 sm:grid-cols-3">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Fecha Ingreso</p>
-                  <p className="text-base">
-                    {new Date(ot.fecha_apertura).toLocaleDateString("es-EC", { dateStyle: "medium" })}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Entrega Estimada</p>
-                  <p className="text-base">
-                    {new Date(ot.fecha_promesa_entrega).toLocaleDateString("es-EC", { dateStyle: "medium" })}
-                  </p>
-                </div>
-                {ot.fecha_entrega_real && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Fecha Entrega</p>
-                    <p className="text-base">
-                      {new Date(ot.fecha_entrega_real).toLocaleDateString("es-EC", { dateStyle: "medium" })}
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Kilometraje Ingreso</p>
-                  <p className="text-base">{ot.kilometraje_ingreso.toLocaleString()} km</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">VIN</p>
-                  <p className="text-base">{ot.vehiculo_detalle.vin}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* NEW: Info Card with improved design */}
+          <OTInfoCard
+            cliente={{
+              nombre: ot.cliente_detalle.first_name,
+              apellido: ot.cliente_detalle.last_name,
+              cedula: ot.cliente_detalle.cedula,
+            }}
+            vehiculo={{
+              marca: ot.vehiculo_detalle.marca,
+              modelo: ot.vehiculo_detalle.modelo,
+              placa: ot.vehiculo_detalle.placa,
+              color: ot.vehiculo_detalle.color,
+              vin: ot.vehiculo_detalle.vin,
+              kilometraje: ot.kilometraje_ingreso,
+            }}
+            tipoOrden={ot.tipo_detalle.nombre}
+            fechaIngreso={ot.fecha_apertura}
+            fechaEstimadaEntrega={ot.fecha_promesa_entrega}
+            fechaEntregaReal={ot.fecha_entrega_real || undefined}
+            asesor={ot.asesor_detalle ? `${ot.asesor_detalle.first_name} ${ot.asesor_detalle.last_name}` : undefined}
+          />
 
           {/* Diagnostico */}
           {ot.descripcion_trabajo && (
             <Card>
-              <CardHeader>
-                <CardTitle>Diagnóstico</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Diagnóstico</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm">{ot.descripcion_trabajo}</p>
@@ -267,66 +288,25 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
             </Card>
           )}
 
-          {/* Subtareas */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Tareas</CardTitle>
-                  <CardDescription>
-                    {ot.tareas.length > 0 ? `${completedTasks} de ${totalTasks} completadas` : 'No hay tareas registradas'}
-                  </CardDescription>
-                </div>
-                <Button size="sm" variant="outline">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Agregar Tarea
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {ot.tareas.length > 0 ? (
-                <div className="space-y-3">
-                  {/* Tareas will be mapped here when available */}
-                  <p className="text-sm text-muted-foreground">Las tareas se mostrarán aquí</p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Circle className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                  <p className="text-sm text-muted-foreground">No hay tareas asignadas a esta orden</p>
-                  <p className="text-xs text-muted-foreground mt-1">Las tareas aparecerán aquí una vez sean creadas</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* NEW: Phases Stepper (replaces old Tareas) */}
+          <OTPhasesStepper
+            phases={phases}
+            onCompletePhase={handleCompletePhase}
+          />
 
-          {/* Repuestos */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Repuestos Utilizados</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {ot.repuestos.length > 0 ? (
-                <div className="space-y-3">
-                  {/* Repuestos will be mapped here when available */}
-                  <p className="text-sm text-muted-foreground">Los repuestos se mostrarán aquí</p>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Circle className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                  <p className="text-sm text-muted-foreground">No hay repuestos registrados</p>
-                  <p className="text-xs text-muted-foreground mt-1">Los repuestos utilizados aparecerán aquí</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* NEW: Repuestos with scroll and add button */}
+          <RepuestosList
+            repuestos={repuestos}
+            onAddRepuesto={handleAddRepuesto}
+          />
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Cost Summary */}
           <Card>
-            <CardHeader>
-              <CardTitle>Resumen de Costos</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Resumen de Costos</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -355,8 +335,8 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
 
           {/* Observaciones */}
           <Card>
-            <CardHeader>
-              <CardTitle>Observaciones</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base">Observaciones</CardTitle>
             </CardHeader>
             <CardContent>
               {ot.observaciones_cliente || ot.observaciones_internas ? (
@@ -375,7 +355,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
                   )}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">Cliente solicita llamada antes de cualquier trabajo adicional</p>
+                <p className="text-sm text-muted-foreground">Sin observaciones registradas</p>
               )}
             </CardContent>
           </Card>
