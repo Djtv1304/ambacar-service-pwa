@@ -17,7 +17,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import {
   Select,
@@ -341,33 +340,31 @@ export function WorkflowsPage({ className }: WorkflowsPageProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
             >
-              <Alert className="border-amber-300 bg-amber-50">
-                <AlertTriangle className="h-4 w-4 text-amber-600" />
-                <AlertTitle className="text-amber-800">Modo Excepción Activo</AlertTitle>
-                <AlertDescription className="text-amber-700">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p>
-                        Editando flujo exclusivo para el vehículo{" "}
-                        <strong>{selectedOrder.placa}</strong> ({selectedOrder.vehiculoModelo}).
-                      </p>
-                      <p className="text-sm mt-1">
-                        Estos cambios no afectarán la plantilla global de{" "}
-                        {SERVICE_TYPE_LABELS[selectedOrder.tipoServicio]}.
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleClearException}
-                      className="shrink-0 border-amber-300 text-amber-800 hover:bg-amber-100"
-                    >
-                      <X className="mr-2 h-4 w-4" />
-                      Salir de Excepción
-                    </Button>
+              <div className="flex items-center justify-between gap-4 w-full rounded-lg border border-amber-300 bg-amber-50 p-4">
+                <div className="flex gap-3 flex-1 min-w-0">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                  <div className="min-w-0">
+                    <p className="font-medium text-amber-800 mb-1">Modo Excepción Activo</p>
+                    <p className="text-sm text-amber-700">
+                      Editando flujo exclusivo para el vehículo{" "}
+                      <strong>{selectedOrder.placa}</strong> ({selectedOrder.vehiculoModelo}).
+                    </p>
+                    <p className="text-sm mt-1 text-amber-600">
+                      Estos cambios no afectarán la plantilla global de{" "}
+                      {SERVICE_TYPE_LABELS[selectedOrder.tipoServicio]}.
+                    </p>
                   </div>
-                </AlertDescription>
-              </Alert>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleClearException}
+                  className="shrink-0 border-amber-400 text-amber-800 hover:bg-amber-100 self-center"
+                >
+                  <X className="mr-2 h-4 w-4" />
+                  Salir de Excepción
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -405,25 +402,26 @@ export function WorkflowsPage({ className }: WorkflowsPageProps) {
           </CardContent>
         </Card>
 
-        {/* Footer Actions */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg border bg-card p-4 sticky bottom-0 shadow-lg">
+        {/* Footer Actions - Sticky */}
+        <div className="sticky bottom-0 z-10 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-lg border bg-card p-4 shadow-lg">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <CheckCircle2 className="h-4 w-4" />
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>
               {fases.length} fases • Tiempo total: {formatTime(calculateTotalTime(fases))}
             </span>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             {mode === "exception" && (
-              <Button variant="outline" onClick={handleResetToTemplate} disabled={isSaving}>
+              <Button variant="outline" onClick={handleResetToTemplate} disabled={isSaving} size="sm" className="sm:size-default">
                 <RotateCcw className="mr-2 h-4 w-4" />
-                Restablecer a Plantilla
+                <span className="hidden sm:inline">Restablecer a Plantilla</span>
+                <span className="sm:hidden">Restablecer</span>
               </Button>
             )}
             <Button
               onClick={handleSave}
               disabled={isSaving || !hasChanges}
-              className="bg-[#E60000] hover:bg-[#CC0000] text-white"
+              className="bg-[#E60000] hover:bg-[#CC0000] text-white flex-1 sm:flex-none"
             >
               {isSaving ? (
                 <>

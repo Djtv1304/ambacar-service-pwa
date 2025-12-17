@@ -8,12 +8,12 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { mockUsers } from "@/lib/fixtures/users"
+import { mockUsers, type MockUser } from "@/lib/fixtures/users"
 import { Building2, Bell, Shield, Users, Palette, Database } from "lucide-react"
 import { WorkflowsPage } from "@/components/configuracion/workflows-page"
 
 export default function ConfiguracionPage() {
-  const usuarios: mockUsers[] = mockUsers.filter((u) => u.rol !== "cliente")
+  const usuarios: MockUser[] = mockUsers.filter((u) => u.rol !== "customer")
 
   return (
     <div className="space-y-6">
@@ -153,9 +153,9 @@ export default function ConfiguracionPage() {
                     <div className="flex items-center gap-4">
                       <Badge variant={usuario.rol === "admin" ? "default" : "secondary"}>
                         {usuario.rol === "admin" && "Administrador"}
-                        {usuario.rol === "recepcion" && "Recepcionista"}
-                        {usuario.rol === "tecnico" && "Técnico"}
-                        {usuario.rol === "jefe_taller" && "Jefe de Taller"}
+                        {usuario.rol === "operator" && "Operador"}
+                        {usuario.rol === "technician" && "Técnico"}
+                        {usuario.rol === "manager" && "Jefe de Taller"}
                       </Badge>
                       <Switch defaultChecked={usuario.activo} />
                       <Button variant="ghost" size="sm">

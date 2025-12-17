@@ -1,6 +1,23 @@
-import type { User } from "@/lib/types"
+/**
+ * Mock Users Fixture
+ * Local user type for mock data (matches legacy Spanish field names)
+ */
 
-export const mockUsers: User[] = [
+// Local user type for the mock data (matches legacy Spanish field names)
+export interface MockUser {
+  id: string
+  email: string
+  nombre: string
+  apellido: string
+  rol: "admin" | "technician" | "manager" | "customer" | "operator"
+  telefono: string
+  sucursal?: string
+  activo: boolean
+  createdAt: Date
+  updatedAt: Date
+}
+
+export const mockUsers: MockUser[] = [
   {
     id: "1",
     email: "admin@ambacar.com",
@@ -17,8 +34,8 @@ export const mockUsers: User[] = [
     id: "2",
     email: "recepcion@ambacar.com",
     nombre: "María",
-    apellido: "Recepción",
-    rol: "recepcion",
+    apellido: "Sanchez",
+    rol: "operator",
     telefono: "+593 99 234 5678",
     sucursal: "Quito Norte",
     activo: true,
@@ -30,7 +47,7 @@ export const mockUsers: User[] = [
     email: "tecnico1@ambacar.com",
     nombre: "Juan",
     apellido: "Técnico",
-    rol: "tecnico",
+    rol: "technician",
     telefono: "+593 99 345 6789",
     sucursal: "Quito Norte",
     activo: true,
@@ -41,8 +58,8 @@ export const mockUsers: User[] = [
     id: "4",
     email: "jefe@ambacar.com",
     nombre: "Roberto",
-    apellido: "Jefe Taller",
-    rol: "jefe_taller",
+    apellido: "Pérez",
+    rol: "manager",
     telefono: "+593 99 456 7890",
     sucursal: "Quito Norte",
     activo: true,
@@ -53,8 +70,8 @@ export const mockUsers: User[] = [
     id: "5",
     email: "cliente@example.com",
     nombre: "Ana",
-    apellido: "Cliente",
-    rol: "cliente",
+    apellido: "Baglio",
+    rol: "customer",
     telefono: "+593 99 567 8901",
     activo: true,
     createdAt: new Date("2024-01-01"),
