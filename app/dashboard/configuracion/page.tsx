@@ -10,9 +10,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { mockUsers } from "@/lib/fixtures/users"
 import { Building2, Bell, Shield, Users, Palette, Database } from "lucide-react"
+import { WorkflowsPage } from "@/components/configuracion/workflows-page"
 
 export default function ConfiguracionPage() {
-  const usuarios = mockUsers.filter((u) => u.rol !== "cliente")
+  const usuarios: mockUsers[] = mockUsers.filter((u) => u.rol !== "cliente")
 
   return (
     <div className="space-y-6">
@@ -22,8 +23,9 @@ export default function ConfiguracionPage() {
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList>
+        <TabsList className="flex-wrap h-auto gap-1">
           <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="fases">Fases del Servicio</TabsTrigger>
           <TabsTrigger value="usuarios">Usuarios</TabsTrigger>
           <TabsTrigger value="notificaciones">Notificaciones</TabsTrigger>
           <TabsTrigger value="seguridad">Seguridad</TabsTrigger>
@@ -114,6 +116,10 @@ export default function ConfiguracionPage() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="fases" className="space-y-4">
+          <WorkflowsPage />
+        </TabsContent>
+
         <TabsContent value="usuarios" className="space-y-4">
           <Card>
             <CardHeader>
@@ -145,9 +151,9 @@ export default function ConfiguracionPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <Badge variant={usuario.rol === "administrador" ? "default" : "secondary"}>
-                        {usuario.rol === "administrador" && "Administrador"}
-                        {usuario.rol === "recepcionista" && "Recepcionista"}
+                      <Badge variant={usuario.rol === "admin" ? "default" : "secondary"}>
+                        {usuario.rol === "admin" && "Administrador"}
+                        {usuario.rol === "recepcion" && "Recepcionista"}
                         {usuario.rol === "tecnico" && "Técnico"}
                         {usuario.rol === "jefe_taller" && "Jefe de Taller"}
                       </Badge>
