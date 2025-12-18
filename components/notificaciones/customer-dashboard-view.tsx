@@ -4,9 +4,7 @@ import * as React from "react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import {
-  Bell,
   Mail,
-  MessageCircle,
   Car,
   Calendar,
   Settings,
@@ -15,15 +13,17 @@ import {
   AlertTriangle,
   Phone,
   Edit2,
+  FileText,
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Switch } from "@/components/ui/switch"
+import { Separator } from "@/components/ui/separator"
 import {
   Dialog,
   DialogContent,
@@ -48,35 +48,111 @@ interface CustomerDashboardViewProps {
   isReadOnly?: boolean
 }
 
-// Stat Card Component
-function StatCard({
-  title,
-  value,
-  icon: Icon,
-  color,
-}: {
-  title: string
-  value: number | string
-  icon: React.ElementType
-  color: "blue" | "green" | "amber" | "red"
-}) {
-  const colorClasses = {
-    blue: "bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400",
-    green: "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400",
-    amber: "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400",
-    red: "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400",
-  }
+// Alert Banner Component - Top Priority
+function AlertBanner({ overdueCount, onViewDetails }: { overdueCount: number; onViewDetails: () => void }) {
+  if (overdueCount === 0) return null
 
   return (
-    <Card className="dark:bg-gray-900">
-      <CardContent className="p-4 sm:p-6">
-        <div className="flex items-center gap-4">
-          <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${colorClasses[color]}`}>
-            <Icon className="h-6 w-6" />
+    <motion.div
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="w-full"
+    >
+      <div className="rounded-lg border border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/50 p-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50 shrink-0">
+              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-red-800 dark:text-red-300">
+                {overdueCount} Recordatorio{overdueCount > 1 ? "s" : ""} Vencido{overdueCount > 1 ? "s" : ""}
+              </h3>
+              <p className="text-sm text-red-700 dark:text-red-400">
+                Tus vehículos requieren atención. Agenda una cita pronto.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
-            <p className="text-sm text-muted-foreground">{title}</p>
+          <Button
+            size="sm"
+            className="bg-red-600 hover:bg-red-700 text-white shrink-0"
+            onClick={onViewDetails}
+          >
+            Ver Detalles
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
+
+// Profile Card with Metrics
+function ProfileCard({
+  contact,
+  summary,
+  onEdit,
+  isReadOnly,
+}: {
+  contact: CustomerContactInfo
+  summary: CustomerDashboardSummary
+  onEdit: () => void
+  isReadOnly?: boolean
+}) {
+  const initials = `${contact.firstName[0]}${contact.lastName[0]}`
+
+  return (
+    <Card className="dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm">
+      <CardContent className="p-5">
+        {/* Profile Header */}
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex items-center gap-3">
+            <Avatar className="h-14 w-14 border-2 border-primary/20">
+              <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                {contact.firstName} {contact.lastName}
+              </h3>
+              <p className="text-xs text-muted-foreground">Cliente desde 2023</p>
+            </div>
+          </div>
+          {!isReadOnly && (
+            <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8">
+              <Edit2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
+        {/* Contact Info */}
+        <div className="space-y-2 mb-4">
+          <div className="flex items-center gap-2 text-sm">
+            <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="text-gray-700 dark:text-gray-300 truncate">{contact.phone}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="text-gray-700 dark:text-gray-300 truncate">{contact.email}</span>
+          </div>
+        </div>
+
+        <Separator className="my-4" />
+
+        {/* Compact Metrics */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="text-center p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+            <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{summary.vehiclesCount}</p>
+            <p className="text-xs text-muted-foreground">Vehículos</p>
+          </div>
+          <div className="text-center p-2 rounded-lg bg-green-50 dark:bg-green-900/20">
+            <p className="text-xl font-bold text-green-600 dark:text-green-400">{summary.activeRemindersCount}</p>
+            <p className="text-xs text-muted-foreground">Recordatorios</p>
+          </div>
+          <div className="text-center p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
+            <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{summary.activeChannelsCount}</p>
+            <p className="text-xs text-muted-foreground">Canales</p>
           </div>
         </div>
       </CardContent>
@@ -84,35 +160,92 @@ function StatCard({
   )
 }
 
-// Quick Action Button
-function QuickActionButton({
-  href,
-  icon: Icon,
-  title,
-  description,
+// Quick Actions Card - Compact with Red Icon Styling
+function QuickActionsCard() {
+  return (
+    <Card className="dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm">
+      <CardContent className="p-4 space-y-3">
+        <h3 className="text-sm font-medium text-muted-foreground">Acciones Rápidas</h3>
+
+        <Link href="/dashboard/notificaciones/preferencias" className="block">
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 hover:border-red-200 dark:hover:border-red-800 transition-all cursor-pointer group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 shrink-0">
+              <Settings className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                Configurar Notificaciones
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Ajusta cómo y cuándo quieres recibir avisos
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-red-500 transition-colors shrink-0" />
+          </div>
+        </Link>
+
+        <Link href="/dashboard/notificaciones/recordatorios" className="block">
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 hover:border-red-200 dark:hover:border-red-800 transition-all cursor-pointer group">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 shrink-0">
+              <Calendar className="h-5 w-5 text-red-600 dark:text-red-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                Planificador de Recordatorios
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Programa avisos de mantenimiento
+              </p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-red-500 transition-colors shrink-0" />
+          </div>
+        </Link>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Budget Notification Toggle (Customer Only)
+function BudgetNotificationCard({
+  enabled,
+  onToggle,
+  isReadOnly,
 }: {
-  href: string
-  icon: React.ElementType
-  title: string
-  description: string
+  enabled: boolean
+  onToggle: (enabled: boolean) => void
+  isReadOnly?: boolean
 }) {
   return (
-    <Link href={href}>
-      <Card className="h-full transition-all duration-200 hover:shadow-md hover:border-primary/50 cursor-pointer dark:bg-gray-900 dark:hover:bg-gray-800">
-        <CardContent className="p-4 sm:p-6">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20">
-              <Icon className="h-6 w-6" />
+    <Card className="dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary/20 shrink-0 mt-0.5">
+              <FileText className="h-4 w-4" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-              <p className="text-sm text-muted-foreground truncate">{description}</p>
+            <div className="min-w-0">
+              <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                Cambios de Presupuesto
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                Recibir alertas cuando cambien los presupuestos de mis OT
+              </p>
             </div>
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
           </div>
-        </CardContent>
-      </Card>
-    </Link>
+          {isReadOnly ? (
+            <Badge variant={enabled ? "default" : "secondary"} className="shrink-0">
+              {enabled ? "Activo" : "Inactivo"}
+            </Badge>
+          ) : (
+            <Switch
+              checked={enabled}
+              onCheckedChange={onToggle}
+              className="shrink-0"
+            />
+          )}
+        </div>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -132,110 +265,60 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
     urgent: "bg-red-500",
   }
 
+  const bgColors = {
+    ok: "bg-green-50 dark:bg-green-900/20",
+    warning: "bg-amber-50 dark:bg-amber-900/20",
+    urgent: "bg-red-50 dark:bg-red-900/20",
+  }
+
   return (
-    <Card className="dark:bg-gray-900">
-      <CardContent className="p-4 sm:p-6">
+    <Card className="dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
         <div className="flex items-start gap-4">
           {/* Vehicle Icon */}
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-muted dark:bg-gray-800">
-            <Car className="h-7 w-7 text-muted-foreground" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted dark:bg-gray-800 shrink-0">
+            <Car className="h-6 w-6 text-muted-foreground" />
           </div>
 
           {/* Vehicle Info */}
           <div className="flex-1 min-w-0 space-y-3">
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-start justify-between gap-2">
+              <div>
                 <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                   {vehicle.brand} {vehicle.model}
                 </h3>
-                <Badge variant="outline" className="text-xs">
-                  {vehicle.year}
-                </Badge>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span>{vehicle.plate}</span>
+                  <span>•</span>
+                  <span>{vehicle.year}</span>
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground">{vehicle.plate}</p>
+              <Badge variant="outline" className={`${bgColors[status]} ${statusColors[status]} border-0 text-xs`}>
+                {status === "urgent" ? "Urgente" : status === "warning" ? "Próximo" : "OK"}
+              </Badge>
             </div>
 
             {/* Kilometrage Progress */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-sm">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground flex items-center gap-1">
-                  <Gauge className="h-4 w-4" />
+                  <Gauge className="h-3.5 w-3.5" />
                   {vehicle.currentKilometers.toLocaleString()} km
                 </span>
                 <span className={statusColors[status]}>
-                  {remainingKm > 0 ? `${remainingKm.toLocaleString()} km restantes` : "¡Servicio requerido!"}
+                  {remainingKm > 0 ? `${remainingKm.toLocaleString()} km restantes` : "Servicio requerido"}
                 </span>
               </div>
-              <div className="relative">
-                <Progress value={progress} className="h-2" />
+              <div className="relative h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
-                  className={`absolute top-0 left-0 h-2 rounded-full transition-all ${progressColors[status]}`}
+                  className={`absolute top-0 left-0 h-full rounded-full transition-all ${progressColors[status]}`}
                   style={{ width: `${progress}%` }}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
-                Próximo servicio: {vehicle.nextServiceKilometers.toLocaleString()} km
+                Próximo: {vehicle.nextServiceKilometers.toLocaleString()} km
               </p>
             </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-// Contact Info Section
-function ContactInfoSection({
-  contact,
-  onEdit,
-  isReadOnly,
-}: {
-  contact: CustomerContactInfo
-  onEdit: () => void
-  isReadOnly?: boolean
-}) {
-  const initials = `${contact.firstName[0]}${contact.lastName[0]}`
-
-  return (
-    <Card className="dark:bg-gray-900">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Datos de Contacto</CardTitle>
-          {!isReadOnly && (
-            <Button variant="ghost" size="sm" onClick={onEdit}>
-              <Edit2 className="h-4 w-4 mr-2" />
-              Editar
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-4">
-          <Avatar className="h-16 w-16">
-            <AvatarFallback className="bg-primary text-primary-foreground text-xl">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-              {contact.firstName} {contact.lastName}
-            </h3>
-            <p className="text-sm text-muted-foreground">Cliente desde 2023</p>
-          </div>
-        </div>
-
-        <div className="grid gap-3 pt-2">
-          <div className="flex items-center gap-3 text-sm">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <span className="text-gray-700 dark:text-gray-300">{contact.email}</span>
-          </div>
-          <div className="flex items-center gap-3 text-sm">
-            <Phone className="h-4 w-4 text-muted-foreground" />
-            <span className="text-gray-700 dark:text-gray-300">{contact.phone}</span>
-          </div>
-          <div className="flex items-center gap-3 text-sm">
-            <MessageCircle className="h-4 w-4 text-muted-foreground" />
-            <span className="text-gray-700 dark:text-gray-300">{contact.whatsapp}</span>
           </div>
         </div>
       </CardContent>
@@ -247,16 +330,15 @@ function ContactInfoSection({
 function LoadingSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-24" />
-        ))}
-      </div>
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Skeleton className="h-64 lg:col-span-1" />
-        <div className="lg:col-span-2 space-y-4">
-          {[1, 2].map((i) => (
-            <Skeleton key={i} className="h-20" />
+      <Skeleton className="h-20 w-full" />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-4 space-y-4">
+          <Skeleton className="h-64" />
+          <Skeleton className="h-32" />
+        </div>
+        <div className="lg:col-span-8 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-28" />
           ))}
         </div>
       </div>
@@ -271,7 +353,8 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
   const [vehicles, setVehicles] = React.useState<Vehicle[]>([])
   const [summary, setSummary] = React.useState<CustomerDashboardSummary | null>(null)
   const [isEditingContact, setIsEditingContact] = React.useState(false)
-  const [editForm, setEditForm] = React.useState({ email: "", phone: "", whatsapp: "" })
+  const [editForm, setEditForm] = React.useState({ email: "", phone: "" })
+  const [budgetNotifications, setBudgetNotifications] = React.useState(true)
 
   // Simular carga de datos
   React.useEffect(() => {
@@ -289,7 +372,6 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
       setEditForm({
         email: contact.email,
         phone: contact.phone,
-        whatsapp: contact.whatsapp,
       })
       setIsEditingContact(true)
     }
@@ -306,6 +388,21 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
         description: "Tu información de contacto se ha actualizado correctamente.",
       })
     }
+  }
+
+  const handleBudgetToggle = (enabled: boolean) => {
+    setBudgetNotifications(enabled)
+    toast.success(enabled ? "Notificaciones activadas" : "Notificaciones desactivadas", {
+      description: enabled
+        ? "Recibirás alertas de cambios en presupuestos."
+        : "Ya no recibirás alertas de presupuestos.",
+    })
+  }
+
+  const handleViewOverdueDetails = () => {
+    toast.info("Navegando a recordatorios", {
+      description: "Redirigiendo al planificador de recordatorios...",
+    })
   }
 
   if (isLoading) {
@@ -327,7 +424,7 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
   if (!contact || !summary) return null
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
@@ -346,65 +443,45 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
         )}
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          title="Vehículos Registrados"
-          value={summary.vehiclesCount}
-          icon={Car}
-          color="blue"
-        />
-        <StatCard
-          title="Recordatorios Activos"
-          value={summary.activeRemindersCount}
-          icon={Bell}
-          color="green"
-        />
-        <StatCard
-          title="Canales Activos"
-          value={summary.activeChannelsCount}
-          icon={MessageCircle}
-          color="amber"
-        />
-      </div>
+      {/* Alert Banner - TOP PRIORITY */}
+      <AlertBanner
+        overdueCount={summary.overdueReminders.length}
+        onViewDetails={handleViewOverdueDetails}
+      />
 
-      {/* Quick Actions */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Acciones Rápidas</h2>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <QuickActionButton
-            href="/dashboard/notificaciones/preferencias"
-            icon={Settings}
-            title="Configurar Notificaciones"
-            description="Ajusta cómo y cuándo quieres recibir avisos"
-          />
-          <QuickActionButton
-            href="/dashboard/notificaciones/recordatorios"
-            icon={Calendar}
-            title="Planificador de Recordatorios"
-            description="Programa avisos de mantenimiento para tus vehículos"
-          />
-        </div>
-      </section>
-
-      {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Contact Info */}
-        <div className="lg:col-span-1">
-          <ContactInfoSection
+      {/* Main Grid Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column - Profile & Actions */}
+        <div className="lg:col-span-4 space-y-4">
+          {/* Profile Card with Metrics */}
+          <ProfileCard
             contact={contact}
+            summary={summary}
             onEdit={handleEditContact}
             isReadOnly={isReadOnly}
           />
+
+          {/* Quick Actions */}
+          <QuickActionsCard />
+
+          {/* Budget Notification Toggle - Only for customers */}
+          {!isReadOnly && (
+            <BudgetNotificationCard
+              enabled={budgetNotifications}
+              onToggle={handleBudgetToggle}
+              isReadOnly={isReadOnly}
+            />
+          )}
         </div>
 
-        {/* Vehicles */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Right Column - Vehicles */}
+        <div className="lg:col-span-8 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Mis Vehículos</h2>
-            <Badge variant="outline">{vehicles.length} vehículos</Badge>
+            <Badge variant="outline">{vehicles.length} registrados</Badge>
           </div>
-          <div className="grid gap-4">
+
+          <div className="space-y-3">
             {vehicles.map((vehicle, index) => (
               <motion.div
                 key={vehicle.id}
@@ -418,30 +495,6 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
           </div>
         </div>
       </div>
-
-      {/* Overdue Reminders Alert */}
-      {summary.overdueReminders.length > 0 && (
-        <Card className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/50">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-red-800 dark:text-red-300">
-                  Tienes {summary.overdueReminders.length} recordatorio(s) vencido(s)
-                </h3>
-                <p className="text-sm text-red-700 dark:text-red-400 mt-1">
-                  Algunos de tus vehículos requieren atención. Te recomendamos agendar una cita pronto.
-                </p>
-                <Button size="sm" className="mt-3 bg-red-600 hover:bg-red-700 text-white">
-                  Ver Recordatorios Vencidos
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Edit Contact Dialog */}
       <Dialog open={isEditingContact} onOpenChange={setIsEditingContact}>
@@ -470,16 +523,6 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
                 type="tel"
                 value={editForm.phone}
                 onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                className="dark:bg-gray-800"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="edit-whatsapp">WhatsApp</Label>
-              <Input
-                id="edit-whatsapp"
-                type="tel"
-                value={editForm.whatsapp}
-                onChange={(e) => setEditForm({ ...editForm, whatsapp: e.target.value })}
                 className="dark:bg-gray-800"
               />
             </div>

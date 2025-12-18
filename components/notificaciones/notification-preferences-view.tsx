@@ -26,10 +26,8 @@ import {
   GripVertical,
   ArrowLeft,
   Save,
-  Check,
   AlertTriangle,
-  Moon,
-  Clock,
+  ArrowRight,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -37,15 +35,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 import {
   mockCustomerPreferences,
@@ -158,55 +148,89 @@ function SortableChannelItem({
   )
 }
 
-// Priority Preview Card
-function PriorityPreviewCard({ channels }: { channels: ChannelConfig[] }) {
+// Configuration Summary Card - Top of page with badges and flow diagram
+function ConfigurationSummaryCard({ channels }: { channels: ChannelConfig[] }) {
   const enabledChannels = channels.filter((c) => c.enabled).sort((a, b) => a.priority - b.priority)
 
-  if (enabledChannels.length === 0) {
-    return (
-      <Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/30">
-        <CardContent className="p-4">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-            <p className="text-sm text-amber-700 dark:text-amber-300">
-              No tienes ningún canal activo. Activa al menos un canal para recibir notificaciones.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    )
+  // Badge colors for each channel
+  const badgeColors: Record<string, string> = {
+    push: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+    email: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
+    whatsapp: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+  }
+
+  // Short names for badges
+  const channelShortNames: Record<string, string> = {
+    push: "Push PWA",
+    email: "Correo",
+    whatsapp: "WhatsApp",
   }
 
   return (
-    <Card className="border-green-200 bg-green-50 dark:border-green-900 dark:bg-green-950/30">
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <Check className="h-5 w-5 text-green-600 dark:text-green-400 mt-0.5 shrink-0" />
-          <div>
-            <p className="text-sm font-medium text-green-800 dark:text-green-300">
-              Así te contactaremos:
-            </p>
-            <p className="text-sm text-green-700 dark:text-green-400 mt-1">
-              {enabledChannels.length === 1 ? (
-                <>Te enviaremos notificaciones por <strong>{enabledChannels[0].name}</strong>.</>
-              ) : (
-                <>
-                  Intentaremos primero por <strong>{enabledChannels[0].name}</strong>
-                  {enabledChannels.length > 1 && (
-                    <>
-                      {enabledChannels.slice(1, -1).map((c) => (
-                        <span key={c.id}>, luego <strong>{c.name}</strong></span>
-                      ))}
-                      {enabledChannels.length > 1 && (
-                        <> y finalmente <strong>{enabledChannels[enabledChannels.length - 1].name}</strong></>
-                      )}
-                    </>
-                  )}
-                  .
-                </>
-              )}
-            </p>
+    <Card className="bg-white dark:bg-card border-gray-200 dark:border-gray-800 shadow-sm">
+      <CardContent className="px-5 space-y-5">
+        {/* Section A: Active Channels (Badges) */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Canales de Comunicación Activos
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {enabledChannels.length > 0 ? (
+              enabledChannels.map((channel) => (
+                <Badge
+                  key={channel.id}
+                  className={`${badgeColors[channel.id]} font-medium px-3 py-1 rounded-full`}
+                >
+                  <span className="mr-1.5">{channelIcons[channel.id]}</span>
+                  {channelShortNames[channel.id]}
+                </Badge>
+              ))
+            ) : (
+              <span className="text-sm text-muted-foreground italic">
+                Ningún canal activo
+              </span>
+            )}
           </div>
+        </div>
+
+        {/* Section B: Priority Order (Flow) */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Orden de Prioridad
+          </h3>
+
+          {enabledChannels.length > 0 ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              {enabledChannels.map((channel, index) => (
+                <React.Fragment key={channel.id}>
+                  {/* Step Box */}
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                      {index + 1}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">
+                        {channelIcons[channel.id]}
+                      </span>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        {channel.name}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Arrow Connector */}
+                  {index < enabledChannels.length - 1 && (
+                    <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <span>Activa al menos un canal para definir el orden de prioridad</span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -282,21 +306,6 @@ export function NotificationPreferencesView({ isReadOnly = false }: Notification
     )
 
     setPreferences({ ...preferences, channels: newChannels })
-    setHasChanges(true)
-  }
-
-  const handleToggleQuietHours = (enabled: boolean) => {
-    if (!preferences) return
-    setPreferences({
-      ...preferences,
-      quietHours: { ...preferences.quietHours, enabled },
-    })
-    setHasChanges(true)
-  }
-
-  const handleFrequencyChange = (frequency: "immediate" | "daily_digest" | "weekly_digest") => {
-    if (!preferences) return
-    setPreferences({ ...preferences, frequency })
     setHasChanges(true)
   }
 
@@ -384,6 +393,9 @@ export function NotificationPreferencesView({ isReadOnly = false }: Notification
         </Card>
       )}
 
+      {/* Configuration Summary Card - TOP OF VIEW */}
+      <ConfigurationSummaryCard channels={sortedChannels} />
+
       {/* Canales y Prioridad */}
       <section className="space-y-4">
         <div>
@@ -419,94 +431,6 @@ export function NotificationPreferencesView({ isReadOnly = false }: Notification
             </div>
           </SortableContext>
         </DndContext>
-
-        {/* Preview */}
-        <PriorityPreviewCard channels={sortedChannels} />
-      </section>
-
-      <Separator />
-
-      {/* Configuración Adicional */}
-      <section className="space-y-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Configuración Adicional
-        </h2>
-
-        {/* Horario Silencioso */}
-        <Card className="dark:bg-gray-900">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400">
-                  <Moon className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">Horario Silencioso</h3>
-                  <p className="text-sm text-muted-foreground">
-                    No recibir notificaciones entre las {preferences.quietHours.start} y las{" "}
-                    {preferences.quietHours.end}
-                  </p>
-                </div>
-              </div>
-              {isReadOnly ? (
-                <Badge variant={preferences.quietHours.enabled ? "default" : "secondary"}>
-                  {preferences.quietHours.enabled ? "Activo" : "Inactivo"}
-                </Badge>
-              ) : (
-                <Switch
-                  checked={preferences.quietHours.enabled}
-                  onCheckedChange={handleToggleQuietHours}
-                />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Frecuencia */}
-        <Card className="dark:bg-gray-900">
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
-                  <Clock className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                    Frecuencia de Notificaciones
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Elige con qué frecuencia quieres recibir resúmenes
-                  </p>
-                </div>
-              </div>
-              {isReadOnly ? (
-                <Badge variant="secondary">
-                  {preferences.frequency === "immediate"
-                    ? "Inmediato"
-                    : preferences.frequency === "daily_digest"
-                    ? "Resumen diario"
-                    : "Resumen semanal"}
-                </Badge>
-              ) : (
-                <Select
-                  value={preferences.frequency}
-                  onValueChange={(v) =>
-                    handleFrequencyChange(v as "immediate" | "daily_digest" | "weekly_digest")
-                  }
-                >
-                  <SelectTrigger className="w-[180px] dark:bg-gray-800">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="immediate">Inmediato</SelectItem>
-                    <SelectItem value="daily_digest">Resumen diario</SelectItem>
-                    <SelectItem value="weekly_digest">Resumen semanal</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-          </CardContent>
-        </Card>
       </section>
     </div>
   )

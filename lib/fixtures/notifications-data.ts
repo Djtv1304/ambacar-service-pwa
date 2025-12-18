@@ -1,14 +1,38 @@
 /**
- * Mock Data for Notifications Module
- * This file contains all the simulated data for the notifications system
+ * ============================================
+ * NOTIFICATIONS MODULE - MOCK DATA & TYPES
+ * ============================================
+ *
+ * This file contains all type definitions and simulated data
+ * for the Notifications system in Ambacar Service PWA.
+ *
+ * Data Schemas documented here serve as reference for
+ * backend API development.
+ *
+ * @module lib/fixtures/notifications-data
  */
 
 // ============================================
-// TYPES
+// TYPES & INTERFACES
 // ============================================
 
+/**
+ * Available notification channels in the system
+ */
 export type NotificationChannel = "push" | "email" | "whatsapp"
 
+/**
+ * Channel Configuration Schema
+ * ----------------------------
+ * Represents a single notification channel and its settings.
+ *
+ * @property id - Unique channel identifier (push, email, whatsapp)
+ * @property name - Human-readable display name
+ * @property description - Brief description for UI tooltips
+ * @property icon - Lucide React icon name for rendering
+ * @property enabled - Whether the user has activated this channel
+ * @property priority - Order in notification cascade (1 = first attempt)
+ */
 export interface ChannelConfig {
   id: NotificationChannel
   name: string
@@ -18,6 +42,16 @@ export interface ChannelConfig {
   priority: number
 }
 
+/**
+ * Taller (Workshop) Notification Configuration Schema
+ * ----------------------------------------------------
+ * Global settings for the workshop's notification system.
+ * Only accessible by Manager role.
+ *
+ * @property tallerId - Unique workshop identifier
+ * @property channels - Available channels and their configuration status
+ * @property templates - Message templates for each notification type
+ */
 export interface TallerNotificationConfig {
   tallerId: string
   channels: {
@@ -35,6 +69,20 @@ export interface TallerNotificationConfig {
   }[]
 }
 
+/**
+ * Customer Contact Information Schema
+ * ------------------------------------
+ * Personal and contact details for a customer.
+ *
+ * @property id - Unique customer identifier
+ * @property firstName - Customer's first name
+ * @property lastName - Customer's last name
+ * @property email - Primary email address for notifications
+ * @property phone - Primary phone number
+ * @property whatsapp - WhatsApp number (may differ from phone)
+ * @property preferredLanguage - ISO language code (e.g., "es", "en")
+ * @property avatarUrl - Optional profile image URL
+ */
 export interface CustomerContactInfo {
   id: string
   firstName: string
@@ -46,17 +94,41 @@ export interface CustomerContactInfo {
   avatarUrl?: string
 }
 
+/**
+ * Customer Notification Preferences Schema
+ * -----------------------------------------
+ * Defines how a customer wants to be notified.
+ *
+ * @property customerId - Unique identifier for the customer
+ * @property channels - Array of notification channels with priority ordering
+ *   - id: Channel identifier (push, email, whatsapp)
+ *   - name: Display name for the channel
+ *   - description: Brief description of the channel
+ *   - icon: Lucide icon name for UI rendering
+ *   - enabled: Whether the channel is active
+ *   - priority: Order of preference (1 = first choice)
+ */
 export interface CustomerNotificationPreferences {
   customerId: string
   channels: ChannelConfig[]
-  quietHours: {
-    enabled: boolean
-    start: string // "22:00"
-    end: string // "08:00"
-  }
-  frequency: "immediate" | "daily_digest" | "weekly_digest"
 }
 
+/**
+ * Vehicle Schema
+ * ---------------
+ * Represents a customer's vehicle registered in the system.
+ *
+ * @property id - Unique vehicle identifier
+ * @property customerId - Reference to the owner customer
+ * @property brand - Vehicle manufacturer (e.g., "Great Wall")
+ * @property model - Vehicle model name (e.g., "Haval H6")
+ * @property year - Manufacturing year
+ * @property plate - License plate number
+ * @property currentKilometers - Current odometer reading
+ * @property lastServiceDate - ISO date of last service
+ * @property nextServiceKilometers - Odometer target for next service
+ * @property imageUrl - Optional vehicle photo URL
+ */
 export interface Vehicle {
   id: string
   customerId: string
@@ -70,6 +142,24 @@ export interface Vehicle {
   imageUrl?: string
 }
 
+/**
+ * Maintenance Reminder Schema
+ * ----------------------------
+ * A scheduled reminder for vehicle maintenance.
+ *
+ * @property id - Unique reminder identifier
+ * @property vehicleId - Reference to the target vehicle
+ * @property customerId - Reference to the vehicle owner
+ * @property type - Trigger type: "kilometers" | "date" | "both"
+ * @property description - What maintenance is needed
+ * @property targetKilometers - Odometer reading to trigger reminder
+ * @property targetDate - ISO date to trigger reminder
+ * @property notifyVia - Array of channels to use for notification
+ * @property status - Current state: "pending" | "notified" | "completed" | "overdue"
+ * @property createdAt - ISO date when reminder was created
+ * @property notifyBeforeDays - Days before targetDate to notify
+ * @property notifyBeforeKm - Km before targetKilometers to notify
+ */
 export interface MaintenanceReminder {
   id: string
   vehicleId: string
@@ -85,6 +175,17 @@ export interface MaintenanceReminder {
   notifyBeforeKm?: number
 }
 
+/**
+ * Customer Dashboard Summary Schema
+ * -----------------------------------
+ * Aggregated data for the customer's notification dashboard.
+ *
+ * @property vehiclesCount - Total registered vehicles
+ * @property activeRemindersCount - Number of pending reminders
+ * @property activeChannelsCount - Number of enabled notification channels
+ * @property upcomingReminders - List of next reminders (max 3)
+ * @property overdueReminders - List of overdue reminders requiring attention
+ */
 export interface CustomerDashboardSummary {
   vehiclesCount: number
   activeRemindersCount: number
@@ -178,12 +279,6 @@ export const mockCustomerPreferences: CustomerNotificationPreferences = {
       priority: 3,
     },
   ],
-  quietHours: {
-    enabled: true,
-    start: "22:00",
-    end: "08:00",
-  },
-  frequency: "immediate",
 }
 
 /**

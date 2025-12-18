@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { motion } from "framer-motion"
-import { Bell, Mail, MessageCircle, Check, Settings2, FileText, Smartphone } from "lucide-react"
+import { Bell, Mail, MessageCircle, Check, FileText, Smartphone, Users, UserCog } from "lucide-react"
 import { toast } from "sonner"
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
   DialogContent,
@@ -24,6 +25,13 @@ import { Textarea } from "@/components/ui/textarea"
 
 import { mockTallerConfig, type TallerNotificationConfig } from "@/lib/fixtures/notifications-data"
 
+// Types for dual config (clients + staff)
+interface ChannelState {
+  push: { enabled: boolean; configured: boolean }
+  email: { enabled: boolean; configured: boolean }
+  whatsapp: { enabled: boolean; configured: boolean }
+}
+
 interface ChannelCardProps {
   name: string
   description: string
@@ -31,7 +39,6 @@ interface ChannelCardProps {
   enabled: boolean
   configured: boolean
   onToggle: (enabled: boolean) => void
-  onConfigure: () => void
 }
 
 function ChannelCard({
@@ -41,7 +48,6 @@ function ChannelCard({
   enabled,
   configured,
   onToggle,
-  onConfigure,
 }: ChannelCardProps) {
   return (
     <motion.div
@@ -50,11 +56,11 @@ function ChannelCard({
       transition={{ duration: 0.2 }}
     >
       <Card className={`transition-all duration-200 ${enabled ? "ring-2 ring-primary/20" : ""} dark:bg-gray-900`}>
-        <CardContent className="p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
               <div
-                className={`flex h-12 w-12 items-center justify-center rounded-xl ${
+                className={`flex h-10 w-10 items-center justify-center rounded-lg ${
                   enabled
                     ? "bg-primary/10 text-primary dark:bg-primary/20"
                     : "bg-muted text-muted-foreground"
@@ -62,21 +68,21 @@ function ChannelCard({
               >
                 {icon}
               </div>
-              <div className="space-y-1">
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">{name}</h3>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm">{name}</h3>
                   {configured ? (
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                      <Check className="mr-1 h-3 w-3" />
-                      Configurado
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-1.5 py-0">
+                      <Check className="mr-0.5 h-3 w-3" />
+                      OK
                     </Badge>
                   ) : (
-                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                    <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs px-1.5 py-0">
                       Pendiente
                     </Badge>
                   )}
                 </div>
-                <p className="text-sm text-muted-foreground">{description}</p>
+                <p className="text-xs text-muted-foreground truncate">{description}</p>
               </div>
             </div>
             <Switch
@@ -85,20 +91,6 @@ function ChannelCard({
               aria-label={`Activar ${name}`}
             />
           </div>
-
-          {enabled && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-4 pt-4 border-t border-border"
-            >
-              <Button variant="outline" size="sm" onClick={onConfigure} className="w-full sm:w-auto">
-                <Settings2 className="mr-2 h-4 w-4" />
-                Configurar Canal
-              </Button>
-            </motion.div>
-          )}
         </CardContent>
       </Card>
     </motion.div>
@@ -113,9 +105,9 @@ function TemplateCard({
   onEdit: () => void
 }) {
   const channelIcons = {
-    push: <Bell className="h-4 w-4" />,
-    email: <Mail className="h-4 w-4" />,
-    whatsapp: <MessageCircle className="h-4 w-4" />,
+    push: <Bell className="h-3.5 w-3.5" />,
+    email: <Mail className="h-3.5 w-3.5" />,
+    whatsapp: <MessageCircle className="h-3.5 w-3.5" />,
   }
 
   const channelColors = {
@@ -125,30 +117,50 @@ function TemplateCard({
   }
 
   return (
-    <Card className="dark:bg-gray-900">
+    <Card className="dark:bg-gray-900 hover:shadow-md transition-shadow cursor-pointer" onClick={onEdit}>
       <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-2">
-              <Badge className={channelColors[template.channel]}>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge className={`${channelColors[template.channel]} text-xs`}>
                 {channelIcons[template.channel]}
                 <span className="ml-1 capitalize">{template.channel}</span>
               </Badge>
               {template.isDefault && (
-                <Badge variant="outline" className="text-xs">
-                  Por defecto
+                <Badge variant="outline" className="text-xs px-1.5 py-0">
+                  Default
                 </Badge>
               )}
             </div>
-            <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-1">{template.name}</h4>
-            <p className="text-sm text-muted-foreground line-clamp-2">{template.body}</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={onEdit}>
-            <FileText className="h-4 w-4" />
-          </Button>
+          <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">{template.name}</h4>
+          <p className="text-xs text-muted-foreground line-clamp-2">{template.body}</p>
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+// Tab indicator component for visual feedback
+function TabIndicator({ type }: { type: "clients" | "staff" }) {
+  return (
+    <div className={`rounded-lg px-3 py-2 text-xs ${
+      type === "clients" 
+        ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border border-blue-200 dark:border-blue-800" 
+        : "bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400 border border-purple-200 dark:border-purple-800"
+    }`}>
+      {type === "clients" ? (
+        <span className="flex items-center gap-1.5">
+          <Users className="h-3.5 w-3.5" />
+          Configurando notificaciones para <strong>Clientes</strong>
+        </span>
+      ) : (
+        <span className="flex items-center gap-1.5">
+          <UserCog className="h-3.5 w-3.5" />
+          Configurando notificaciones para <strong>Personal Interno</strong>
+        </span>
+      )}
+    </div>
   )
 }
 
@@ -161,7 +173,7 @@ function LoadingSkeleton() {
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-40" />
+          <Skeleton key={i} className="h-24" />
         ))}
       </div>
     </div>
@@ -173,34 +185,51 @@ export function TallerConfigView() {
   const [config, setConfig] = React.useState<TallerNotificationConfig | null>(null)
   const [editingTemplate, setEditingTemplate] = React.useState<TallerNotificationConfig["templates"][0] | null>(null)
 
+  // Separate state for clients and staff channels
+  const [clientChannels, setClientChannels] = React.useState<ChannelState>({
+    push: { enabled: true, configured: true },
+    email: { enabled: true, configured: true },
+    whatsapp: { enabled: true, configured: false },
+  })
+
+  const [staffChannels, setStaffChannels] = React.useState<ChannelState>({
+    push: { enabled: true, configured: true },
+    email: { enabled: true, configured: true },
+    whatsapp: { enabled: false, configured: false },
+  })
+
+  // Active tabs state
+  const [channelsTab, setChannelsTab] = React.useState<"clients" | "staff">("clients")
+  const [templatesTab, setTemplatesTab] = React.useState<"clients" | "staff">("clients")
+
   // Simular carga de datos
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setConfig(mockTallerConfig)
+      setClientChannels({
+        push: mockTallerConfig.channels.push,
+        email: mockTallerConfig.channels.email,
+        whatsapp: mockTallerConfig.channels.whatsapp,
+      })
       setIsLoading(false)
     }, 800)
     return () => clearTimeout(timer)
   }, [])
 
-  const handleToggleChannel = (channel: "push" | "email" | "whatsapp", enabled: boolean) => {
-    if (!config) return
+  const handleToggleChannel = (
+    target: "clients" | "staff",
+    channel: "push" | "email" | "whatsapp",
+    enabled: boolean
+  ) => {
+    const setter = target === "clients" ? setClientChannels : setStaffChannels
+    setter((prev) => ({
+      ...prev,
+      [channel]: { ...prev[channel], enabled },
+    }))
 
-    setConfig({
-      ...config,
-      channels: {
-        ...config.channels,
-        [channel]: { ...config.channels[channel], enabled },
-      },
-    })
-
+    const targetLabel = target === "clients" ? "clientes" : "personal interno"
     toast.success(`Canal ${enabled ? "activado" : "desactivado"}`, {
-      description: `El canal ha sido ${enabled ? "activado" : "desactivado"} correctamente.`,
-    })
-  }
-
-  const handleConfigureChannel = (channel: "push" | "email" | "whatsapp") => {
-    toast.info("Configuración de canal", {
-      description: `Abriendo configuración para ${channel}...`,
+      description: `Canal para ${targetLabel} ${enabled ? "activado" : "desactivado"} correctamente.`,
     })
   }
 
@@ -237,56 +266,98 @@ export function TallerConfigView() {
           Configuración de Notificaciones
         </h1>
         <p className="text-muted-foreground">
-          Configura los canales de notificación disponibles para tu taller
+          Configura los canales de notificación para clientes y personal interno
         </p>
       </div>
 
-      {/* Canales */}
+      {/* Canales de Comunicación */}
       <section className="space-y-4">
         <div className="flex items-center gap-2">
           <Smartphone className="h-5 w-5 text-muted-foreground" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Canales de Comunicación</h2>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Activa los canales que quieres ofrecer a tus clientes para recibir notificaciones.
-        </p>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <ChannelCard
-            name="Notificaciones Push"
-            description="Alertas instantáneas en el dispositivo móvil del cliente"
-            icon={<Bell className="h-6 w-6" />}
-            enabled={config.channels.push.enabled}
-            configured={config.channels.push.configured}
-            onToggle={(enabled) => handleToggleChannel("push", enabled)}
-            onConfigure={() => handleConfigureChannel("push")}
-          />
-          <ChannelCard
-            name="Correo Electrónico"
-            description="Emails profesionales con la imagen de tu taller"
-            icon={<Mail className="h-6 w-6" />}
-            enabled={config.channels.email.enabled}
-            configured={config.channels.email.configured}
-            onToggle={(enabled) => handleToggleChannel("email", enabled)}
-            onConfigure={() => handleConfigureChannel("email")}
-          />
-          <ChannelCard
-            name="WhatsApp Business"
-            description="Mensajes directos al WhatsApp del cliente"
-            icon={<MessageCircle className="h-6 w-6" />}
-            enabled={config.channels.whatsapp.enabled}
-            configured={config.channels.whatsapp.configured}
-            onToggle={(enabled) => handleToggleChannel("whatsapp", enabled)}
-            onConfigure={() => handleConfigureChannel("whatsapp")}
-          />
-        </div>
+        <Tabs value={channelsTab} onValueChange={(v) => setChannelsTab(v as "clients" | "staff")}>
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="clients" className="gap-2">
+              <Users className="h-4 w-4" />
+              Clientes
+            </TabsTrigger>
+            <TabsTrigger value="staff" className="gap-2">
+              <UserCog className="h-4 w-4" />
+              Personal Interno
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="mt-4">
+            <TabIndicator type={channelsTab} />
+          </div>
+
+          <TabsContent value="clients" className="mt-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <ChannelCard
+                name="Notificaciones Push"
+                description="Alertas en el dispositivo móvil"
+                icon={<Bell className="h-5 w-5" />}
+                enabled={clientChannels.push.enabled}
+                configured={clientChannels.push.configured}
+                onToggle={(enabled) => handleToggleChannel("clients", "push", enabled)}
+              />
+              <ChannelCard
+                name="Correo Electrónico"
+                description="Emails con imagen del taller"
+                icon={<Mail className="h-5 w-5" />}
+                enabled={clientChannels.email.enabled}
+                configured={clientChannels.email.configured}
+                onToggle={(enabled) => handleToggleChannel("clients", "email", enabled)}
+              />
+              <ChannelCard
+                name="WhatsApp Business"
+                description="Mensajes directos a WhatsApp"
+                icon={<MessageCircle className="h-5 w-5" />}
+                enabled={clientChannels.whatsapp.enabled}
+                configured={clientChannels.whatsapp.configured}
+                onToggle={(enabled) => handleToggleChannel("clients", "whatsapp", enabled)}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="staff" className="mt-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <ChannelCard
+                name="Notificaciones Push"
+                description="Alertas para técnicos y operadores"
+                icon={<Bell className="h-5 w-5" />}
+                enabled={staffChannels.push.enabled}
+                configured={staffChannels.push.configured}
+                onToggle={(enabled) => handleToggleChannel("staff", "push", enabled)}
+              />
+              <ChannelCard
+                name="Correo Electrónico"
+                description="Emails corporativos internos"
+                icon={<Mail className="h-5 w-5" />}
+                enabled={staffChannels.email.enabled}
+                configured={staffChannels.email.configured}
+                onToggle={(enabled) => handleToggleChannel("staff", "email", enabled)}
+              />
+              <ChannelCard
+                name="WhatsApp Business"
+                description="Mensajes al grupo de staff"
+                icon={<MessageCircle className="h-5 w-5" />}
+                enabled={staffChannels.whatsapp.enabled}
+                configured={staffChannels.whatsapp.configured}
+                onToggle={(enabled) => handleToggleChannel("staff", "whatsapp", enabled)}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
       </section>
 
       <Separator />
 
-      {/* Plantillas */}
+      {/* Plantillas de Mensajes */}
       <section className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-muted-foreground" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Plantillas de Mensajes</h2>
@@ -296,19 +367,81 @@ export function TallerConfigView() {
             Nueva Plantilla
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Personaliza los mensajes que se envían a tus clientes. Usa variables como {"{{nombre}}"} o {"{{vehiculo}}"}.
-        </p>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          {config.templates.map((template) => (
-            <TemplateCard
-              key={template.id}
-              template={template}
-              onEdit={() => setEditingTemplate(template)}
-            />
-          ))}
-        </div>
+        <Tabs value={templatesTab} onValueChange={(v) => setTemplatesTab(v as "clients" | "staff")}>
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="clients" className="gap-2">
+              <Users className="h-4 w-4" />
+              Clientes
+            </TabsTrigger>
+            <TabsTrigger value="staff" className="gap-2">
+              <UserCog className="h-4 w-4" />
+              Personal Interno
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="mt-4">
+            <TabIndicator type={templatesTab} />
+          </div>
+
+          <TabsContent value="clients" className="mt-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Plantillas de mensajes para notificaciones a clientes. Usa variables como {"{{nombre}}"} o {"{{vehiculo}}"}.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {config.templates.map((template) => (
+                <TemplateCard
+                  key={template.id}
+                  template={template}
+                  onEdit={() => setEditingTemplate(template)}
+                />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="staff" className="mt-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Plantillas para notificaciones internas al equipo. Usa variables como {"{{tecnico}}"} o {"{{orden}}"}.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {/* Mock staff templates */}
+              <TemplateCard
+                template={{
+                  id: "staff-tpl-001",
+                  name: "Nueva OT Asignada",
+                  channel: "push",
+                  body: "Tienes una nueva orden de trabajo asignada: {{orden}}",
+                  isDefault: true,
+                }}
+                onEdit={() => setEditingTemplate({
+                  id: "staff-tpl-001",
+                  name: "Nueva OT Asignada",
+                  channel: "push",
+                  body: "Tienes una nueva orden de trabajo asignada: {{orden}}",
+                  isDefault: true,
+                })}
+              />
+              <TemplateCard
+                template={{
+                  id: "staff-tpl-002",
+                  name: "Repuesto Disponible",
+                  channel: "email",
+                  subject: "Repuesto listo para instalación",
+                  body: "El repuesto {{repuesto}} ya está disponible para la OT {{orden}}.",
+                  isDefault: true,
+                }}
+                onEdit={() => setEditingTemplate({
+                  id: "staff-tpl-002",
+                  name: "Repuesto Disponible",
+                  channel: "email",
+                  subject: "Repuesto listo para instalación",
+                  body: "El repuesto {{repuesto}} ya está disponible para la OT {{orden}}.",
+                  isDefault: true,
+                })}
+              />
+            </div>
+          </TabsContent>
+        </Tabs>
       </section>
 
       {/* Dialog de edición de plantilla */}
@@ -349,7 +482,7 @@ export function TallerConfigView() {
                   className="dark:bg-gray-800"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Variables disponibles: {"{{nombre}}"}, {"{{vehiculo}}"}, {"{{fecha}}"}, {"{{kilometraje}}"}
+                  Variables disponibles: {"{{nombre}}"}, {"{{vehiculo}}"}, {"{{fecha}}"}, {"{{kilometraje}}"}, {"{{orden}}"}
                 </p>
               </div>
               <div className="flex justify-end gap-2 pt-4">
