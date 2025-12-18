@@ -3,8 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Sidebar } from "@/components/dashboard/sidebar"
+import { Sidebar, MobileMenuToggle } from "@/components/dashboard/sidebar"
 import { SidebarProvider, useSidebar } from "@/components/dashboard/sidebar-context"
 import { Topbar } from "@/components/dashboard/topbar"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
@@ -17,7 +16,6 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
   const { user, isLoading } = useAuth()
   const [mounted, setMounted] = useState(false)
   const [canRedirect, setCanRedirect] = useState(false)
@@ -75,14 +73,15 @@ export default function DashboardLayout({
 }
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-  const { collapsed } = useSidebar()
+  const { collapsed, isMobile } = useSidebar()
 
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
+      <MobileMenuToggle />
       <motion.div
         initial={false}
-        animate={{ paddingLeft: collapsed ? 80 : 256 }}
+        animate={{ paddingLeft: isMobile ? 0 : (collapsed ? 80 : 256) }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className="flex flex-1 flex-col overflow-hidden"
       >
