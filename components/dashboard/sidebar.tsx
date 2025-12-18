@@ -22,6 +22,7 @@ import {
   Images,
   CarFront,
   Menu,
+  Bell,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -112,6 +113,12 @@ const navItems: NavItem[] = [
     href: "/dashboard/reportes",
     icon: BarChart3,
     roles: [],
+  },
+  {
+    title: "Notificaciones",
+    href: "/dashboard/notificaciones",
+    icon: Bell,
+    roles: ["admin", "manager", "operator", "customer"],
   },
   {
     title: "Configuración",
