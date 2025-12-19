@@ -90,7 +90,7 @@ export function ClientSearchForm({ onClientFound, isLoading = false }: ClientSea
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[60vh] px-4">
+    <div className="flex items-center justify-center min-h-[60vh] md:px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

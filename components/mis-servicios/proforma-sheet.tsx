@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { Download, Mail, Printer, FileWarning, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -25,6 +26,29 @@ interface ProformaItem {
 
 export function ProformaSheet({ service, open, onClose }: ProformaSheetProps) {
   const isMobile = useIsMobile()
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (open) {
+      // Save current scroll position and lock
+      const scrollY = window.scrollY
+      document.body.style.position = 'fixed'
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.left = '0'
+      document.body.style.right = '0'
+      document.body.style.overflow = 'hidden'
+
+      return () => {
+        // Restore scroll position when modal closes
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.left = ''
+        document.body.style.right = ''
+        document.body.style.overflow = ''
+        window.scrollTo(0, scrollY)
+      }
+    }
+  }, [open])
 
   // Build proforma items from service data
   const buildProformaItems = (): ProformaItem[] => {

@@ -230,10 +230,10 @@ export default function ServiceDetailPage({
           {/* Left column - Timeline (Primary Focus) */}
           <div className="lg:col-span-3 space-y-6">
             <Card>
-              <CardHeader className="pb-3">
+              <CardHeader className="px-4 md:px-6 pb-3">
                 <CardTitle className="text-lg">Línea de Tiempo</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4 md:px-6">
                 <TimelineVertical
                   events={service.timeline}
                   simplified={userIsCustomer}
@@ -258,10 +258,10 @@ export default function ServiceDetailPage({
 
             {/* Service Details Accordion */}
             <Card>
-              <CardHeader className="pb-2">
+              <CardHeader className="px-4 md:px-6 pb-2">
                 <CardTitle className="text-base">Detalles del Servicio</CardTitle>
               </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="px-4 md:px-6 pt-0">
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="cliente">
                     <AccordionTrigger className="text-sm py-3">
@@ -376,55 +376,61 @@ export default function ServiceDetailPage({
       {/* STICKY FOOTER - Mobile/Tablet */}
       <div
         className={cn(
-          "fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t p-4 lg:hidden",
+          "fixed bottom-0 left-0 right-0 z-40 bg-background/95 backdrop-blur-sm border-t lg:hidden",
           "transition-all duration-300",
           collapsed ? "lg:left-20" : "lg:left-64"
         )}
       >
-        <div className="flex items-center justify-between gap-3 max-w-screen-xl mx-auto">
-          {/* Total estimado */}
-          <div className="flex flex-col">
-            <span className="text-xs text-muted-foreground">Total estimado</span>
-            <span className="text-xl font-bold text-primary">
-              ${service.total.toFixed(2)}
-            </span>
-          </div>
+        {/* Container: FAB safe zone on left, stacked content on right */}
+        <div className="flex items-center justify-end pl-20 pr-4 py-3">
+          {/* Stacked block: 2 levels aligned to the right */}
+          <div className="flex flex-col items-end gap-2">
+            {/* Level 1: Label + Price inline */}
+            <div className="flex w-full justify-around items-baseline gap-2">
+              <span className="text-xs text-muted-foreground">Total estimado</span>
+              <span className="text-base font-bold text-primary">
+                ${service.total.toFixed(2)}
+              </span>
+            </div>
 
-          {/* Action buttons */}
-          <div className="flex items-center gap-2">
-            {/* Aprobar pendientes - only for clients, not internal users */}
-            {service.pendingApprovals > 0 && !userIsInternal && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={scrollToApprovals}
-                className="border-orange-500/50 text-orange-600 hover:bg-orange-500/10"
-              >
-                <AlertCircle className="h-4 w-4 mr-1.5" />
-                <span className="hidden xs:inline">Aprobar</span>
-                <Badge variant="secondary" className="ml-1.5 h-5 w-5 p-0 justify-center text-xs">
-                  {service.pendingApprovals}
-                </Badge>
+            {/* Horizontal divider - full width */}
+            <div className="w-full h-px bg-border" />
+
+            {/* Level 2: Action buttons in row */}
+            <div className="flex items-center gap-2">
+              {/* Aprobar pendientes - only for clients, not internal users */}
+              {service.pendingApprovals > 0 && !userIsInternal && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={scrollToApprovals}
+                  className="border-orange-500/50 text-orange-600 hover:bg-orange-500/10 px-2"
+                >
+                  <AlertCircle className="h-4 w-4" />
+                  <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 justify-center text-xs">
+                    {service.pendingApprovals}
+                  </Badge>
+                </Button>
+              )}
+
+              {/* Ver Proforma - Opens unified Sheet */}
+              <Button size="sm" onClick={() => setShowProformaSheet(true)}>
+                <Receipt className="h-4 w-4 mr-1.5" />
+                Proforma
               </Button>
-            )}
 
-            {/* Ver Proforma - Opens unified Sheet */}
-            <Button size="sm" onClick={() => setShowProformaSheet(true)}>
-              <Receipt className="h-4 w-4 mr-1.5" />
-              Ver Proforma
-            </Button>
-
-            {/* Reporte de cierre - if finished */}
-            {isFinished && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setShowCompletionReport(true)}
-              >
-                <CheckCircle className="h-4 w-4 mr-1.5" />
-                Reporte
-              </Button>
-            )}
+              {/* Reporte de cierre - if finished */}
+              {isFinished && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setShowCompletionReport(true)}
+                >
+                  <CheckCircle className="h-4 w-4 mr-1.5" />
+                  Reporte
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -498,12 +504,18 @@ function ServiceDetailSkeleton() {
       </div>
 
       {/* Sticky footer skeleton - mobile */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-4 lg:hidden">
-        <div className="flex items-center justify-between">
-          <Skeleton className="h-10 w-24" />
-          <div className="flex gap-2">
-            <Skeleton className="h-9 w-24" />
-            <Skeleton className="h-9 w-28" />
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t lg:hidden">
+        <div className="flex items-center justify-end pl-20 pr-4 py-3">
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex w-full justify-around items-baseline gap-2">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-5 w-16" />
+            </div>
+            <div className="w-full h-px bg-border" />
+            <div className="flex gap-2">
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="h-8 w-24" />
+            </div>
           </div>
         </div>
       </div>
