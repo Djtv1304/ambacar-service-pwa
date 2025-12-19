@@ -547,7 +547,7 @@ export function getTemplateStats(body: string): {
 } {
   const characters = body.length
   const words = body.trim().split(/\s+/).filter(Boolean).length
-  const variableMatches = body.match(/\{\{[^}]+\}\}/g) || []
+  const variableMatches = body.match(/\{\{[^}]+}}/g) || []
   const variables = variableMatches.length
 
   return { characters, words, variables }
