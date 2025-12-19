@@ -10,6 +10,7 @@ import { mockCitas } from "@/lib/fixtures/ordenes-trabajo"
 import { mockOrdenesTrabajoData } from "@/lib/fixtures/ordenes-trabajo"
 import { mockClientes, mockVehiculos } from "@/lib/fixtures/clientes"
 import { useAuth } from "@/components/auth/auth-provider"
+import { useIsMobile } from "@/hooks/use-mobile"
 import Link from "next/link"
 
 const estadoColors = {
@@ -31,6 +32,7 @@ const prioridadColors = {
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const isMobile = useIsMobile()
 
   // Calculate stats
   const today = new Date()
@@ -65,11 +67,36 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+
       {/* Welcome Section */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Bienvenido, {user?.nombre}</h1>
         <p className="text-muted-foreground mt-1">Resumen de actividades del taller</p>
       </div>
+
+        {/* Alerts Section - Moved to top for priority */}
+        {user?.rol !== "cliente" && (
+            <Card className="border-orange-500/20 bg-orange-500/5">
+                <CardHeader>
+                    <div className="flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-orange-500" />
+                        <CardTitle className="text-orange-500">Alertas del Sistema</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <ul className="space-y-2 text-sm">
+                        <li className="flex items-center gap-2">
+                            <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                            <span>2 repuestos por debajo del umbral mínimo</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+                            <span>1 orden de trabajo con retraso en entrega estimada</span>
+                        </li>
+                    </ul>
+                </CardContent>
+            </Card>
+        )}
 
       {/* Stats Grid */}
       <motion.div
@@ -200,7 +227,42 @@ export default function DashboardPage() {
                   const cliente = mockClientes.find((c) => c.id === ot.clienteId)
                   const vehiculo = mockVehiculos.find((v) => v.id === ot.vehiculoId)
 
-                  return (
+                  return isMobile ? (
+                    // Mobile Layout: 3 rows
+                    <div
+                      key={ot.id}
+                      className="rounded-lg border border-border p-4 transition-colors hover:bg-accent/50"
+                    >
+                      {/* Row 1: Icon and Badges */}
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                          <Car className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className={prioridadColors[ot.prioridad]}>
+                            {ot.prioridad}
+                          </Badge>
+                          <Badge variant="outline" className={estadoColors[ot.estado]}>
+                            {ot.estado.replace("_", " ")}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      {/* Row 2: OT Number */}
+                      <p className="font-medium text-lg mb-2">{ot.numero}</p>
+
+                      {/* Row 3: Client and Vehicle Info */}
+                      <div className="space-y-1">
+                        <p className="text-sm text-muted-foreground">
+                          {cliente?.nombre} {cliente?.apellido}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {vehiculo?.marca} {vehiculo?.modelo} - {vehiculo?.placa}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    // Desktop Layout: Horizontal
                     <div
                       key={ot.id}
                       className="flex items-start gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-accent/50"
@@ -235,30 +297,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Alerts Section */}
-      {user?.rol !== "cliente" && (
-        <Card className="border-orange-500/20 bg-orange-500/5">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-orange-500" />
-              <CardTitle className="text-orange-500">Alertas del Sistema</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm">
-              <li className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                <span>2 repuestos por debajo del umbral mínimo</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-orange-500" />
-                <span>1 orden de trabajo con retraso en entrega estimada</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

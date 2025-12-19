@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { Car, History, Inbox, User, ArrowLeft } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ScrollableTabs, TabsContent } from "@/components/ui/scrollable-tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -110,6 +110,25 @@ export function ServiceList({
 }: ServiceListProps) {
   const totalPending = activeServices.reduce((acc, s) => acc + s.pendingApprovals, 0)
 
+  // Tab configuration for ScrollableTabs
+  const tabs = [
+    {
+      value: "active",
+      label: "Servicios Activos",
+      icon: <Car className="h-4 w-4 shrink-0" />,
+      badge: activeServices.length > 0 && (
+        <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+          {activeServices.length}
+        </span>
+      ),
+    },
+    {
+      value: "history",
+      label: "Historial",
+      icon: <History className="h-4 w-4 shrink-0" />,
+    },
+  ]
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -159,23 +178,7 @@ export function ServiceList({
         </div>
       )}
 
-      <Tabs defaultValue="active" className="space-y-6">
-        <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex">
-          <TabsTrigger value="active" className="gap-2">
-            <Car className="h-4 w-4" />
-            <span>Servicios Activos</span>
-            {activeServices.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
-                {activeServices.length}
-              </span>
-            )}
-          </TabsTrigger>
-          <TabsTrigger value="history" className="gap-2">
-            <History className="h-4 w-4" />
-            <span>Historial</span>
-          </TabsTrigger>
-        </TabsList>
-
+      <ScrollableTabs tabs={tabs} defaultValue="active">
         {/* Alert for pending approvals - ONLY for clients, NOT internal users */}
         {!isInternalUser && totalPending > 0 && (
           <motion.div
@@ -200,47 +203,47 @@ export function ServiceList({
         )}
 
         <TabsContent value="active" className="mt-0">
-        <AnimatePresence mode="wait">
-          {activeServices.length === 0 ? (
-            <EmptyState type="active" />
-          ) : (
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-4"
-            >
-              {activeServices.map((service) => (
-                <motion.div key={service.id} variants={itemVariants}>
-                  <ServiceCard service={service} />
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </TabsContent>
+          <AnimatePresence mode="wait">
+            {activeServices.length === 0 ? (
+              <EmptyState type="active" />
+            ) : (
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-4"
+              >
+                {activeServices.map((service) => (
+                  <motion.div key={service.id} variants={itemVariants}>
+                    <ServiceCard service={service} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </TabsContent>
 
-      <TabsContent value="history" className="mt-0">
-        <AnimatePresence mode="wait">
-          {completedServices.length === 0 ? (
-            <EmptyState type="history" />
-          ) : (
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-4"
-            >
-              {completedServices.map((service) => (
-                <motion.div key={service.id} variants={itemVariants}>
-                  <ServiceCard service={service} />
-                </motion.div>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </TabsContent>
-    </Tabs>
+        <TabsContent value="history" className="mt-0">
+          <AnimatePresence mode="wait">
+            {completedServices.length === 0 ? (
+              <EmptyState type="history" />
+            ) : (
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-4"
+              >
+                {completedServices.map((service) => (
+                  <motion.div key={service.id} variants={itemVariants}>
+                    <ServiceCard service={service} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </TabsContent>
+      </ScrollableTabs>
     </div>
   )
 }
