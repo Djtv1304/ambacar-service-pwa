@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { CheckCircle2, Circle, AlertTriangle, XCircle, Ruler, Camera, ImagePlus } from "lucide-react"
 import { motion } from "framer-motion"
 import type { PuntoInspeccionEvaluado, PuntoInspeccionCatalogo, ItemInspeccion } from "@/lib/types"
@@ -130,20 +129,20 @@ export function ChecklistInspeccionApi({
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
             <div className="space-y-1">
-              <CardTitle className="text-2xl">Puntos de Inspección</CardTitle>
+              <CardTitle className="text-xl sm:text-2xl">Puntos de Inspección</CardTitle>
               <CardDescription>
                 Completa los {puntosInspeccion.length} puntos de inspección del vehículo
               </CardDescription>
             </div>
-            <Badge className="bg-[#ED1C24]/10 text-[#ED1C24] border-[#ED1C24]/20 text-lg px-4 py-2">
+            <Badge className="bg-[#ED1C24]/10 text-[#ED1C24] border-[#ED1C24]/20 text-base sm:text-lg px-3 py-1.5 sm:px-4 sm:py-2 self-start sm:shrink-0">
               {puntosCompletados}/{puntosInspeccion.length}
             </Badge>
           </div>
 
           <div className="space-y-2 pt-4">
-            <div className="flex justify-between text-sm">
+            <div className="flex flex-col sm:flex-row sm:justify-between text-sm gap-1">
               <span className="font-medium">Progreso de Inspección</span>
               <span className="text-muted-foreground">{progreso.toFixed(0)}% completado</span>
             </div>
@@ -194,7 +193,53 @@ export function ChecklistInspeccionApi({
                         )}
                         onClick={() => handleClickPunto(punto)}
                       >
-                        <div className="flex items-start gap-3 w-full">
+                        {/* Mobile Layout: 3 rows */}
+                        <div className="flex flex-col gap-2 w-full min-w-0 overflow-hidden sm:hidden">
+                          {/* Row 1: Icon + Number + Status Badge */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="flex-shrink-0">{getEstadoIcon(punto.id)}</div>
+                              <span className="font-semibold text-sm text-gray-500">#{punto.orden_visualizacion}</span>
+                            </div>
+                            {getEstadoBadge(punto.id)}
+                          </div>
+
+                          {/* Row 2: Name + Mediciones badge if applicable */}
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <h4 className="font-semibold text-base break-words whitespace-normal overflow-hidden">{punto.nombre}</h4>
+                            {punto.requiere_mediciones && (
+                              <Badge variant="outline" className="self-start text-xs bg-blue-50 text-blue-700 border-blue-200">
+                                <Ruler className="h-3 w-3 mr-1" />
+                                Mediciones
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* Row 3: Description + Photos/Measurements info */}
+                          <div className="space-y-1">
+                            <p className="text-sm text-muted-foreground line-clamp-2">{punto.descripcion}</p>
+                            {evaluacion?.observaciones && (
+                              <p className="text-xs text-gray-600 italic">
+                                Observaciones: {evaluacion.observaciones.substring(0, 50)}...
+                              </p>
+                            )}
+                            {evaluacion?.mediciones && Object.keys(evaluacion.mediciones).length > 0 && (
+                              <p className="text-xs text-blue-600 flex items-center gap-1">
+                                <Ruler className="h-3 w-3" />
+                                {Object.keys(evaluacion.mediciones).length} medición(es) registrada(s)
+                              </p>
+                            )}
+                            {fotosActuales > 0 && (
+                              <p className="text-xs text-purple-600 flex items-center gap-1">
+                                <Camera className="h-3 w-3" />
+                                {fotosActuales} foto(s) adjunta(s)
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Tablet/Desktop Layout: Horizontal */}
+                        <div className="hidden sm:flex items-start gap-3 w-full">
                           <div className="flex-shrink-0 mt-0.5">{getEstadoIcon(punto.id)}</div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2 mb-1">
@@ -235,25 +280,49 @@ export function ChecklistInspeccionApi({
                         </div>
                       </Button>
 
-                      {/* Alerta para agregar fotos si el estado es ROJO y no tiene fotos suficientes */}
+                      {/* Alerta fotos requeridas - Fuera del Button */}
                       {requiereFotos && item && !readOnly && (
-                        <Alert className="border-red-300 bg-red-50 ml-8">
-                          <Camera className="h-4 w-4 text-red-600" />
-                          <AlertDescription className="flex items-center justify-between">
-                            <span className="text-red-900 text-sm">
+                        <div className="pl-4 sm:pl-8 w-full">
+                          {/* Mobile: 3 filas apiladas */}
+                          <div className="flex flex-col gap-2 p-3 rounded-md border border-red-300 bg-red-50 sm:hidden">
+                            <div className="flex items-center gap-2">
+                              <Camera className="h-4 w-4 text-red-600 shrink-0" />
+                              <span className="text-red-900 text-sm font-medium">Fotos requeridas</span>
+                            </div>
+                            <span className="text-red-800 text-xs">
                               Se requieren al menos {MIN_FOTOS_INSPECCION} fotos de evidencia para este punto crítico
                             </span>
                             <Button
                               size="sm"
                               variant="default"
-                              className="bg-red-600 hover:bg-red-700 ml-2"
+                              className="bg-red-600 hover:bg-red-700 w-full"
                               onClick={(e) => handleAgregarFotos(item.id, punto.nombre, e)}
                             >
                               <ImagePlus className="h-4 w-4 mr-1" />
                               Agregar Fotos
                             </Button>
-                          </AlertDescription>
-                        </Alert>
+                          </div>
+
+                          {/* Desktop/Tablet: horizontal */}
+                          <div className="hidden sm:flex items-center gap-4 p-3 rounded-md border border-red-300 bg-red-50">
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Camera className="h-4 w-4 text-red-600" />
+                              <span className="text-red-900 text-sm font-medium">Fotos requeridas</span>
+                            </div>
+                            <span className="text-red-800 text-sm flex-1 min-w-0">
+                              Se requieren al menos {MIN_FOTOS_INSPECCION} fotos de evidencia para este punto crítico
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              className="bg-red-600 hover:bg-red-700 shrink-0"
+                              onClick={(e) => handleAgregarFotos(item.id, punto.nombre, e)}
+                            >
+                              <ImagePlus className="h-4 w-4 mr-1" />
+                              Agregar Fotos
+                            </Button>
+                          </div>
+                        </div>
                       )}
                     </motion.div>
                   )

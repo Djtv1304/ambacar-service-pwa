@@ -36,7 +36,7 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
             {/* Success Banner */}
             <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
                 <Card className="border-green-500/50 bg-green-500/5">
-                    <CardContent className="pt-6">
+                    <CardContent className="px-4 md:px-6">
                         <div className="flex items-start gap-4">
                             <div className="flex-shrink-0">
                                 <CheckCircle className="h-8 w-8 text-green-600" />
@@ -52,9 +52,9 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
 
             {/* Orden de Trabajo */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                <Card>
-                    <CardHeader className="pb-3 bg-[#ED1C24]/5">
-                        <CardTitle className="flex items-center justify-between">
+                <Card className="bg-[#ED1C24]/5">
+                    <CardHeader className="pb-3 px-4 md:px-6">
+                        <CardTitle className="flex items-center justify-between gap-1.5">
                             <div className="flex items-center gap-2">
                                 <Wrench className="h-5 w-5 text-[#ED1C24]" />
                                 <span>Orden de Trabajo Generada</span>
@@ -62,7 +62,7 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                             <Badge className="bg-[#ED1C24] hover:bg-[#c41820]">{orden_trabajo.numero_orden}</Badge>
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="pt-4">
+                    <CardContent className="px-4 md:px-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-xs text-muted-foreground">ID Orden de Trabajo</p>
@@ -82,13 +82,13 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
             {/* Detalles de Recepción */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
                 <Card>
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 px-4 md:px-6">
                         <CardTitle className="flex items-center gap-2">
                             <Calendar className="h-5 w-5 text-[#ED1C24]" />
                             <span>Detalles de Recepción</span>
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 px-4 md:px-6">
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-xs text-muted-foreground">Número de Recepción</p>
@@ -136,14 +136,14 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
             <div className="grid md:grid-cols-2 gap-6">
                 {/* Cliente */}
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
-                    <Card>
-                        <CardHeader className="pb-3">
+                    <Card className="h-full">
+                        <CardHeader className="pb-3 px-4 md:px-6">
                             <CardTitle className="flex items-center gap-2">
                                 <User className="h-5 w-5 text-[#ED1C24]" />
                                 <span>Cliente</span>
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-2">
+                        <CardContent className="space-y-2 px-4 md:px-6">
                             <div>
                                 <p className="text-xs text-muted-foreground">Nombre</p>
                                 <p className="font-medium">{recepcion.cliente_info.nombre_completo}</p>
@@ -152,13 +152,15 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                                 <p className="text-xs text-muted-foreground">Cédula</p>
                                 <p className="font-medium">{recepcion.cliente_info.cedula}</p>
                             </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground">Email</p>
-                                <p className="font-medium text-sm">{recepcion.cliente_info.email}</p>
-                            </div>
-                            <div>
-                                <p className="text-xs text-muted-foreground">Teléfono</p>
-                                <p className="font-medium">{recepcion.cliente_info.telefono}</p>
+                            <div className="flex flex-wrap gap-x-4 gap-y-2">
+                                <div className="w-full sm:w-auto sm:flex-1">
+                                    <p className="text-xs text-muted-foreground">Email</p>
+                                    <p className="font-medium text-sm break-all">{recepcion.cliente_info.email}</p>
+                                </div>
+                                <div className="w-full sm:w-auto sm:flex-1">
+                                    <p className="text-xs text-muted-foreground">Teléfono</p>
+                                    <p className="font-medium">{recepcion.cliente_info.telefono}</p>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -166,14 +168,14 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
 
                 {/* Vehículo */}
                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.5 }}>
-                    <Card>
-                        <CardHeader className="pb-3">
+                    <Card className="h-full">
+                        <CardHeader className="pb-3 px-4 md:px-6">
                             <CardTitle className="flex items-center gap-2">
                                 <Car className="h-5 w-5 text-[#ED1C24]" />
                                 <span>Vehículo</span>
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-2">
+                        <CardContent className="space-y-2 px-4 md:px-6">
                             <div>
                                 <p className="text-xs text-muted-foreground">Placa</p>
                                 <p className="font-medium text-lg">{recepcion.vehiculo_info.placa}</p>
@@ -202,7 +204,7 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
             {/* Fotos del Vehículo */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
                 <Card>
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-3 px-4 md:px-6">
                         <CardTitle className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <ImageIcon className="h-5 w-5 text-[#ED1C24]" />
@@ -213,7 +215,7 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                             </Badge>
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="px-4 md:px-6">
                         {recepcion.fotos && recepcion.fotos.length > 0 ? (
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {recepcion.fotos.map((foto, index) => (
@@ -222,24 +224,27 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: 0.7 + index * 0.1 }}
-                                        className="group relative cursor-pointer"
+                                        className="group cursor-pointer"
                                         onClick={() => handleImageClick(foto.url_imagen)}
                                     >
-                                        <div className="aspect-square rounded-lg overflow-hidden border-2 border-muted hover:border-[#ED1C24] transition-colors">
+                                        {/* Image container with overlay */}
+                                        <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-muted hover:border-[#ED1C24] transition-colors">
                                             <img
                                                 src={foto.url_imagen}
                                                 alt={`Foto ${foto.tipo_foto}`}
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                                             />
+                                            {/* Overlay only on image */}
+                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <Eye className="h-8 w-8 text-white" />
+                                            </div>
                                         </div>
+                                        {/* Title outside overlay */}
                                         <div className="mt-2 space-y-1">
                                             <p className="text-xs font-medium capitalize">{foto.tipo_foto.replace("_", " ")}</p>
                                             <p className="text-xs text-muted-foreground">
                                                 {foto.ancho_imagen}x{foto.alto_imagen} • {foto.tamano_mb.toFixed(2)} MB
                                             </p>
-                                        </div>
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                                            <Eye className="h-8 w-8 text-white" />
                                         </div>
                                     </motion.div>
                                 ))}
@@ -255,10 +260,10 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
             {(recepcion.motivo_visita || recepcion.observaciones_cliente || recepcion.descripcion_danos) && (
                 <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
                     <Card>
-                        <CardHeader className="pb-3">
+                        <CardHeader className="pb-3 px-4 md:px-6">
                             <CardTitle>Información Adicional</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-3">
+                        <CardContent className="space-y-3 px-4 md:px-6">
                             {recepcion.motivo_visita && (
                                 <div>
                                     <p className="text-xs text-muted-foreground mb-1">Motivo de Visita</p>

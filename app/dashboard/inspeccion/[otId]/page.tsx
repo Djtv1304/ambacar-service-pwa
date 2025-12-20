@@ -403,15 +403,19 @@ export default function InspeccionPage({ params }: { params: Promise<{ otId: str
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href={inspeccionExistente ? "/dashboard/inspecciones" : `/dashboard/ot/${otId}`}>
+      {/* Header - Mobile: 3 filas, Desktop: layout original */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* Fila 1 Mobile: Volver | Desktop: parte del layout normal */}
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Button variant="ghost" size="sm" asChild className="sm:size-icon sm:p-2">
+            <Link href={inspeccionExistente ? "/dashboard/inspecciones" : `/dashboard/ot/${otId}`} className="flex items-center gap-1">
               <ArrowLeft className="h-5 w-5" />
+              <span className="sm:hidden">Volver</span>
             </Link>
           </Button>
-          <div>
+
+          {/* Fila 2 en Desktop: Título e info (oculto en mobile aquí) */}
+          <div className="hidden sm:block">
             <h1 className="text-3xl font-bold tracking-tight">
               {inspeccionExistente ? inspeccionExistente.numero_inspeccion : "Nueva Inspección"}
             </h1>
@@ -422,21 +426,35 @@ export default function InspeccionPage({ params }: { params: Promise<{ otId: str
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Fila 2 Mobile: Título e info */}
+        <div className="sm:hidden">
+          <h1 className="text-2xl font-bold tracking-tight">
+            {inspeccionExistente ? inspeccionExistente.numero_inspeccion : "Nueva Inspección"}
+          </h1>
+          <p className="text-muted-foreground text-sm mt-0.5">
+            {inspeccionExistente
+              ? `${inspeccionExistente.orden_trabajo_info.numero_orden} - ${inspeccionExistente.orden_trabajo_info.vehiculo_placa}`
+              : `Orden de Trabajo #${otId}`}
+          </p>
+        </div>
+
+        {/* Fila 3 Mobile / Derecha Desktop: Badge + Botón */}
+        <div className="flex items-center gap-2 flex-wrap">
           {inspeccionExistente && (
             <>
               {inspeccionExistente.estado === "PENDIENTE" && (
-                <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 text-base px-4 py-2">
+                <Badge className="bg-orange-500/10 text-orange-600 border-orange-500/20 text-sm sm:text-base px-3 sm:px-4 h-9 sm:h-10 flex items-center">
                   Pendiente
                 </Badge>
               )}
               {inspeccionExistente.estado === "EN_PROCESO" && (
-                <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-base px-4 py-2">
+                <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20 text-sm sm:text-base px-3 sm:px-4 h-9 sm:h-10 flex items-center">
                   En Proceso
                 </Badge>
               )}
               {inspeccionExistente.estado === "COMPLETADA" && (
-                <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-base px-4 py-2">
+                <Badge className="bg-green-500/10 text-green-600 border-green-500/20 text-sm sm:text-base px-3 sm:px-4 h-9 sm:h-10 flex items-center">
                   Completada
                 </Badge>
               )}
@@ -446,18 +464,20 @@ export default function InspeccionPage({ params }: { params: Promise<{ otId: str
             <Button
               onClick={handleFinalizarInspeccion}
               disabled={!todosCompletados || guardando}
-              size="lg"
-              className="bg-green-600 hover:bg-green-700"
+              size="default"
+              className="bg-green-600 hover:bg-green-700 text-sm sm:text-base h-9 sm:h-10"
             >
               {guardando ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Finalizando...
+                  <span className="hidden sm:inline">Finalizando...</span>
+                  <span className="sm:hidden">...</span>
                 </>
               ) : (
                 <>
                   <CheckCircle className="mr-2 h-4 w-4" />
-                  Finalizar Inspección
+                  <span className="hidden sm:inline">Finalizar Inspección</span>
+                  <span className="sm:hidden">Finalizar</span>
                 </>
               )}
             </Button>
@@ -469,7 +489,7 @@ export default function InspeccionPage({ params }: { params: Promise<{ otId: str
       {inspeccionExistente && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground">Orden de Trabajo</CardTitle>
             </CardHeader>
             <CardContent>
@@ -490,7 +510,7 @@ export default function InspeccionPage({ params }: { params: Promise<{ otId: str
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground">Cliente</CardTitle>
             </CardHeader>
             <CardContent>
@@ -502,7 +522,7 @@ export default function InspeccionPage({ params }: { params: Promise<{ otId: str
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground">Inspector</CardTitle>
             </CardHeader>
             <CardContent>
@@ -512,7 +532,7 @@ export default function InspeccionPage({ params }: { params: Promise<{ otId: str
           </Card>
 
           <Card>
-            <CardHeader className="pb-3">
+            <CardHeader>
               <CardTitle className="text-sm font-medium text-muted-foreground">Fecha de Inspección</CardTitle>
             </CardHeader>
             <CardContent>

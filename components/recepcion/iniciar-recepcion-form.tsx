@@ -101,11 +101,12 @@ export function IniciarRecepcionForm({ cita, kmIngreso, onRecepcionInitiated }: 
                     <FormField
                         control={form.control}
                         name="nivel_combustible"
+
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Nivel de Combustible *</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
+                                    <FormControl className="w-full">
                                         <SelectTrigger>
                                             <SelectValue placeholder="Selecciona el nivel de combustible" />
                                         </SelectTrigger>

@@ -39,6 +39,27 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
     const tipoActual = TIPOS_FOTO[indexActual] || TIPOS_FOTO[0]
     const fotosRestantes = FOTOS_REQUERIDAS - fotosCapturadas.length
 
+    // Lock body scroll when dialog is open
+    useEffect(() => {
+        if (open) {
+            const scrollY = window.scrollY
+            document.body.style.position = 'fixed'
+            document.body.style.top = `-${scrollY}px`
+            document.body.style.left = '0'
+            document.body.style.right = '0'
+            document.body.style.overflow = 'hidden'
+
+            return () => {
+                document.body.style.position = ''
+                document.body.style.top = ''
+                document.body.style.left = ''
+                document.body.style.right = ''
+                document.body.style.overflow = ''
+                window.scrollTo(0, scrollY)
+            }
+        }
+    }, [open])
+
     // Debug: Monitorear cambios en cameraActive
     useEffect(() => {
         console.log("[CameraDialog] ⚡ cameraActive cambió a:", cameraActive)
@@ -280,8 +301,8 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-lg" aria-describedby="dialog-description">
-                <DialogHeader>
+            <DialogContent className="p-4 md:p-6 sm:max-w-lg max-h-[90vh] flex flex-col" aria-describedby="dialog-description">
+                <DialogHeader className="shrink-0">
                     <DialogTitle>Tomar Fotos de Vehículo</DialogTitle>
                 </DialogHeader>
 
@@ -289,6 +310,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                     Captura las 4 fotos requeridas del vehículo: frontal, trasera, lateral izquierda y lateral derecha
                 </p>
 
+                <div className="flex-1 overflow-y-auto -mx-4 px-4 md:-mx-6 md:px-6">
                 <div className="space-y-4">
                     {/* Progress */}
                     <div className="space-y-2">
@@ -353,10 +375,10 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                 <p className="text-xs text-center text-muted-foreground">
                                     También puedes elegir una foto desde tus archivos
                                 </p>
-                                <div className="flex gap-2">
+                                <div className="flex flex-col sm:flex-row gap-2">
                                     <Button
                                         variant="outline"
-                                        className="flex-1 bg-transparent"
+                                        className="w-full sm:flex-1 bg-transparent"
                                         onClick={() => fileInputRef.current?.click()}
                                         disabled={isCapturing}
                                     >
@@ -368,7 +390,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                         onClick={capturarFoto}
                                         disabled={isCapturing}
                                         size="lg"
-                                        className="flex-1 bg-[#ED1C24] hover:bg-[#c41820]"
+                                        className="w-full sm:flex-1 bg-[#ED1C24] hover:bg-[#c41820]"
                                     >
                                         {isCapturing ? (
                                             <>
@@ -409,7 +431,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                         </Alert>
                                     )}
                                     <div
-                                        className="grid grid-cols-2 gap-3"
+                                        className="grid grid-cols-1 sm:grid-cols-2 gap-3"
                                         onClick={(e) => {
                                             // Deseleccionar si se hace click en el gap entre imágenes
                                             if (e.target === e.currentTarget) {
@@ -456,12 +478,12 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                 </div>
                             )}
 
-                            <div className="flex gap-2">
+                            <div className="flex flex-col sm:flex-row gap-2">
                                 {fotosCapturadas.length < FOTOS_REQUERIDAS && (
                                     <Button
                                         onClick={iniciarCamara}
                                         size="lg"
-                                        className="flex-1 bg-[#ED1C24] hover:bg-[#c41820]"
+                                        className="w-full sm:flex-1 bg-[#ED1C24] hover:bg-[#c41820]"
                                         disabled={isLoading}
                                     >
                                         <Camera className="mr-2 h-4 w-4" />
@@ -475,7 +497,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                             <Button
                                                 onClick={retomar}
                                                 size="lg"
-                                                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white"
+                                                className="w-full sm:flex-1 bg-orange-500 hover:bg-orange-600 text-white"
                                                 disabled={isLoading}
                                             >
                                                 <RotateCcw className="mr-2 h-4 w-4" />
@@ -486,7 +508,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                                 onClick={reiniciarFlujo}
                                                 variant="outline"
                                                 size="lg"
-                                                className="flex-1"
+                                                className="w-full sm:flex-1"
                                                 disabled={isLoading}
                                             >
                                                 <RotateCcw className="mr-2 h-4 w-4" />
@@ -496,7 +518,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                         <Button
                                             onClick={confirmar}
                                             size="lg"
-                                            className="flex-1 bg-green-600 hover:bg-green-700"
+                                            className="w-full sm:flex-1 bg-green-600 hover:bg-green-700"
                                             disabled={isLoading}
                                         >
                                             {isLoading ? (
@@ -516,6 +538,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                             </div>
                         </div>
                     )}
+                </div>
                 </div>
             </DialogContent>
         </Dialog>

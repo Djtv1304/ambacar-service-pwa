@@ -45,7 +45,7 @@ export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
       {/* Cliente */}
       <motion.div variants={itemVariants}>
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <CardTitle className="text-lg">Información del Cliente</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -66,7 +66,7 @@ export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
       {/* Vehículo */}
       <motion.div variants={itemVariants}>
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <Car className="h-4 w-4" />
               Información del Vehículo
@@ -135,7 +135,7 @@ export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
       {/* Servicio */}
       <motion.div variants={itemVariants}>
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <CardTitle className="text-lg">Servicio Solicitado</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -161,7 +161,7 @@ export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
       {/* Cita */}
       <motion.div variants={itemVariants}>
         <Card>
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-2">
             <CardTitle className="text-lg">Datos de la Cita</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-4">

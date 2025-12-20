@@ -147,7 +147,7 @@ export default function RecepcionDetailPage() {
 
                 {step === 2 && cita && recepcion === null && (
                     <Card>
-                        <CardContent className="pt-6">
+                        <CardContent>
                             <IniciarRecepcionForm cita={cita} kmIngreso={kmIngreso} onRecepcionInitiated={handleRecepcionInitiated} />
                         </CardContent>
                     </Card>

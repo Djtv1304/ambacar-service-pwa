@@ -102,9 +102,14 @@ export default function NuevaRecepcionPage() {
       </div>
 
       {/* Progress */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-center">
         {stepLabels.map((label, idx) => (
-          <motion.div key={idx} className="flex-1 flex items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+          <motion.div
+            key={idx}
+            className="flex items-center"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm transition-all ${
                 idx < step
@@ -117,7 +122,7 @@ export default function NuevaRecepcionPage() {
               {idx < step ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
             </div>
             {idx < stepLabels.length - 1 && (
-              <div className={`flex-1 h-1 mx-2 transition-colors ${idx < step ? "bg-[#ED1C24]" : "bg-muted"}`} />
+              <div className={`w-12 md:w-20 lg:w-24 h-1 mx-2 transition-colors ${idx < step ? "bg-[#ED1C24]" : "bg-muted"}`} />
             )}
           </motion.div>
         ))}
@@ -127,7 +132,7 @@ export default function NuevaRecepcionPage() {
       <motion.div key={step} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
         {step === 0 && (
           <Card>
-            <CardContent className="pt-6">
+            <CardContent className="p-4 md:p-6">
               <NuevaRecepcionForm onRecepcionInitiated={handleRecepcionInitiated} />
             </CardContent>
           </Card>

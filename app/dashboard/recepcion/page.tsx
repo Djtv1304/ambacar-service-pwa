@@ -41,7 +41,7 @@ export default function RecepcionPage() {
           <h1 className="text-3xl font-bold tracking-tight">Recepción Digital</h1>
           <p className="text-muted-foreground mt-1">Gestiona la recepción de vehículos</p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-col items-sta md:items-end gap-2">
           <Button asChild>
             <Link href="/dashboard/recepcion/nueva">
               <ClipboardCheck className="mr-2 h-4 w-4" />
@@ -56,7 +56,7 @@ export default function RecepcionPage() {
 
       {/* Filters */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent>
           <div className="flex flex-col gap-4 md:flex-row">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -98,40 +98,49 @@ export default function RecepcionPage() {
 
             return (
               <Card key={cita.id} className="transition-colors hover:bg-accent/50">
-                <CardContent className="p-6">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <CardContent className="p-4 lg:p-6">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex-1 space-y-3">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-semibold">
-                              {cliente?.nombre} {cliente?.apellido}
-                            </h3>
-                            <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
-                              Confirmada
-                            </Badge>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">{cita.servicio}</p>
-                        </div>
+                      {/* Row 1: Name + Badge - space-between on mobile/tablet, inline on desktop */}
+                      <div className="flex items-center justify-between lg:justify-start gap-2">
+                        <h3 className="font-semibold">
+                          {cliente?.nombre} {cliente?.apellido}
+                        </h3>
+                        <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 shrink-0">
+                          Confirmada
+                        </Badge>
                       </div>
 
-                      <div className="grid gap-3 sm:grid-cols-3">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span>
-                            {new Date(cita.fecha).toLocaleDateString("es-EC", {
-                              day: "2-digit",
-                              month: "short",
-                            })}{" "}
-                            - {cita.hora}
-                          </span>
+                      {/* Info rows - stacked on mobile, 2-col grid on tablet, 3-col on desktop */}
+                      <div className="flex flex-col gap-2 md:grid md:grid-cols-2 md:gap-3 lg:grid-cols-3">
+                        {/* Date/Time */}
+                        <div className="flex items-center justify-between md:justify-start gap-2 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span>
+                              {new Date(cita.fecha).toLocaleDateString("es-EC", {
+                                day: "2-digit",
+                                month: "short",
+                              })}{" "}
+                              - {cita.hora}
+                            </span>
+                          </div>
+                          {/* Vehicle visible on mobile only in same row */}
+                          <div className="flex items-center gap-2 md:hidden">
+                            <Car className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span>
+                              {vehiculo?.marca} {vehiculo?.modelo}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Car className="h-4 w-4 text-muted-foreground" />
+                        {/* Vehicle - hidden on mobile, visible on tablet/desktop */}
+                        <div className="hidden md:flex items-center gap-2 text-sm">
+                          <Car className="h-4 w-4 text-muted-foreground shrink-0" />
                           <span>
                             {vehiculo?.marca} {vehiculo?.modelo}
                           </span>
                         </div>
+                        {/* Placa */}
                         <div className="flex items-center gap-2 text-sm">
                           <span className="font-medium">Placa:</span>
                           <span>{vehiculo?.placa}</span>
@@ -145,8 +154,9 @@ export default function RecepcionPage() {
                       )}
                     </div>
 
+                    {/* Button - full width on mobile/tablet, auto on desktop */}
                     <div className="flex gap-2">
-                      <Button asChild>
+                      <Button asChild className="w-full lg:w-auto">
                         <Link href={`/dashboard/recepcion/${cita.id}`}>
                           <ClipboardCheck className="mr-2 h-4 w-4" />
                           Iniciar Recepción

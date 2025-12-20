@@ -219,9 +219,12 @@ export function CameraInspeccionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl" aria-describedby="dialog-description">
-        <DialogHeader>
-          <DialogTitle>Fotografías de Evidencia {puntoNombre && `- ${puntoNombre}`}</DialogTitle>
+      <DialogContent className="p-4 md:p-6 sm:max-w-2xl max-h-[90vh] overflow-y-auto" aria-describedby="dialog-description">
+        <DialogHeader className="text-left">
+          <DialogTitle className="text-left">Fotografías de Evidencia</DialogTitle>
+          {puntoNombre && (
+            <p className="text-sm text-muted-foreground font-normal">{puntoNombre}</p>
+          )}
         </DialogHeader>
 
         <p id="dialog-description" className="sr-only">
@@ -289,6 +292,7 @@ export function CameraInspeccionDialog({
                 <div className="flex gap-2">
                   <Button
                     variant="outline"
+                    size="sm"
                     className="flex-1 bg-transparent"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isCapturing}
@@ -300,7 +304,7 @@ export function CameraInspeccionDialog({
                   <Button
                     onClick={capturarFoto}
                     disabled={isCapturing}
-                    size="lg"
+                    size="sm"
                     className="flex-1 bg-[#ED1C24] hover:bg-[#c41820]"
                   >
                     {isCapturing ? (
@@ -331,7 +335,7 @@ export function CameraInspeccionDialog({
                       </AlertDescription>
                     </Alert>
                   )}
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     <AnimatePresence>
                       {fotosCapturadas.map((foto, idx) => (
                         <motion.div
@@ -371,9 +375,9 @@ export function CameraInspeccionDialog({
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 {fotosCapturadas.length < MAX_FOTOS_INSPECCION && (
-                  <Button onClick={iniciarCamara} size="lg" className="flex-1 bg-[#ED1C24] hover:bg-[#c41820]">
+                  <Button onClick={iniciarCamara} size="lg" className="w-full sm:flex-1 bg-[#ED1C24] hover:bg-[#c41820]">
                     <Camera className="mr-2 h-4 w-4" />
                     {fotosCapturadas.length === 0 ? "Comenzar a Capturar" : "Continuar Capturando"}
                   </Button>
@@ -382,17 +386,17 @@ export function CameraInspeccionDialog({
                 {fotosCapturadas.length >= MIN_FOTOS_INSPECCION && (
                   <>
                     {fotoSeleccionadaRetomar !== null ? (
-                      <Button onClick={retomar} size="lg" className="flex-1 bg-orange-500 hover:bg-orange-600 text-white">
+                      <Button onClick={retomar} size="lg" className="w-full sm:flex-1 bg-orange-500 hover:bg-orange-600 text-white">
                         <RotateCcw className="mr-2 h-4 w-4" />
                         Retomar Foto
                       </Button>
                     ) : (
-                      <Button onClick={reiniciarFlujo} variant="outline" size="lg" className="flex-1">
+                      <Button onClick={reiniciarFlujo} variant="outline" size="lg" className="w-full sm:flex-1">
                         <RotateCcw className="mr-2 h-4 w-4" />
                         Retomar Todas
                       </Button>
                     )}
-                    <Button onClick={confirmar} size="lg" className="flex-1 bg-green-600 hover:bg-green-700">
+                    <Button onClick={confirmar} size="lg" className="w-full sm:flex-1 bg-green-600 hover:bg-green-700">
                       <Check className="mr-2 h-4 w-4" />
                       Confirmar Fotos
                     </Button>

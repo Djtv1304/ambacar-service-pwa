@@ -32,6 +32,7 @@ export function SubirFotosDialog({
   const [isSubiendo, setIsSubiendo] = useState(false)
   const [progreso, setProgreso] = useState<{ actual: number; total: number } | null>(null)
 
+
   const handleSubirFotos = async () => {
     if (fotos.length < MIN_FOTOS_INSPECCION) {
       alert(`Debes capturar al menos ${MIN_FOTOS_INSPECCION} fotos`)
@@ -100,13 +101,13 @@ export function SubirFotosDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-xl">Fotografías de Evidencia</DialogTitle>
             <p className="text-sm text-muted-foreground mt-2">{puntoNombre}</p>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-4 py-2">
             <Alert className="border-red-200 bg-red-50">
               <Camera className="h-4 w-4 text-red-600" />
               <AlertDescription className="text-red-900">
@@ -120,7 +121,7 @@ export function SubirFotosDialog({
                 <p className="text-sm font-medium mb-2">
                   Fotos capturadas: {fotos.length}/{MIN_FOTOS_INSPECCION}
                 </p>
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {fotos.map((foto, idx) => (
                     <div key={`foto-preview-${idx}`} className="relative">
                       <img
