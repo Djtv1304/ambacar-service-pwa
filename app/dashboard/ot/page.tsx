@@ -26,13 +26,6 @@ const estadoColors: Record<string, string> = {
   entregada: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
 }
 
-const prioridadColors: Record<string, string> = {
-  baja: "bg-gray-500/10 text-gray-500 border-gray-500/20",
-  media: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-  alta: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  urgente: "bg-red-500/10 text-red-500 border-red-500/20",
-}
-
 // Helper function to get estado color class
 const getEstadoColorClass = (codigo: string): string => {
   const codigoLower = codigo.toLowerCase().replace(/-/g, "_")

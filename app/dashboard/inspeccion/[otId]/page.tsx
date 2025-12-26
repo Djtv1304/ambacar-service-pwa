@@ -31,14 +31,12 @@ import {
   createItemInspeccion,
   updateObservacionesGenerales,
   completarInspeccion,
-  uploadFotoInspeccion,
 } from "@/lib/api/inspecciones"
 import { useAuthToken } from "@/hooks/use-auth-token"
-import type { PuntoInspeccionEvaluado, PuntoInspeccionCatalogo, InspeccionDetalle, FotoInspeccion } from "@/lib/types"
+import type { PuntoInspeccionEvaluado, PuntoInspeccionCatalogo, InspeccionDetalle } from "@/lib/types"
 import { toast } from "sonner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { motion } from "framer-motion"
 
 export default function InspeccionPage({ params }: { params: Promise<{ otId: string }> }) {
   const resolvedParams = use(params)

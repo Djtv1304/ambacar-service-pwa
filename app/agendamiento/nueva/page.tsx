@@ -16,7 +16,6 @@ import { StepsIndicator } from "@/components/agendamiento/steps-indicator"
 import { vehiculoSchema, citaSchema, type VehiculoFormData, type CitaFormData } from "@/lib/validations/agendamiento"
 import {
   fetchVehiculosByClienteId,
-  registrarVehiculo,
   getHorariosDisponibles,
   getTiposServicio,
   crearCitaAPI,
