@@ -123,44 +123,101 @@ export default function ConfiguracionPage() {
         <TabsContent value="usuarios" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              {/* Mobile: Stack vertical */}
+              <div className="flex flex-col gap-3 sm:hidden">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  <CardTitle>Gestión de Usuarios</CardTitle>
+                </div>
+                <CardDescription>Administra los usuarios del sistema y sus permisos</CardDescription>
+                <Button size="sm" className="w-full">Agregar Usuario</Button>
+              </div>
+
+              {/* Desktop: Horizontal layout */}
+              <div className="hidden sm:flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5" />
                   <CardTitle>Gestión de Usuarios</CardTitle>
                 </div>
                 <Button size="sm">Agregar Usuario</Button>
               </div>
-              <CardDescription>Administra los usuarios del sistema y sus permisos</CardDescription>
+              <CardDescription className="hidden sm:block">Administra los usuarios del sistema y sus permisos</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {usuarios.map((usuario) => (
-                  <div key={usuario.id} className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="flex items-center gap-4">
-                      <Avatar>
-                        <AvatarFallback className="bg-primary/10 text-primary">
-                          {usuario.nombre.charAt(0)}
-                          {usuario.apellido.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">
-                          {usuario.nombre} {usuario.apellido}
-                        </p>
-                        <p className="text-sm text-muted-foreground">{usuario.email}</p>
+                  <div key={usuario.id} className="rounded-lg border p-4">
+                    {/* Mobile Layout: Vertical Stack */}
+                    <div className="flex flex-col gap-3 sm:hidden">
+                      {/* Row 1: Avatar + Name + Email */}
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {usuario.nombre.charAt(0)}
+                            {usuario.apellido.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {usuario.nombre} {usuario.apellido}
+                          </p>
+                          <p className="text-sm text-muted-foreground truncate">{usuario.email}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Badge variant={usuario.rol === "admin" ? "default" : "secondary"}>
-                        {usuario.rol === "admin" && "Administrador"}
-                        {usuario.rol === "operator" && "Operador"}
-                        {usuario.rol === "technician" && "Técnico"}
-                        {usuario.rol === "manager" && "Jefe de Taller"}
-                      </Badge>
-                      <Switch defaultChecked={usuario.activo} />
-                      <Button variant="ghost" size="sm">
-                        Editar
+
+                      {/* Row 2: Badge Role */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground shrink-0">Rol:</span>
+                        <Badge variant={usuario.rol === "admin" ? "default" : "secondary"}>
+                          {usuario.rol === "admin" && "Administrador"}
+                          {usuario.rol === "operator" && "Operador"}
+                          {usuario.rol === "technician" && "Técnico"}
+                          {usuario.rol === "manager" && "Jefe de Taller"}
+                        </Badge>
+                      </div>
+
+                      {/* Row 3: Active Switch */}
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">
+                          {usuario.activo ? "Usuario Activo" : "Usuario Inactivo"}
+                        </Label>
+                        <Switch defaultChecked={usuario.activo} />
+                      </div>
+
+                      {/* Row 4: Edit Button */}
+                      <Button variant="outline" size="sm" className="w-full">
+                        Editar Usuario
                       </Button>
+                    </div>
+
+                    {/* Desktop Layout: Horizontal */}
+                    <div className="hidden sm:flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <Avatar>
+                          <AvatarFallback className="bg-primary/10 text-primary">
+                            {usuario.nombre.charAt(0)}
+                            {usuario.apellido.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">
+                            {usuario.nombre} {usuario.apellido}
+                          </p>
+                          <p className="text-sm text-muted-foreground">{usuario.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Badge variant={usuario.rol === "admin" ? "default" : "secondary"}>
+                          {usuario.rol === "admin" && "Administrador"}
+                          {usuario.rol === "operator" && "Operador"}
+                          {usuario.rol === "technician" && "Técnico"}
+                          {usuario.rol === "manager" && "Jefe de Taller"}
+                        </Badge>
+                        <Switch defaultChecked={usuario.activo} />
+                        <Button variant="ghost" size="sm">
+                          Editar
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}

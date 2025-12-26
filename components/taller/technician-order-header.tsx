@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   ArrowLeft,
   Phone,
@@ -65,15 +65,78 @@ const STATUS_CONFIG = {
 
 export function TechnicianOrderHeader({ order, onStatusChange }: TechnicianOrderHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [isSticky, setIsSticky] = useState(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLDivElement>(null)
   const statusConfig = STATUS_CONFIG[order.estado]
   const deliveryInfo = getRelativeDeliveryDate(order.fechaEstimadaEntrega)
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    const header = headerRef.current
+    if (!sentinel || !header) return
+
+    // Estrategia dual: IntersectionObserver + scroll listener con RAF para precisión
+    let rafId: number | null = null
+    let lastScrollY = window.scrollY
+
+    // IntersectionObserver para la detección principal
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsSticky(!entry.isIntersecting)
+      },
+      {
+        threshold: [0, 1],
+        // Margen negativo para anticipar el cambio durante scroll rápido
+        rootMargin: '-1px 0px 0px 0px'
+      }
+    )
+
+    // Scroll listener con RAF para scroll agresivo/rápido
+    const handleScroll = () => {
+      if (rafId) return
+
+      rafId = requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY
+        const sentinelRect = sentinel.getBoundingClientRect()
+
+        // Detección anticipada: si el sentinel está a punto de salir del viewport
+        const isAboutToStick = sentinelRect.bottom <= 0
+
+        setIsSticky(isAboutToStick)
+
+        lastScrollY = currentScrollY
+        rafId = null
+      })
+    }
+
+    observer.observe(sentinel)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('scroll', handleScroll)
+      if (rafId) cancelAnimationFrame(rafId)
+    }
+  }, [])
 
   const handleCall = () => {
     window.location.href = `tel:${order.cliente.telefono}`
   }
 
   return (
-    <div className="sticky top-16 z-50 bg-background/95 backdrop-blur-sm border-b -mx-4 sm:-mx-6 px-4 sm:px-6">
+    <>
+      {/* Sentinel element to detect sticky state - positioned above header */}
+      <div ref={sentinelRef} className="h-0 -mx-4 sm:-mx-6" aria-hidden="true" />
+
+      <div
+        ref={headerRef}
+        className={cn(
+          "sticky -top-14 z-40 bg-background/95 backdrop-blur-sm border-b -mx-4 sm:-mx-6 px-4 sm:px-6",
+          "will-change-[padding]",
+          isSticky ? "pt-10" : "pt-0"
+        )}
+      >
       {/* Main header row */}
       <div className="flex items-center justify-between gap-3 py-3">
         {/* Left side - Back + Order code */}
@@ -165,7 +228,8 @@ export function TechnicianOrderHeader({ order, onStatusChange }: TechnicianOrder
           {deliveryInfo.text}
         </Badge>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 

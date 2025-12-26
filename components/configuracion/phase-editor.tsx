@@ -154,22 +154,21 @@ function SortablePhaseItem({
                   )}
                 </div>
 
-                {/* Delete Button - Top right */}
-                {canDelete ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="text-red-500 hover:text-red-600 hover:bg-red-50 h-9 px-2 shrink-0 -mr-1 gap-1"
-                    aria-label="Eliminar fase"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span className="text-xs">Eliminar Fase</span>
-                  </Button>
-                ) : (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
+                {/* Delete Button - Icon only with tooltip on mobile */}
+                <TooltipProvider>
+                  <Tooltip delayDuration={0}>
+                    <TooltipTrigger asChild>
+                      {canDelete ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowDeleteDialog(true)}
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 h-9 w-9 shrink-0 -mr-1 active:scale-95 transition-transform"
+                          aria-label="Eliminar fase"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      ) : (
                         <Button
                           variant="ghost"
                           size="icon"
@@ -178,13 +177,17 @@ function SortablePhaseItem({
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="left" className="max-w-xs">
-                        <p className="text-sm">{deleteReason}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
+                      )}
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="left"
+                      className="max-w-xs md:pointer-events-none"
+                      onPointerDownOutside={(e) => e.preventDefault()}
+                    >
+                      <p className="text-sm">{canDelete ? "Eliminar Fase" : deleteReason}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
 
               {/* Row 2: Name Input - Full Width */}
@@ -209,9 +212,10 @@ function SortablePhaseItem({
                 className="text-sm text-muted-foreground h-9 w-full"
               />
 
-              {/* Row 4: Time Input */}
-              <div className="flex items-center gap-2">
+              {/* Row 4: Time Input - Full Width with Label */}
+              <div className="flex items-center gap-2 w-full">
                 <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-sm font-medium text-foreground shrink-0">Duración:</span>
                 <Input
                   type="number"
                   min={1}
@@ -221,9 +225,9 @@ function SortablePhaseItem({
                     onUpdate(fase.id, { tiempoEstimado: parseInt(e.target.value) || 0 })
                   }
                   disabled={isCompleted}
-                  className="w-20 h-9 text-sm text-center"
+                  className="flex-1 h-9 text-sm text-center"
                 />
-                <span className="text-sm text-muted-foreground">minutos</span>
+                <span className="text-sm text-muted-foreground shrink-0">minutos</span>
               </div>
 
               {/* Error message - Mobile */}
@@ -320,7 +324,8 @@ function SortablePhaseItem({
               {/* Time & Delete */}
               <div className="flex flex-col items-end gap-3 shrink-0">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm font-medium text-foreground whitespace-nowrap">Duración:</span>
                   <Input
                     type="number"
                     min={1}
