@@ -65,8 +65,106 @@ function OrderCard({ order, index }: OrderCardProps) {
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
       >
+        {/* Mobile Layout */}
+        <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer sm:hidden relative p-0">
+          {/* Gradient border effect for high priority - top to bottom */}
+          {isHighPriority && (
+            <div
+              className="absolute inset-0 rounded-xl pointer-events-none z-10"
+              style={{
+                background: 'linear-gradient(to top, rgba(239, 68, 68, 1) 0%, rgba(239, 68, 68, 0.5) 50%, rgba(239, 68, 68, 0) 100%)',
+                padding: '3px',
+                WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+                WebkitMaskComposite: 'xor',
+                maskComposite: 'exclude',
+              }}
+            />
+          )}
+          <CardContent className="p-0">
+            <div className="flex flex-col">
+              {/* Top - Vehicle Thumbnail (full width) */}
+              <div className="relative w-full h-28 bg-muted flex items-center justify-center">
+                {/* Placeholder vehicle icon */}
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Car className="h-8 w-8 text-primary" />
+                </div>
+                {/* Priority indicator */}
+                {isHighPriority && (
+                  <div className="absolute top-3 left-3">
+                    <div className="h-3 w-3 rounded-full bg-red-500 animate-pulse" />
+                  </div>
+                )}
+                {/* Order type badge - top right */}
+                <Badge variant="outline" className={cn("absolute top-3 right-3 h-6 text-xs", typeConfig.color)}>
+                  {typeConfig.label}
+                </Badge>
+              </div>
+
+              {/* Content - Below image */}
+              <div className="p-4 space-y-3">
+                {/* Order code + Status Badge */}
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-bold text-base">{order.codigo}</h3>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "h-6 text-xs gap-1.5",
+                      statusConfig.textColor
+                    )}
+                  >
+                    <div className={cn("h-2 w-2 rounded-full", statusConfig.color)} />
+                    {statusConfig.label}
+                  </Badge>
+                </div>
+
+                {/* Vehicle + Plate */}
+                <p className="text-sm">
+                  {order.vehiculo.marca} {order.vehiculo.modelo}
+                  <span className="font-mono text-xs text-muted-foreground ml-2">
+                    {order.vehiculo.placa}
+                  </span>
+                </p>
+
+                {/* Progress bar */}
+                <div>
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="text-muted-foreground">
+                      Fase: <span className="font-medium text-foreground">{currentPhaseLabel}</span>
+                    </span>
+                    <span className="font-medium">{completedPhases}/{totalPhases}</span>
+                  </div>
+                  <Progress value={progress} className="h-2" />
+                </div>
+
+                {/* Footer - Delivery date */}
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Wrench className="h-4 w-4" />
+                    <span>Técnico asignado</span>
+                  </div>
+
+                  <div className={cn(
+                    "flex items-center gap-1.5 text-xs font-medium",
+                    deliveryInfo.isLate ? "text-red-600" :
+                    deliveryInfo.text.includes("Hoy") ? "text-orange-600" : "text-muted-foreground"
+                  )}>
+                    {deliveryInfo.isLate ? (
+                      <AlertTriangle className="h-3.5 w-3.5" />
+                    ) : (
+                      <Clock className="h-3.5 w-3.5" />
+                    )}
+                    <span>{deliveryInfo.text}</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Desktop/Tablet Layout */}
         <Card className={cn(
-          "overflow-hidden hover:shadow-md transition-shadow cursor-pointer",
+          "overflow-hidden hover:shadow-md transition-shadow cursor-pointer hidden sm:block",
           isHighPriority && "border-l-4 border-l-red-500"
         )}>
           <CardContent className="p-0">

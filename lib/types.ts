@@ -54,7 +54,6 @@ export interface Cita {
   hora: string
   servicio: string
   observaciones?: string
-  estado: "pendiente" | "confirmada" | "en_proceso" | "completada" | "cancelada"
   tecnicoAsignado?: string
   sucursal?: string
   createdAt: string
@@ -440,6 +439,19 @@ export interface OrdenTrabajoDetalle {
     updated_at: string
   }
   presupuesto_detalle: any | null
+  sucursal_detalle: {
+    id: number
+    codigo: string
+    nombre: string
+    direccion: string
+    telefono: string
+    email: string
+    ciudad: string
+    es_principal: boolean
+    estado: string
+    created_at: string
+    updated_at: string
+  }
   etapas: any[]
   tareas: any[]
   repuestos: any[]

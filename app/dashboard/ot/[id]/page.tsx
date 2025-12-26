@@ -2,13 +2,14 @@
 
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
-import { ArrowLeft, ClipboardCheck, AlertTriangle } from "lucide-react"
+import { ArrowLeft, ClipboardCheck, AlertTriangle, Building2, Phone, Mail, MapPin, Stethoscope } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTInfoCard } from "@/components/ot/ot-info-card"
 import { OTPhasesStepper, type Phase } from "@/components/ot/ot-phases-stepper"
 import { RepuestosList, type Repuesto } from "@/components/ot/ot-repuestos-list"
@@ -276,17 +277,94 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
             asesor={ot.asesor_detalle ? `${ot.asesor_detalle.first_name} ${ot.asesor_detalle.last_name}` : undefined}
           />
 
-          {/* Diagnostico */}
-          {ot.descripcion_trabajo && (
-            <Card>
+          {/* Tabs: Diagnóstico y Sucursal */}
+          <Card>
+            <Tabs defaultValue="sucursal" className="w-full">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base">Diagnóstico</CardTitle>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="sucursal" className="text-sm">
+                    <Building2 className="h-4 w-4 mr-1.5" />
+                    Sucursal
+                  </TabsTrigger>
+                  <TabsTrigger value="diagnostico" className="text-sm">
+                    <Stethoscope className="h-4 w-4 mr-1.5" />
+                    Diagnóstico
+                  </TabsTrigger>
+                </TabsList>
               </CardHeader>
               <CardContent>
-                <p className="text-sm">{ot.descripcion_trabajo}</p>
+                <TabsContent value="sucursal" className="mt-0">
+                  {ot.sucursal_detalle ? (
+                    <div className="space-y-4">
+                      {/* Nombre de la sucursal */}
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <Building2 className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-base">{ot.sucursal_detalle.nombre}</p>
+                          {ot.sucursal_detalle.es_principal && (
+                            <Badge variant="secondary" className="text-xs mt-0.5">
+                              Sucursal Principal
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <Separator />
+
+                      {/* Información de contacto */}
+                      <div className="grid gap-3">
+                        <div className="flex items-start gap-3">
+                          <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Dirección</p>
+                            <p className="text-sm font-medium">{ot.sucursal_detalle.direccion}</p>
+                            <p className="text-xs text-muted-foreground">{ot.sucursal_detalle.ciudad}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <Phone className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Teléfono</p>
+                            <a
+                              href={`tel:${ot.sucursal_detalle.telefono}`}
+                              className="text-sm font-medium text-primary hover:underline"
+                            >
+                              {ot.sucursal_detalle.telefono}
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                          <Mail className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                          <div>
+                            <p className="text-xs text-muted-foreground">Email</p>
+                            <a
+                              href={`mailto:${ot.sucursal_detalle.email}`}
+                              className="text-sm font-medium text-primary hover:underline break-all"
+                            >
+                              {ot.sucursal_detalle.email}
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No hay información de sucursal disponible</p>
+                  )}
+                </TabsContent>
+                <TabsContent value="diagnostico" className="mt-0">
+                  {ot.descripcion_trabajo ? (
+                    <p className="text-sm">{ot.descripcion_trabajo}</p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No hay diagnóstico registrado</p>
+                  )}
+                </TabsContent>
               </CardContent>
-            </Card>
-          )}
+            </Tabs>
+          </Card>
 
           {/* NEW: Phases Stepper (replaces old Tareas) */}
           <OTPhasesStepper

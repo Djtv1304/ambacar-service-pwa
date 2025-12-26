@@ -381,7 +381,6 @@ export default function NuevaCitaPage() {
         hora: horariosDisponibles.find((h) => h.hora === selectedHora)?.hora_display || selectedHora,
         servicio: citaResponse.tipo_servicio_detalle?.nombre || citaForm.getValues("servicio"),
         observaciones: citaResponse.observaciones,
-        estado: citaResponse.estado_display || "confirmada",
         sucursal: "Principal",
         createdAt: citaResponse.created_at || new Date().toISOString(),
         updatedAt: citaResponse.updated_at || new Date().toISOString(),
@@ -969,11 +968,6 @@ export default function NuevaCitaPage() {
                           <p className="text-xs sm:text-sm text-[#202020]">{citaCreada.observaciones}</p>
                         </div>
                       )}
-
-                      <div className="p-2 sm:p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-xs text-green-700 mb-1">Estado</p>
-                        <p className="text-xs sm:text-sm font-semibold text-green-700">{citaCreada.estado}</p>
-                      </div>
                     </div>
                   </motion.div>
 
