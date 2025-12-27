@@ -44,7 +44,7 @@ export function DigitalProforma({ service, className }: DigitalProformaProps) {
 
   const items = buildProformaItems()
   const subtotal = items.reduce((acc, item) => acc + item.subtotal, 0)
-  const iva = subtotal * 0.12
+  const iva = subtotal * 0.15
   const total = subtotal + iva - service.descuento
 
   const handlePrint = () => {
@@ -186,7 +186,7 @@ export function DigitalProforma({ service, className }: DigitalProformaProps) {
                 <span className="font-medium">${subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">IVA (12%):</span>
+                <span className="text-muted-foreground">IVA (15%):</span>
                 <span className="font-medium">${iva.toFixed(2)}</span>
               </div>
               {service.descuento > 0 && (

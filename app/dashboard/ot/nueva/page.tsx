@@ -2,18 +2,19 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import { motion } from "framer-motion"
-import { ArrowLeft, Loader2, AlertCircle, FileText, Calendar, Gauge, User as UserIcon, Car, Wrench } from "lucide-react"
+import { ArrowLeft, Loader2, FileText, Calendar, Gauge, User as UserIcon, Car, Wrench } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuthToken } from "@/hooks/use-auth-token"
@@ -22,6 +23,7 @@ import {
   createOrdenTrabajo,
 } from "@/lib/api/ordenes-trabajo"
 import type { TipoOT, SubtipoOT, ClienteTestData, AsesorTestData, VehiculoTestData } from "@/lib/types"
+import { ordenTrabajoSchema, type OrdenTrabajoFormData } from "@/lib/validations/orden-trabajo"
 import { toast } from "sonner"
 
 export default function NuevaOrdenTrabajoPage() {
@@ -29,7 +31,6 @@ export default function NuevaOrdenTrabajoPage() {
   const { getToken } = useAuthToken()
   const [loading, setLoading] = useState(false)
   const [loadingData, setLoadingData] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   // Data for selects
   const [tipos, setTipos] = useState<TipoOT[]>([])
@@ -44,16 +45,20 @@ export default function NuevaOrdenTrabajoPage() {
   const [clienteOpen, setClienteOpen] = useState(false)
   const [asesorOpen, setAsesorOpen] = useState(false)
 
-  // Form data
-  const [formData, setFormData] = useState({
-    tipo: "",
-    subtipo: "",
-    cliente: "",
-    vehiculo: "",
-    fecha_promesa_entrega: "",
-    kilometraje_ingreso: "",
-    descripcion_trabajo: "",
-    asesor: "",
+  // Form configuration with React Hook Form + Zod
+  const form = useForm<OrdenTrabajoFormData>({
+    resolver: zodResolver(ordenTrabajoSchema),
+    defaultValues: {
+      tipo: "",
+      subtipo: "",
+      cliente: "",
+      vehiculo: "",
+      fecha_promesa_entrega: "",
+      kilometraje_ingreso: 0,
+      descripcion_trabajo: "",
+      asesor: "",
+    },
+    mode: "onChange",
   })
 
   // Load initial data
@@ -86,31 +91,33 @@ export default function NuevaOrdenTrabajoPage() {
   }, [router, getToken])
 
   // Filter subtipos when tipo changes
+  const tipoValue = form.watch("tipo")
   useEffect(() => {
-    if (!formData.tipo) {
+    if (!tipoValue) {
       setFilteredSubtipos([])
-      setFormData((prev) => ({ ...prev, subtipo: "" }))
+      form.setValue("subtipo", "")
       return
     }
 
-    const tipoSeleccionado = tipos.find((t) => t.id.toString() === formData.tipo)
+    const tipoSeleccionado = tipos.find((t) => t.id.toString() === tipoValue)
     if (tipoSeleccionado) {
       const subtipposFiltrados = subtipos.filter((st) => st.tipo__codigo === tipoSeleccionado.codigo)
       setFilteredSubtipos(subtipposFiltrados)
     }
-  }, [formData.tipo, tipos, subtipos])
+  }, [tipoValue, tipos, subtipos, form])
 
   // Filter vehicles when client changes
+  const clienteValue = form.watch("cliente")
   useEffect(() => {
-    if (!formData.cliente) {
+    if (!clienteValue) {
       setFilteredVehiculos([])
-      setFormData((prev) => ({ ...prev, vehiculo: "" }))
+      form.setValue("vehiculo", "")
       return
     }
 
     // Filtrar vehículos por cliente
     const vehiculosDelCliente = vehiculos.filter(
-      (v) => v.cliente__id.toString() === formData.cliente
+      (v) => v.cliente__id.toString() === clienteValue
     )
     setFilteredVehiculos(vehiculosDelCliente)
 
@@ -119,7 +126,7 @@ export default function NuevaOrdenTrabajoPage() {
     //   const token = await getClientAccessToken()
     //   if (!token) return
     //   try {
-    //     const vehiculosData = await getVehiculosByCliente(parseInt(formData.cliente), token)
+    //     const vehiculosData = await getVehiculosByCliente(parseInt(clienteValue), token)
     //     setFilteredVehiculos(vehiculosData)
     //   } catch (error) {
     //     console.error("Error loading vehicles:", error)
@@ -127,19 +134,10 @@ export default function NuevaOrdenTrabajoPage() {
     //   }
     // }
     // loadVehiculosFromAPI()
-  }, [formData.cliente, vehiculos])
+  }, [clienteValue, vehiculos, form])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+  const handleSubmit = async (data: OrdenTrabajoFormData) => {
     setLoading(true)
-
-    // Validation
-    if (!formData.tipo || !formData.cliente || !formData.vehiculo || !formData.fecha_promesa_entrega || !formData.kilometraje_ingreso || !formData.descripcion_trabajo) {
-      setError("Por favor completa todos los campos requeridos")
-      setLoading(false)
-      return
-    }
 
     const token = await getToken()
     if (!token) {
@@ -151,17 +149,22 @@ export default function NuevaOrdenTrabajoPage() {
     try {
       // Prepare data for API (schema exacto requerido)
       const createData: any = {
-        tipo: parseInt(formData.tipo),
-        cliente: parseInt(formData.cliente),
-        vehiculo: parseInt(formData.vehiculo),
-        fecha_promesa_entrega: new Date(formData.fecha_promesa_entrega).toISOString(),
-        kilometraje_ingreso: parseInt(formData.kilometraje_ingreso),
-        descripcion_trabajo: formData.descripcion_trabajo,
+        tipo: parseInt(data.tipo),
+        cliente: parseInt(data.cliente),
+        vehiculo: parseInt(data.vehiculo),
+        fecha_promesa_entrega: new Date(data.fecha_promesa_entrega).toISOString(),
+        kilometraje_ingreso: data.kilometraje_ingreso,
+        descripcion_trabajo: data.descripcion_trabajo,
       }
 
       // Agregar subtipo si está seleccionado (opcional)
-      if (formData.subtipo) {
-        createData.subtipo = parseInt(formData.subtipo)
+      if (data.subtipo) {
+        createData.subtipo = parseInt(data.subtipo)
+      }
+
+      // Agregar asesor si está seleccionado (opcional)
+      if (data.asesor) {
+        createData.asesor = parseInt(data.asesor)
       }
 
       // Realizar POST a la API
@@ -174,8 +177,7 @@ export default function NuevaOrdenTrabajoPage() {
       router.push("/dashboard/ot")
     } catch (error: any) {
       console.error("Error creating OT:", error)
-      setError(error.message || "Error al crear la orden de trabajo")
-      toast.error("Error al crear la orden de trabajo")
+      toast.error(error.message || "Error al crear la orden de trabajo")
     } finally {
       setLoading(false)
     }
@@ -211,301 +213,359 @@ export default function NuevaOrdenTrabajoPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <Card className="border-gray-200 bg-white shadow-lg">
+          <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-lg">
           <CardHeader>
-            <CardTitle className="text-[#202020]">Información de la Orden</CardTitle>
-            <CardDescription className="text-gray-600">
+            <CardTitle className="text-[#202020] dark:text-gray-100">Información de la Orden</CardTitle>
+            <CardDescription className="text-gray-600 dark:text-gray-400">
               Completa los datos para crear una nueva orden de trabajo
             </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-6">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleSubmit)}>
+              <CardContent className="space-y-6 px-4 sm:px-6">
 
               {/* Grid para Tipo de Orden y Subtipo */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Tipo de OT */}
-                <div className="space-y-2">
-                  <Label htmlFor="tipo" className="text-[#202020] flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Tipo de Orden *
-                  </Label>
-                  <Select
-                    value={formData.tipo}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, tipo: value }))}
-                    disabled={loading}
-                  >
-                    <SelectTrigger className="w-full border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
-                      <SelectValue placeholder="Selecciona el tipo de orden" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {tipos.map((tipo) => (
-                        <SelectItem key={tipo.id} value={tipo.id.toString()}>
-                          {tipo.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="tipo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Tipo de Orden *
+                      </FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value} disabled={loading}>
+                        <FormControl>
+                          <SelectTrigger className="w-full border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                            <SelectValue placeholder="Selecciona el tipo de orden" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {tipos.map((tipo) => (
+                            <SelectItem key={tipo.id} value={tipo.id.toString()}>
+                              {tipo.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Subtipo de OT */}
-                <div className="space-y-2">
-                  <Label htmlFor="subtipo" className="text-[#202020] flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    Subtipo de Orden
-                  </Label>
-                  <Select
-                    value={formData.subtipo}
-                    onValueChange={(value) => setFormData((prev) => ({ ...prev, subtipo: value }))}
-                    disabled={loading || !formData.tipo || filteredSubtipos.length === 0}
-                  >
-                    <SelectTrigger className="w-full border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
-                      <SelectValue
-                        placeholder={
-                          !formData.tipo
-                            ? "Primero selecciona un tipo"
-                            : filteredSubtipos.length === 0
-                              ? "No hay subtipos disponibles"
-                              : "Selecciona el subtipo (opcional)"
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {filteredSubtipos.map((subtipo) => (
-                        <SelectItem key={subtipo.id} value={subtipo.id.toString()}>
-                          {subtipo.nombre}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="subtipo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Subtipo de Orden
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={loading || !tipoValue || filteredSubtipos.length === 0}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                            <SelectValue
+                              placeholder={
+                                !tipoValue
+                                  ? "Primero selecciona un tipo"
+                                  : filteredSubtipos.length === 0
+                                    ? "No hay subtipos disponibles"
+                                    : "Selecciona el subtipo (opcional)"
+                              }
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {filteredSubtipos.map((subtipo) => (
+                            <SelectItem key={subtipo.id} value={subtipo.id.toString()}>
+                              {subtipo.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               {/* Grid para Cliente y Asesor */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="flex flex-col md:grid md:grid-cols-2 gap-4">
                 {/* Cliente */}
-                <div className="space-y-2">
-                  <Label htmlFor="cliente" className="text-[#202020] flex items-center gap-2">
-                    <UserIcon className="h-4 w-4" />
-                    Cliente *
-                  </Label>
-                  <Popover open={clienteOpen} onOpenChange={setClienteOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={clienteOpen}
-                        className="w-full justify-between border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
-                        disabled={loading}
-                      >
-                        {formData.cliente
-                          ? (() => {
-                              const cliente = clientes.find((c) => c.id.toString() === formData.cliente)
-                              return cliente
-                                ? `${cliente.first_name} ${cliente.last_name} - ${cliente.cedula}`
-                                : "Selecciona el cliente"
-                            })()
-                          : "Selecciona el cliente"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
-                      <Command>
-                        <CommandInput placeholder="Buscar por nombre o cédula..." />
-                        <CommandList>
-                          <CommandEmpty>No se encontraron clientes.</CommandEmpty>
-                          <CommandGroup>
-                            {clientes.map((cliente) => (
-                              <CommandItem
-                                key={cliente.id}
-                                value={`${cliente.first_name} ${cliente.last_name} ${cliente.cedula}`}
-                                onSelect={() => {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    cliente: cliente.id.toString(),
-                                  }))
-                                  setClienteOpen(false)
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    formData.cliente === cliente.id.toString() ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                {cliente.first_name} {cliente.last_name} - {cliente.cedula}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="cliente"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                        <UserIcon className="h-4 w-4" />
+                        Cliente *
+                      </FormLabel>
+                      <Popover open={clienteOpen} onOpenChange={setClienteOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={clienteOpen}
+                              className="w-full justify-between border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                              disabled={loading}
+                            >
+                              {field.value
+                                ? (() => {
+                                    const cliente = clientes.find((c) => c.id.toString() === field.value)
+                                    return cliente
+                                      ? `${cliente.first_name} ${cliente.last_name} - ${cliente.cedula}`
+                                      : "Selecciona el cliente"
+                                  })()
+                                : "Selecciona el cliente"}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-full max-w-md mx-4 p-0 bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800">
+                          <Command className="bg-white dark:bg-gray-950">
+                            <CommandInput
+                              placeholder="Buscar por nombre o cédula..."
+                              className="border-gray-200 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500"
+                            />
+                            <CommandList className="max-h-[300px] overflow-y-auto">
+                              <CommandEmpty className="dark:text-gray-400">No se encontraron clientes.</CommandEmpty>
+                              <CommandGroup className="overflow-x-auto">
+                                {clientes.map((cliente) => (
+                                  <CommandItem
+                                    key={cliente.id}
+                                    value={`${cliente.first_name} ${cliente.last_name} ${cliente.cedula}`}
+                                    onSelect={() => {
+                                      field.onChange(cliente.id.toString())
+                                      setClienteOpen(false)
+                                    }}
+                                    className="whitespace-nowrap cursor-pointer dark:hover:bg-gray-800 dark:aria-selected:bg-gray-800"
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4 flex-shrink-0 text-[#ED1C24] dark:text-[#ED1C24]",
+                                        field.value === cliente.id.toString() ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    <span className="inline-block dark:text-gray-100">
+                                      {cliente.first_name} {cliente.last_name} - {cliente.cedula}
+                                    </span>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Asesor */}
-                <div className="space-y-2">
-                  <Label htmlFor="asesor" className="text-[#202020] flex items-center gap-2">
-                    <Wrench className="h-4 w-4" />
-                    Asesor
-                  </Label>
-                  <Popover open={asesorOpen} onOpenChange={setAsesorOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={asesorOpen}
-                        className="w-full justify-between border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
-                        disabled={loading}
-                      >
-                        {formData.asesor
-                          ? (() => {
-                              const asesor = asesores.find((a) => a.id.toString() === formData.asesor)
-                              return asesor
-                                ? `${asesor.first_name} ${asesor.last_name} - ${asesor.cedula}`
-                                : "Selecciona el asesor"
-                            })()
-                          : "Selecciona el asesor (opcional)"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
-                      <Command>
-                        <CommandInput placeholder="Buscar por nombre o cédula..." />
-                        <CommandList>
-                          <CommandEmpty>No se encontraron asesores.</CommandEmpty>
-                          <CommandGroup>
-                            {asesores.map((asesor) => (
-                              <CommandItem
-                                key={asesor.id}
-                                value={`${asesor.first_name} ${asesor.last_name} ${asesor.cedula}`}
-                                onSelect={() => {
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    asesor: asesor.id.toString(),
-                                  }))
-                                  setAsesorOpen(false)
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    formData.asesor === asesor.id.toString() ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                {asesor.first_name} {asesor.last_name} - {asesor.cedula}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </CommandList>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                <FormField
+                  control={form.control}
+                  name="asesor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                        <Wrench className="h-4 w-4" />
+                        Asesor (opcional)
+                      </FormLabel>
+                      <Popover open={asesorOpen} onOpenChange={setAsesorOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={asesorOpen}
+                              className="w-full justify-between border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                              disabled={loading}
+                            >
+                              {field.value
+                                ? (() => {
+                                    const asesor = asesores.find((a) => a.id.toString() === field.value)
+                                    return asesor
+                                      ? `${asesor.first_name} ${asesor.last_name} - ${asesor.cedula}`
+                                      : "Selecciona el asesor"
+                                  })()
+                                : "Selecciona el asesor"}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[calc(100vw-2rem)] sm:w-full max-w-md mx-4 p-0 bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800">
+                          <Command className="bg-white dark:bg-gray-950">
+                            <CommandInput
+                              placeholder="Buscar por nombre o cédula..."
+                              className="border-gray-200 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500"
+                            />
+                            <CommandList className="max-h-[300px] overflow-y-auto">
+                              <CommandEmpty className="dark:text-gray-400">No se encontraron asesores.</CommandEmpty>
+                              <CommandGroup className="overflow-x-auto">
+                                {asesores.map((asesor) => (
+                                  <CommandItem
+                                    key={asesor.id}
+                                    value={`${asesor.first_name} ${asesor.last_name} ${asesor.cedula}`}
+                                    onSelect={() => {
+                                      field.onChange(asesor.id.toString())
+                                      setAsesorOpen(false)
+                                    }}
+                                    className="whitespace-nowrap cursor-pointer dark:hover:bg-gray-800 dark:aria-selected:bg-gray-800"
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4 flex-shrink-0 text-[#ED1C24] dark:text-[#ED1C24]",
+                                        field.value === asesor.id.toString() ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    <span className="inline-block dark:text-gray-100">
+                                      {asesor.first_name} {asesor.last_name} - {asesor.cedula}
+                                    </span>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               {/* Vehículo */}
-              <div className="space-y-2">
-                <Label htmlFor="vehiculo" className="text-[#202020] flex items-center gap-2">
-                  <Car className="h-4 w-4" />
-                  Vehículo *
-                </Label>
-                <Select
-                  value={formData.vehiculo}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, vehiculo: value }))}
-                  disabled={loading || !formData.cliente || filteredVehiculos.length === 0}
-                >
-                  <SelectTrigger className="w-full border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
-                    <SelectValue
-                      placeholder={
-                        !formData.cliente
-                          ? "Primero selecciona un cliente"
-                          : filteredVehiculos.length === 0
-                            ? "Este cliente no tiene vehículos"
-                            : "Selecciona el vehículo"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredVehiculos.map((vehiculo) => (
-                      <SelectItem key={vehiculo.id} value={vehiculo.id.toString()}>
-                        {vehiculo.modelo_tecnico__marca} {vehiculo.modelo_tecnico__modelo} - {vehiculo.placa}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <FormField
+                control={form.control}
+                name="vehiculo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                      <Car className="h-4 w-4" />
+                      Vehículo *
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={loading || !clienteValue || filteredVehiculos.length === 0}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                          <SelectValue
+                            placeholder={
+                              !clienteValue
+                                ? "Primero selecciona un cliente"
+                                : filteredVehiculos.length === 0
+                                  ? "Este cliente no tiene vehículos"
+                                  : "Selecciona el vehículo"
+                            }
+                          />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {filteredVehiculos.map((vehiculo) => (
+                          <SelectItem key={vehiculo.id} value={vehiculo.id.toString()}>
+                            {vehiculo.modelo_tecnico__marca} {vehiculo.modelo_tecnico__modelo} - {vehiculo.placa}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Grid para Fecha Promesa y Kilometraje */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Fecha Promesa de Entrega */}
-                <div className="space-y-2">
-                  <Label htmlFor="fecha_promesa_entrega" className="text-[#202020] flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Fecha Promesa de Entrega *
-                  </Label>
-                  <Input
-                    id="fecha_promesa_entrega"
-                    type="datetime-local"
-                    className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
-                    value={formData.fecha_promesa_entrega}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, fecha_promesa_entrega: e.target.value }))
-                    }
-                    disabled={loading}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="fecha_promesa_entrega"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Fecha Promesa de Entrega *
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="datetime-local"
+                          className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                          disabled={loading}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                 {/* Kilometraje */}
-                <div className="space-y-2">
-                  <Label htmlFor="kilometraje_ingreso" className="text-[#202020] flex items-center gap-2">
-                    <Gauge className="h-4 w-4" />
-                    Kilometraje de Ingreso *
-                  </Label>
-                  <Input
-                    id="kilometraje_ingreso"
-                    type="number"
-                    placeholder="45000"
-                    className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
-                    value={formData.kilometraje_ingreso}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, kilometraje_ingreso: e.target.value }))
-                    }
-                    disabled={loading}
-                    min="0"
-                  />
-                </div>
-              </div>
-
-              {/* Descripción */}
-              <div className="space-y-2">
-                <Label htmlFor="descripcion_trabajo" className="text-[#202020] flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Descripción del Trabajo *
-                </Label>
-                <Textarea
-                  id="descripcion_trabajo"
-                  placeholder="Describe el trabajo a realizar..."
-                  className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24] min-h-[100px]"
-                  value={formData.descripcion_trabajo}
-                  onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, descripcion_trabajo: e.target.value }))
-                  }
-                  disabled={loading}
+                <FormField
+                  control={form.control}
+                  name="kilometraje_ingreso"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                        <Gauge className="h-4 w-4" />
+                        Kilometraje de Ingreso *
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="45000"
+                          className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                          disabled={loading}
+                          min="1"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
 
+              {/* Descripción */}
+              <FormField
+                control={form.control}
+                name="descripcion_trabajo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Descripción del Trabajo *
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Describe el trabajo a realizar..."
+                        className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24] min-h-[100px]"
+                        disabled={loading}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {/* Submit Buttons */}
-              <div className="flex gap-4 pt-4">
+              <div className="flex flex-col sm:flex-row gap-4 pt-4">
                 <Button
                   type="button"
                   variant="outline"
-                  className="flex-1"
+                  className="w-full sm:flex-1"
                   onClick={() => router.push("/dashboard/ot")}
                   disabled={loading}
                 >
@@ -513,7 +573,7 @@ export default function NuevaOrdenTrabajoPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-[#ED1C24] hover:bg-[#C41820]"
+                  className="w-full sm:flex-1 bg-[#ED1C24] hover:bg-[#C41820]"
                   disabled={loading}
                 >
                   {loading ? (
@@ -527,7 +587,8 @@ export default function NuevaOrdenTrabajoPage() {
                 </Button>
               </div>
             </CardContent>
-          </form>
+            </form>
+          </Form>
         </Card>
       </motion.div>
       </div>

@@ -144,7 +144,7 @@ export default function FacturaDetailPage({ params }: { params: { id: string } }
                 <span className="font-medium">${factura.subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">IVA (12%):</span>
+                <span className="text-muted-foreground">IVA (15%):</span>
                 <span className="font-medium">${factura.iva.toFixed(2)}</span>
               </div>
               {factura.descuento > 0 && (

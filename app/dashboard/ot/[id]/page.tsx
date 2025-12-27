@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
-import { ArrowLeft, ClipboardCheck, AlertTriangle, Building2, Phone, Mail, MapPin, Stethoscope } from "lucide-react"
+import { ArrowLeft, ClipboardCheck, AlertTriangle, Building2, Phone, Mail, MapPin, Stethoscope, Receipt } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +18,7 @@ import { useAuthToken } from "@/hooks/use-auth-token"
 import type { OrdenTrabajoDetalle, HallazgoOT } from "@/lib/types"
 import { toast } from "sonner"
 import { RegistroHallazgoDialog } from "@/components/hallazgos/registro-hallazgo-dialog"
+import { OTProformaSheet } from "@/components/ot/ot-proforma-sheet"
 
 const estadoColors: Record<string, string> = {
   creada: "bg-gray-500/10 text-gray-500 border-gray-500/20",
@@ -66,6 +67,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
   const [loading, setLoading] = useState(true)
   const [currentEstado, setCurrentEstado] = useState<string>("")
   const [hallazgoDialogOpen, setHallazgoDialogOpen] = useState(false)
+  const [showProformaSheet, setShowProformaSheet] = useState(false)
   const [phases, setPhases] = useState<Phase[]>([])
   const [repuestos, setRepuestos] = useState<Repuesto[]>([])
   const { getToken } = useAuthToken()
@@ -302,7 +304,9 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
                           <Building2 className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <p className="font-semibold text-base">{ot.sucursal_detalle.nombre}</p>
+                            <p className="font-semibold text-base">
+                                {ot.sucursal_detalle.nombre || "No existe información acerca de la sucursal"}
+                            </p>
                           {ot.sucursal_detalle.es_principal && (
                             <Badge variant="secondary" className="text-xs mt-0.5">
                               Sucursal Principal
@@ -400,13 +404,22 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
 
               <Separator />
 
-              <div className="flex justify-between">
-                <span className="font-semibold">Total</span>
-                <span className="text-2xl font-bold text-primary">${parseFloat(ot.total).toFixed(2)}</span>
+              <div>
+                <div className="flex justify-between">
+                  <span className="font-semibold">Total</span>
+                  <span className="text-2xl font-bold text-primary">${parseFloat(ot.total).toFixed(2)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground dark:text-gray-500 mt-1 text-right">
+                  Incluye IVA (15%)
+                </p>
               </div>
 
-              <Button className="w-full" asChild>
-                <Link href={`/dashboard/facturacion/nueva?otId=${ot.id}`}>Generar Factura</Link>
+              <Button
+                className="w-full bg-[#ED1C24] hover:bg-[#c41820] text-white"
+                onClick={() => setShowProformaSheet(true)}
+              >
+                <Receipt className="mr-2 h-5 w-5" />
+                Observar Proforma
               </Button>
             </CardContent>
           </Card>
@@ -447,6 +460,13 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
         ordenTrabajoId={ot.id}
         onGuardar={handleGuardarHallazgo}
         clienteNombre={`${ot.cliente_detalle.first_name} ${ot.cliente_detalle.last_name}`}
+      />
+
+      {/* Proforma Sheet */}
+      <OTProformaSheet
+        ot={ot}
+        open={showProformaSheet}
+        onClose={() => setShowProformaSheet(false)}
       />
     </div>
   )

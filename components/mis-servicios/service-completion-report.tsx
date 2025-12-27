@@ -294,7 +294,7 @@ export function ServiceCompletionReport({
                     <span>${service.subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">IVA (12%):</span>
+                    <span className="text-muted-foreground">IVA (15%):</span>
                     <span>${service.iva.toFixed(2)}</span>
                   </div>
                   {service.descuento > 0 && (

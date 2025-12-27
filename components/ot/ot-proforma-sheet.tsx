@@ -5,13 +5,13 @@ import { Download, Mail, Printer, FileWarning, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import type { ServiceDetail } from "@/lib/mis-servicios/types"
+import type { OrdenTrabajoDetalle } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { motion, AnimatePresence } from "framer-motion"
 
-interface ProformaSheetProps {
-  service: ServiceDetail
+interface OTProformaSheetProps {
+  ot: OrdenTrabajoDetalle
   open: boolean
   onClose: () => void
 }
@@ -24,7 +24,7 @@ interface ProformaItem {
   subtotal: number
 }
 
-export function ProformaSheet({ service, open, onClose }: ProformaSheetProps) {
+export function OTProformaSheet({ ot, open, onClose }: OTProformaSheetProps) {
   const isMobile = useIsMobile()
 
   // Lock body scroll when modal is open
@@ -50,40 +50,47 @@ export function ProformaSheet({ service, open, onClose }: ProformaSheetProps) {
     }
   }, [open])
 
-  // Build proforma items from service data
+  // Build proforma items from OT data
   const buildProformaItems = (): ProformaItem[] => {
     const items: ProformaItem[] = []
 
-    // Base service
-    const baseServiceCost = service.subtotal -
-      service.trabajosAprobados.reduce((acc, w) => acc + w.costoTotal, 0)
-
-    items.push({
-      descripcion: "Servicio Base",
-      detalle: service.servicioSolicitado,
-      cantidad: 1,
-      precioUnitario: baseServiceCost,
-      subtotal: baseServiceCost,
-    })
-
-    // Add approved additional work
-    service.trabajosAprobados.forEach((work) => {
+    // Add mano de obra if > 0
+    const manoObraCost = parseFloat(ot.subtotal_mano_obra)
+    if (manoObraCost > 0) {
       items.push({
-        descripcion: work.titulo,
-        detalle: work.descripcion,
+        descripcion: "Mano de Obra",
+        detalle: ot.descripcion_trabajo || undefined,
         cantidad: 1,
-        precioUnitario: work.costoTotal,
-        subtotal: work.costoTotal,
+        precioUnitario: manoObraCost,
+        subtotal: manoObraCost,
       })
-    })
+    }
+
+    // Add each repuesto
+    if (ot.repuestos && ot.repuestos.length > 0) {
+      ot.repuestos.forEach((repuesto: any) => {
+        const cantidad = repuesto.cantidad || 1
+        const precioUnitario = parseFloat(repuesto.precio_unitario) || 0
+        const subtotal = cantidad * precioUnitario
+
+        items.push({
+          descripcion: repuesto.descripcion || repuesto.nombre || "Repuesto",
+          detalle: repuesto.codigo ? `Código: ${repuesto.codigo}` : undefined,
+          cantidad: cantidad,
+          precioUnitario: precioUnitario,
+          subtotal: subtotal,
+        })
+      })
+    }
 
     return items
   }
 
   const items = buildProformaItems()
-  const subtotal = items.reduce((acc, item) => acc + item.subtotal, 0)
-  const iva = subtotal * 0.15
-  const total = subtotal + iva - service.descuento
+  const subtotal = parseFloat(ot.subtotal)
+  const iva = parseFloat(ot.iva)
+  const descuento = parseFloat(ot.descuento)
+  const total = parseFloat(ot.total)
 
   const handlePrint = () => {
     window.print()
@@ -148,16 +155,16 @@ export function ProformaSheet({ service, open, onClose }: ProformaSheetProps) {
               duration: 0.3
             }}
             className={cn(
-              "fixed z-50 bg-background overflow-hidden flex flex-col",
+              "fixed z-50 bg-background dark:bg-gray-950 overflow-hidden flex flex-col",
               // Mobile: Bottom sheet
               "inset-x-0 bottom-0 rounded-t-2xl max-h-[90vh]",
               // Desktop: Floating side panel
               "md:inset-auto md:right-4 md:top-4 md:bottom-4 md:w-[480px] md:max-w-[calc(100vw-2rem)]",
-              "md:rounded-2xl md:border md:border-border/50 md:shadow-2xl"
+              "md:rounded-2xl md:border md:border-border/50 dark:md:border-gray-800 md:shadow-2xl"
             )}
           >
             {/* Header - Premium style */}
-            <div className="shrink-0 bg-muted/30 border-b px-6 py-4">
+            <div className="shrink-0 bg-muted/30 dark:bg-gray-900/50 border-b dark:border-gray-800 px-6 py-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -166,16 +173,16 @@ export function ProformaSheet({ service, open, onClose }: ProformaSheetProps) {
                       PROFORMA
                     </div>
                   </div>
-                  <h2 className="text-lg font-bold">{service.numeroOrden}</h2>
-                  <p className="text-sm text-muted-foreground">
-                    {service.vehiculo.marca} {service.vehiculo.modelo} • {service.vehiculo.placa}
+                  <h2 className="text-lg font-bold dark:text-gray-100">{ot.numero_orden}</h2>
+                  <p className="text-sm text-muted-foreground dark:text-gray-400">
+                    {ot.vehiculo_detalle.marca} {ot.vehiculo_detalle.modelo} • {ot.vehiculo_detalle.placa}
                   </p>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={onClose}
-                  className="shrink-0 -mr-2 -mt-1"
+                  className="shrink-0 -mr-2 -mt-1 dark:hover:bg-gray-800"
                 >
                   <X className="h-5 w-5" />
                 </Button>
@@ -183,15 +190,30 @@ export function ProformaSheet({ service, open, onClose }: ProformaSheetProps) {
 
               {/* Action buttons */}
               <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" onClick={handlePrint} className="flex-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handlePrint}
+                  className="flex-1 dark:border-gray-700 dark:hover:bg-gray-800"
+                >
                   <Printer className="mr-1.5 h-3.5 w-3.5" />
                   Imprimir
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleDownload} className="flex-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownload}
+                  className="flex-1 dark:border-gray-700 dark:hover:bg-gray-800"
+                >
                   <Download className="mr-1.5 h-3.5 w-3.5" />
                   PDF
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleEmail} className="flex-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleEmail}
+                  className="flex-1 dark:border-gray-700 dark:hover:bg-gray-800"
+                >
                   <Mail className="mr-1.5 h-3.5 w-3.5" />
                   Email
                 </Button>
@@ -201,91 +223,88 @@ export function ProformaSheet({ service, open, onClose }: ProformaSheetProps) {
             {/* Content - Scrollable */}
             <ScrollArea className="flex-1 px-6">
               <div className="py-4 space-y-4">
-                {/* Client & Vehicle Info */}
+                {/* Client & Branch Info */}
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Cliente</p>
-                    <p className="font-medium">{service.cliente.nombre} {service.cliente.apellido}</p>
-                    <p className="text-muted-foreground text-xs">{service.cliente.telefono}</p>
+                    <p className="text-xs text-muted-foreground dark:text-gray-500 uppercase tracking-wide mb-1">Cliente</p>
+                    <p className="font-medium dark:text-gray-100">
+                      {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name}
+                    </p>
+                    <p className="text-muted-foreground dark:text-gray-400 text-xs">
+                      {ot.cliente_detalle.cedula}
+                    </p>
                   </div>
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Taller</p>
-                    <p className="font-medium">{service.taller.nombre}</p>
-                    <p className="text-muted-foreground text-xs">{service.taller.direccion}</p>
+                    <p className="text-xs text-muted-foreground dark:text-gray-500 uppercase tracking-wide mb-1">Sucursal</p>
+                    <p className="font-medium dark:text-gray-100">{ot.sucursal_detalle.nombre}</p>
+                    <p className="text-muted-foreground dark:text-gray-400 text-xs">{ot.sucursal_detalle.direccion}</p>
                   </div>
                 </div>
 
-                <Separator className="border-dashed" />
+                <Separator className="border-dashed dark:border-gray-800" />
 
                 {/* Items list */}
                 <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Detalle de Servicios</p>
+                  <p className="text-xs text-muted-foreground dark:text-gray-500 uppercase tracking-wide">Detalle de Servicios</p>
 
                   {items.map((item, index) => (
                     <div key={index} className="flex justify-between gap-3 py-2">
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm">{item.descripcion}</p>
+                        <p className="font-medium text-sm dark:text-gray-100">{item.descripcion}</p>
                         {item.detalle && (
-                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                          <p className="text-xs text-muted-foreground dark:text-gray-400 line-clamp-1 mt-0.5">
                             {item.detalle}
                           </p>
                         )}
+                        {item.cantidad > 1 && (
+                          <p className="text-xs text-muted-foreground dark:text-gray-400 mt-0.5">
+                            {item.cantidad} x ${item.precioUnitario.toFixed(2)}
+                          </p>
+                        )}
                       </div>
-                      <p className="font-medium text-sm shrink-0">
+                      <p className="font-medium text-sm dark:text-gray-100 shrink-0">
                         ${item.subtotal.toFixed(2)}
                       </p>
                     </div>
                   ))}
                 </div>
 
-                <Separator className="border-dashed" />
+                <Separator className="border-dashed dark:border-gray-800" />
 
                 {/* Subtotals */}
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span>${subtotal.toFixed(2)}</span>
+                    <span className="text-muted-foreground dark:text-gray-400">Subtotal</span>
+                    <span className="dark:text-gray-100">${subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">IVA (15%)</span>
-                    <span>${iva.toFixed(2)}</span>
+                    <span className="text-muted-foreground dark:text-gray-400">IVA (15%)</span>
+                    <span className="dark:text-gray-100">${iva.toFixed(2)}</span>
                   </div>
-                  {service.descuento > 0 && (
-                    <div className="flex justify-between text-green-600">
+                  {descuento > 0 && (
+                    <div className="flex justify-between text-green-600 dark:text-green-400">
                       <span>Descuento</span>
-                      <span>-${service.descuento.toFixed(2)}</span>
+                      <span>-${descuento.toFixed(2)}</span>
                     </div>
                   )}
                 </div>
-
-                {/* Pending work notice */}
-                {service.trabajosAdicionales.length > 0 && (
-                  <div className="rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-3 text-sm">
-                    <p className="font-medium text-yellow-600 dark:text-yellow-400">
-                      {service.trabajosAdicionales.length} trabajo{service.trabajosAdicionales.length > 1 ? "s" : ""} pendiente{service.trabajosAdicionales.length > 1 ? "s" : ""} de aprobación
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      El total puede variar según tus decisiones
-                    </p>
-                  </div>
-                )}
               </div>
             </ScrollArea>
 
             {/* Footer - Total */}
-            <div className="shrink-0 border-t bg-muted/20 px-6 py-4">
+            <div className="shrink-0 border-t dark:border-gray-800 bg-muted/20 dark:bg-gray-900/30 px-6 py-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Estimado</p>
-                  <p className="text-xs text-muted-foreground">Incluye IVA</p>
+                  <p className="text-xs text-muted-foreground dark:text-gray-500 uppercase tracking-wide">Total Estimado</p>
+                  <p className="text-xs text-muted-foreground dark:text-gray-500">Incluye IVA</p>
                 </div>
-                <p className="text-2xl font-bold text-primary">
+                <p className="text-2xl font-bold text-primary dark:text-[#ED1C24]">
                   ${total.toFixed(2)}
                 </p>
               </div>
 
               {/* Legal disclaimer */}
-              <p className="text-[10px] text-muted-foreground mt-3 text-center">
+              <p className="text-[10px] text-muted-foreground dark:text-gray-500 mt-3 text-center">
                 Este documento es una proforma y no tiene validez tributaria. Validez: 15 días.
               </p>
             </div>
@@ -295,4 +314,3 @@ export function ProformaSheet({ service, open, onClose }: ProformaSheetProps) {
     </AnimatePresence>
   )
 }
-

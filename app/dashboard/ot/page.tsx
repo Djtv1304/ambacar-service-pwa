@@ -209,73 +209,80 @@ export default function OrdenesTrabajoPage() {
             <div className="grid gap-4">
               {otsPorEstado.activas.map((ot) => (
                 <Card key={`ot-activa-${ot.id}`} className="transition-colors hover:bg-accent/50">
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div className="flex-1 space-y-3">
-                        <div className="flex items-start justify-between">
-                          <div>
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-semibold">{ot.numero_orden}</h3>
-                              <Badge variant="outline" className={getEstadoColorClass(ot.estado_detalle.codigo)}>
-                                {ot.estado_detalle.nombre}
-                              </Badge>
-                              <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
-                                {ot.tipo_detalle.nombre}
-                              </Badge>
+                        {/* Header con número de orden y badges */}
+                        <div className="flex flex-col gap-2 md:block">
+                          <div className="flex items-start justify-between gap-2 md:block">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-semibold text-base sm:text-lg">{ot.numero_orden}</h3>
+                                <Badge variant="outline" className={getEstadoColorClass(ot.estado_detalle.codigo)}>
+                                  {ot.estado_detalle.nombre}
+                                </Badge>
+                                <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+                                  {ot.tipo_detalle.nombre}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground mt-1 md:block hidden">
+                                {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name}
+                              </p>
                             </div>
-                            <p className="text-sm text-muted-foreground mt-1">
-                              {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name}
-                            </p>
+                            <Button asChild variant="outline" size="sm" className="shrink-0 md:hidden">
+                              <Link href={`/dashboard/ot/${ot.id}`}>Ver Detalles</Link>
+                            </Button>
                           </div>
                         </div>
 
-                        <div className="grid gap-3 sm:grid-cols-3">
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="font-medium">Vehículo:</span>
-                            <span>
-                              {ot.vehiculo_detalle.marca}{" "}
-                              {ot.vehiculo_detalle.modelo}
-                            </span>
+                        {/* Cliente - Solo mobile */}
+                        <div className="text-sm md:hidden">
+                          <span className="font-medium text-muted-foreground">Cliente: </span>
+                          <span>{ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name}</span>
+                        </div>
+
+                        {/* Vehículo y Placa */}
+                        <div className="flex flex-col gap-2 text-sm md:grid md:grid-cols-2 md:gap-3">
+                          <div>
+                            <span className="font-medium text-muted-foreground md:font-medium">Vehículo: </span>
+                            <span>{ot.vehiculo_detalle.marca} {ot.vehiculo_detalle.modelo}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="font-medium">Placa:</span>
+                          <div>
+                            <span className="font-medium text-muted-foreground md:font-medium">Placa: </span>
                             <span>{ot.vehiculo_detalle.placa}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span>Juan Técnico</span>
-                          </div>
                         </div>
 
-                        <div className="flex items-center gap-4 text-sm">
+                        {/* Fechas */}
+                        <div className="flex flex-col gap-2 text-sm border-t pt-3 md:border-t-0 md:pt-0 md:flex-row md:items-center md:gap-4">
                           <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span>
-                              Ingreso:{" "}
+                            <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                            <span className="text-muted-foreground md:inline hidden">Ingreso:</span>
+                            <span className="md:hidden">Ingreso:</span>
+                            <span className="font-medium md:font-normal">
                               {new Date(ot.fecha_apertura).toLocaleDateString("es-EC", {
                                 day: "2-digit",
                                 month: "short",
+                                year: "numeric",
                               })}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground shrink-0 md:hidden" />
                             <span className="text-muted-foreground">Entrega estimada:</span>
-                            <span>
+                            <span className="font-medium md:font-normal">
                               {new Date(ot.fecha_promesa_entrega).toLocaleDateString("es-EC", {
                                 day: "2-digit",
                                 month: "short",
+                                year: "numeric",
                               })}
                             </span>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground">Progreso:</span>
-                          <span>1 / 2 tareas</span>
-                        </div>
                       </div>
 
-                      <div className="flex gap-2">
+                      {/* Botón - Solo desktop */}
+                      <div className="hidden md:flex gap-2">
                         <Button asChild variant="outline" size="sm">
                           <Link href={`/dashboard/ot/${ot.id}`}>Ver Detalles</Link>
                         </Button>
@@ -300,24 +307,54 @@ export default function OrdenesTrabajoPage() {
             <div className="grid gap-4">
               {otsPorEstado.completadas.map((ot) => (
                 <Card key={`ot-completada-${ot.id}`} className="transition-colors hover:bg-accent/50">
-                  <CardContent className="p-6">
+                  <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                       <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="font-semibold">{ot.numero_orden}</h3>
-                          <Badge variant="outline" className={getEstadoColorClass(ot.estado_detalle.codigo)}>
-                            {ot.estado_detalle.nombre}
-                          </Badge>
-                          <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
-                            {ot.tipo_detalle.nombre}
-                          </Badge>
+                        {/* Header - Mobile y Desktop */}
+                        <div className="flex flex-col gap-2 md:block">
+                          <div className="flex items-start justify-between gap-2 md:block">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-semibold text-base sm:text-lg">{ot.numero_orden}</h3>
+                              <Badge variant="outline" className={getEstadoColorClass(ot.estado_detalle.codigo)}>
+                                {ot.estado_detalle.nombre}
+                              </Badge>
+                              <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+                                {ot.tipo_detalle.nombre}
+                              </Badge>
+                            </div>
+                            <Button asChild variant="outline" size="sm" className="shrink-0 md:hidden">
+                              <Link href={`/dashboard/ot/${ot.id}`}>Ver Detalles</Link>
+                            </Button>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name} - {ot.vehiculo_detalle.placa}
-                        </p>
-                        <p className="text-sm font-medium">Total: $0.00</p>
+
+                        {/* Info - Diferentes layouts para mobile y desktop */}
+                        <div className="flex flex-col gap-2 text-sm md:block">
+                          {/* Desktop: Todo en una línea */}
+                          <p className="hidden md:block text-muted-foreground">
+                            {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name} - {ot.vehiculo_detalle.placa}
+                          </p>
+
+                          {/* Mobile: Apilado */}
+                          <div className="md:hidden space-y-2">
+                            <div>
+                              <span className="font-medium text-muted-foreground">Cliente: </span>
+                              <span>{ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name}</span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Vehículo: </span>
+                              <span>{ot.vehiculo_detalle.marca} {ot.vehiculo_detalle.modelo}</span>
+                            </div>
+                            <div>
+                              <span className="font-medium text-muted-foreground">Placa: </span>
+                              <span>{ot.vehiculo_detalle.placa}</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <Button asChild variant="outline" size="sm">
+
+                      {/* Botón - Solo desktop */}
+                      <Button asChild variant="outline" size="sm" className="hidden md:flex">
                         <Link href={`/dashboard/ot/${ot.id}`}>Ver Detalles</Link>
                       </Button>
                     </div>
