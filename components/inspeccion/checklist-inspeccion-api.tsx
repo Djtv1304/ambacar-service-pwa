@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle2, Circle, AlertTriangle, XCircle, Ruler, Camera, ImagePlus } from "lucide-react"
-import { motion } from "framer-motion"
-import type { PuntoInspeccionEvaluado, PuntoInspeccionCatalogo, ItemInspeccion } from "@/lib/types"
+import { CheckCircle2, Circle, AlertTriangle, XCircle, Ruler, Camera, ImagePlus, ChevronDown, Eye, User, Calendar as CalendarIcon } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import type { PuntoInspeccionEvaluado, PuntoInspeccionCatalogo, ItemInspeccion, FotoInspeccionAPI } from "@/lib/types"
 import { MIN_FOTOS_INSPECCION } from "@/lib/inspeccion/constants"
 import { EvaluacionPuntoDialog } from "./evaluacion-punto-dialog"
 import { EvaluacionConMedicionesDialog } from "./evaluacion-con-mediciones-dialog"
@@ -23,6 +24,106 @@ interface ChecklistInspeccionApiProps {
   readOnly?: boolean
 }
 
+interface FotoThumbnailProps {
+  foto: FotoInspeccionAPI
+  onClick: () => void
+}
+
+function FotoThumbnail({ foto, onClick }: FotoThumbnailProps) {
+  return (
+    <motion.button
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={onClick}
+      className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-lg overflow-hidden border border-border bg-muted hover:border-primary transition-colors group"
+    >
+      <img
+        src={foto.url_imagen}
+        alt={foto.descripcion || "Foto de inspección"}
+        className="h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <Eye className="h-6 w-6 text-white" />
+      </div>
+    </motion.button>
+  )
+}
+
+interface FotoModalProps {
+  foto: FotoInspeccionAPI | null
+  open: boolean
+  onClose: () => void
+}
+
+function FotoModal({ foto, open, onClose }: FotoModalProps) {
+  const [showOverlay, setShowOverlay] = useState(false)
+
+  if (!foto) return null
+
+  const handleImageClick = () => {
+    window.open(foto.url_imagen, "_blank")
+  }
+
+  const handleTouchStart = () => {
+    setShowOverlay(true)
+  }
+
+  const handleTouchEnd = () => {
+    setShowOverlay(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{foto.descripcion || "Foto de Inspección"}</DialogTitle>
+        </DialogHeader>
+        <div className="mt-4 space-y-4">
+          <div className="flex items-center justify-center bg-muted rounded-lg p-2 min-h-[200px]">
+            <div
+              className="relative rounded-lg overflow-hidden cursor-pointer group"
+              onClick={handleImageClick}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              onTouchCancel={handleTouchEnd}
+            >
+              <img
+                src={foto.url_imagen}
+                alt={foto.descripcion || "Foto de inspección"}
+                className="max-h-[60vh] md:max-h-[70vh] w-auto max-w-full object-contain rounded-lg"
+              />
+              <div
+                className={cn(
+                  "absolute inset-0 bg-black/60 transition-opacity flex items-center justify-center rounded-lg",
+                  showOverlay ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}
+              >
+                <div className="text-center px-4">
+                  <Eye className="h-10 w-10 md:h-12 md:w-12 text-white mx-auto mb-2" />
+                  <p className="text-white text-xs md:text-sm font-medium">
+                    Click para abrir en nueva pestaña
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2 text-sm bg-muted/50 dark:bg-muted/20 p-3 rounded-lg">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <CalendarIcon className="h-4 w-4 shrink-0" />
+              <span>{new Date(foto.fecha_captura).toLocaleString("es-EC")}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <User className="h-4 w-4 shrink-0" />
+              <span>Capturada por: {foto.usuario_nombre}</span>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function ChecklistInspeccionApi({
   puntosInspeccion,
   evaluaciones,
@@ -35,6 +136,8 @@ export function ChecklistInspeccionApi({
   const [dialogOpen, setDialogOpen] = useState(false)
   const [fotosDialogOpen, setFotosDialogOpen] = useState(false)
   const [itemParaFotos, setItemParaFotos] = useState<{ id: number; nombre: string } | null>(null)
+  const [expandedPhotos, setExpandedPhotos] = useState<Set<number>>(new Set())
+  const [selectedFoto, setSelectedFoto] = useState<FotoInspeccionAPI | null>(null)
 
   const puntosCompletados = evaluaciones.filter((e) => e.completado).length
   const progreso = (puntosCompletados / puntosInspeccion.length) * 100
@@ -50,6 +153,18 @@ export function ChecklistInspeccionApi({
     e.stopPropagation()
     setItemParaFotos({ id: itemId, nombre: puntoNombre })
     setFotosDialogOpen(true)
+  }
+
+  const toggleExpandedPhotos = (puntoId: number) => {
+    setExpandedPhotos((prev) => {
+      const next = new Set(prev)
+      if (next.has(puntoId)) {
+        next.delete(puntoId)
+      } else {
+        next.add(puntoId)
+      }
+      return next
+    })
   }
 
   const necesitaFotos = (puntoId: number): boolean => {
@@ -230,10 +345,33 @@ export function ChecklistInspeccionApi({
                               </p>
                             )}
                             {fotosActuales > 0 && (
-                              <p className="text-xs text-purple-600 flex items-center gap-1">
-                                <Camera className="h-3 w-3" />
-                                {fotosActuales} foto(s) adjunta(s)
-                              </p>
+                              <div
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleExpandedPhotos(punto.id)
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    toggleExpandedPhotos(punto.id)
+                                  }
+                                }}
+                                className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/30 dark:hover:bg-purple-950/50 border border-purple-200 dark:border-purple-900 transition-colors cursor-pointer"
+                              >
+                                <Camera className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                                <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                                  Ver {fotosActuales} foto{fotosActuales !== 1 ? 's' : ''}
+                                </span>
+                                <ChevronDown
+                                  className={cn(
+                                    "h-3.5 w-3.5 text-purple-600 dark:text-purple-400 transition-transform",
+                                    expandedPhotos.has(punto.id) && "rotate-180"
+                                  )}
+                                />
+                              </div>
                             )}
                           </div>
                         </div>
@@ -271,14 +409,66 @@ export function ChecklistInspeccionApi({
                               </p>
                             )}
                             {fotosActuales > 0 && (
-                              <p className="text-xs text-purple-600 mt-1 flex items-center gap-1">
-                                <Camera className="h-3 w-3" />
-                                {fotosActuales} foto(s) adjunta(s)
-                              </p>
+                              <div
+                                role="button"
+                                tabIndex={0}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleExpandedPhotos(punto.id)
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    toggleExpandedPhotos(punto.id)
+                                  }
+                                }}
+                                className="mt-1 inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/30 dark:hover:bg-purple-950/50 border border-purple-200 dark:border-purple-900 transition-colors cursor-pointer"
+                              >
+                                <Camera className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                                <span className="text-xs font-medium text-purple-700 dark:text-purple-300">
+                                  Ver {fotosActuales} foto{fotosActuales !== 1 ? 's' : ''}
+                                </span>
+                                <ChevronDown
+                                  className={cn(
+                                    "h-3.5 w-3.5 text-purple-600 dark:text-purple-400 transition-transform",
+                                    expandedPhotos.has(punto.id) && "rotate-180"
+                                  )}
+                                />
+                              </div>
                             )}
                           </div>
                         </div>
                       </Button>
+
+                      {/* Galería de fotos expandible */}
+                      <AnimatePresence>
+                        {expandedPhotos.has(punto.id) && item?.fotos && item.fotos.length > 0 && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="pl-4 sm:pl-8 pt-3">
+                              <div className="p-3 rounded-lg border bg-purple-50/50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900">
+                                <p className="text-xs text-purple-900 dark:text-purple-300 mb-2 font-medium">
+                                  Evidencia fotográfica ({item.fotos.length})
+                                </p>
+                                <div className="flex flex-wrap gap-2">
+                                  {item.fotos.map((foto) => (
+                                    <FotoThumbnail
+                                      key={foto.id}
+                                      foto={foto}
+                                      onClick={() => setSelectedFoto(foto)}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
 
                       {/* Alerta fotos requeridas - Fuera del Button */}
                       {requiereFotos && item && !readOnly && (
@@ -367,6 +557,13 @@ export function ChecklistInspeccionApi({
           }}
         />
       )}
+
+      {/* Modal de fotos */}
+      <FotoModal
+        foto={selectedFoto}
+        open={!!selectedFoto}
+        onClose={() => setSelectedFoto(null)}
+      />
     </>
   )
 }
