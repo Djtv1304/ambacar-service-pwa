@@ -20,6 +20,13 @@ const pathLabels: Record<string, string> = {
   nueva: "Nueva",
   nuevo: "Nuevo",
   editar: "Editar",
+  "mis-servicios": "Mis Servicios",
+  inspecciones: "Inspecciones",
+  inspeccion: "Inspección",
+  multimedia: "Registro Multimedia",
+  notificaciones: "Notificaciones",
+  preferencias: "Preferencias",
+  recordatorios: "Recordatorios",
 }
 
 export function Breadcrumbs() {

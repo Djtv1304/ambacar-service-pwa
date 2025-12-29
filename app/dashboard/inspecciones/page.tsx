@@ -164,12 +164,12 @@ export default function InspeccionesPage() {
               } else if (inspeccion.estado === "EN_PROCESO") {
                 return {
                   text: "Continuar Inspección",
-                  href: `/dashboard/inspeccion/${inspeccion.orden_trabajo}`,
+                  href: `/dashboard/inspecciones/${inspeccion.orden_trabajo}`,
                 }
               } else {
                 return {
                   text: "Ver Inspección",
-                  href: `/dashboard/inspeccion/${inspeccion.orden_trabajo}`,
+                  href: `/dashboard/inspecciones/${inspeccion.orden_trabajo}`,
                 }
               }
             }

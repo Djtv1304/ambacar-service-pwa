@@ -230,7 +230,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
           </Button>
           {currentEstado === "CTRL-CAL" && (
             <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
-              <Link href={`/dashboard/inspeccion/${ot.id}`}>
+              <Link href={`/dashboard/inspecciones/${ot.id}`}>
                 <ClipboardCheck className="mr-2 h-4 w-4" />
                 Inspección
               </Link>
