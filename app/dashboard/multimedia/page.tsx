@@ -130,33 +130,41 @@ export default function MultimediaPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
+              className="h-full"
             >
               <Card
-                className="cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden group"
+                className="cursor-pointer hover:shadow-lg transition-shadow duration-200 overflow-hidden group flex flex-col py-0 h-full"
                 onClick={() => handleOTClick(ot.id)}
               >
-                <div className="relative aspect-video bg-gray-100">
+                {/* Image container - sin padding para que llegue hasta el borde */}
+                <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
                   {ot.previewImage ? (
                     <img
                       src={ot.previewImage}
                       alt={`OT ${ot.numero_orden}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                      className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center">
+                    <div className="absolute inset-0 w-full h-full flex items-center justify-center">
                       <ImageIcon className="h-12 w-12 text-gray-300" />
                     </div>
                   )}
-                  <Badge className="absolute top-2 right-2 bg-[#ED1C24]">
+                  <Badge className="absolute top-3 right-3 bg-[#ED1C24] shadow-lg">
                     {ot.totalFotos || 0} fotos
                   </Badge>
                 </div>
 
-                <CardContent className="p-4">
+                <CardContent className="p-4 flex-1">
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-[#202020]">OT {ot.numero_orden}</h3>
-                      <Badge variant="outline" className="text-xs">
+                    {/* Header: En mobile lado a lado, en desktop stack vertical para badges largos */}
+                    <div className="flex flex-col md:flex-col gap-2">
+                      <div className="flex items-center justify-between md:justify-start gap-2">
+                        <h3 className="font-semibold text-[#202020] flex-shrink-0">{ot.numero_orden}</h3>
+                        <Badge variant="outline" className="text-xs md:hidden flex-shrink-0">
+                          {ot.estado_detalle.nombre}
+                        </Badge>
+                      </div>
+                      <Badge variant="outline" className="text-xs hidden md:inline-flex md:self-start">
                         {ot.estado_detalle.nombre}
                       </Badge>
                     </div>
