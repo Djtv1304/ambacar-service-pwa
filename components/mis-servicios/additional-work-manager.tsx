@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   AlertTriangle,
+  AlertCircle,
   Check,
   X,
   ChevronDown,
@@ -25,8 +26,8 @@ interface AdditionalWorkManagerProps {
   pendingWork: AdditionalWork[]
   approvedWork: AdditionalWork[]
   rejectedWork: AdditionalWork[]
-  onApprove: (workId: string) => Promise<void>
-  onReject: (workId: string) => Promise<void>
+  onApprove: (workId: number) => Promise<void>
+  onReject: (workId: number) => Promise<void>
   className?: string
   /** When true, hides approve/reject buttons (for internal users viewing client data) */
   readOnly?: boolean
@@ -65,8 +66,8 @@ const severityConfig = {
 
 interface WorkItemCardProps {
   work: AdditionalWork
-  onApprove?: (workId: string) => Promise<void>
-  onReject?: (workId: string) => Promise<void>
+  onApprove?: (workId: number) => Promise<void>
+  onReject?: (workId: number) => Promise<void>
   showActions?: boolean
   status?: "approved" | "rejected"
   /** When true, shows a waiting badge instead of action buttons */
@@ -375,66 +376,78 @@ export function AdditionalWorkManager({
       )}
 
       {/* History toggle */}
-      {hasHistory && (
-        <div>
-          <Collapsible open={showHistory} onOpenChange={setShowHistory}>
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" className="w-full justify-between">
-                <span>Historial de decisiones ({approvedWork.length + rejectedWork.length})</span>
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 transition-transform",
-                    showHistory && "rotate-180"
+      <div>
+        <Collapsible open={showHistory} onOpenChange={setShowHistory}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-between">
+              <span>Historial de decisiones ({approvedWork.length + rejectedWork.length})</span>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  showHistory && "rotate-180"
+                )}
+              />
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="space-y-4 mt-4">
+              {hasHistory ? (
+                <>
+                  {/* Approved */}
+                  {approvedWork.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Aprobados ({approvedWork.length})
+                      </h4>
+                      <div className="space-y-3">
+                        {approvedWork.map((work) => (
+                          <WorkItemCard
+                            key={work.id}
+                            work={work}
+                            showActions={false}
+                            status="approved"
+                          />
+                        ))}
+                      </div>
+                    </div>
                   )}
-                />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <div className="space-y-4 mt-4">
-                {/* Approved */}
-                {approvedWork.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      Aprobados ({approvedWork.length})
-                    </h4>
-                    <div className="space-y-3">
-                      {approvedWork.map((work) => (
-                        <WorkItemCard
-                          key={work.id}
-                          work={work}
-                          showActions={false}
-                          status="approved"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
 
-                {/* Rejected */}
-                {rejectedWork.length > 0 && (
-                  <div>
-                    <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                      <X className="h-4 w-4 text-muted-foreground" />
-                      Rechazados ({rejectedWork.length})
-                    </h4>
-                    <div className="space-y-3">
-                      {rejectedWork.map((work) => (
-                        <WorkItemCard
-                          key={work.id}
-                          work={work}
-                          showActions={false}
-                          status="rejected"
-                        />
-                      ))}
+                  {/* Rejected */}
+                  {rejectedWork.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                        <X className="h-4 w-4 text-muted-foreground" />
+                        Rechazados ({rejectedWork.length})
+                      </h4>
+                      <div className="space-y-3">
+                        {rejectedWork.map((work) => (
+                          <WorkItemCard
+                            key={work.id}
+                            work={work}
+                            showActions={false}
+                            status="rejected"
+                          />
+                        ))}
+                      </div>
                     </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                    <AlertCircle className="h-6 w-6 text-muted-foreground" />
                   </div>
-                )}
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
-        </div>
-      )}
+                  <p className="font-medium text-foreground">Sin decisiones previas</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Los trabajos aprobados o rechazados aparecerán aquí
+                  </p>
+                </div>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
     </div>
   )
 }

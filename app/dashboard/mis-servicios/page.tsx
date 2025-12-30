@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { Car, Search } from "lucide-react"
 import { ServiceList } from "@/components/mis-servicios/service-list"
 import { ClientSearchForm } from "@/components/mis-servicios/client-search-form"
@@ -18,9 +18,24 @@ export default function MisServiciosPage() {
 
   // Fetch services - for clients directly, for internal users after client selection
   const shouldFetchServices = !userIsInternal || selectedClientId !== null
-  const { activeServices, completedServices, isLoading, error } = useClientServices(
-    shouldFetchServices ? selectedClientId : undefined
-  )
+  const {
+    activeServices,
+    completedServices,
+    isLoading,
+    activeLoading,
+    historialLoading,
+    error,
+    fetchHistorial,
+    refetchActive,
+    refetchHistorial,
+  } = useClientServices(shouldFetchServices ? selectedClientId : undefined)
+
+  // Handle tab change - lazy load historial when tab is selected
+  const handleTabChange = useCallback((tab: "active" | "history") => {
+    if (tab === "history") {
+      fetchHistorial()
+    }
+  }, [fetchHistorial])
 
   // Handle client found from search
   const handleClientFound = (clientId: string, clientName: string) => {
@@ -95,9 +110,14 @@ export default function MisServiciosPage() {
         activeServices={activeServices}
         completedServices={completedServices}
         isLoading={isLoading}
+        activeLoading={activeLoading}
+        historialLoading={historialLoading}
         isInternalUser={userIsInternal}
         clientName={selectedClientName || undefined}
         onClearClient={handleClearClient}
+        onTabChange={handleTabChange}
+        onRefreshActive={refetchActive}
+        onRefreshHistorial={refetchHistorial}
       />
     </div>
   )

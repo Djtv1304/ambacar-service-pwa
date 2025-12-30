@@ -318,11 +318,17 @@ export default function ServiceDetailPage({
                             </span>
                           </div>
                         </div>
-                        {service.recepcion.observaciones && (
+                        {service.recepcion.observaciones ? (
                           <div>
                             <p className="text-muted-foreground mb-1">Observaciones:</p>
                             <p className="bg-muted/50 rounded p-2 text-xs">
                               {service.recepcion.observaciones}
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="text-center py-2">
+                            <p className="text-xs text-muted-foreground italic">
+                              Sin observaciones adicionales en la recepción
                             </p>
                           </div>
                         )}
@@ -330,30 +336,44 @@ export default function ServiceDetailPage({
                     </AccordionContent>
                   </AccordionItem>
 
-                  {service.tecnicoAsignado && (
-                    <AccordionItem value="tecnico">
-                      <AccordionTrigger className="text-sm py-3">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4" />
-                          Técnico Asignado
-                        </div>
-                      </AccordionTrigger>
-                      <AccordionContent>
+                  <AccordionItem value="tecnico">
+                    <AccordionTrigger className="text-sm py-3">
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        Técnico Asignado
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      {service.tecnicoAsignado ? (
                         <div className="space-y-2 text-sm">
                           <p>
                             <span className="text-muted-foreground">Nombre:</span>{" "}
                             {service.tecnicoAsignado.nombre}
                           </p>
-                          {service.tecnicoAsignado.especialidad && (
+                          {service.tecnicoAsignado.especialidad ? (
                             <p>
                               <span className="text-muted-foreground">Especialidad:</span>{" "}
                               {service.tecnicoAsignado.especialidad}
                             </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground italic">
+                              Sin especialidad registrada
+                            </p>
                           )}
                         </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  )}
+                      ) : (
+                        <div className="text-center py-4">
+                          <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mx-auto mb-2">
+                            <User className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                          <p className="font-medium text-sm">Sin técnico asignado</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Se asignará un técnico cuando el servicio avance
+                          </p>
+                        </div>
+                      )}
+                    </AccordionContent>
+                  </AccordionItem>
                 </Accordion>
               </CardContent>
             </Card>

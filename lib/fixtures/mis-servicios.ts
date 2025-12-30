@@ -9,7 +9,7 @@ import type {
 // Mock active services for the client
 export const mockClientServices: ClientService[] = [
   {
-    id: "srv1",
+    id: 1,
     ordenTrabajoId: "ot1",
     numeroOrden: "OT-2025-001",
     vehiculo: {
@@ -34,7 +34,7 @@ export const mockClientServices: ClientService[] = [
     servicioSolicitado: "Mantenimiento preventivo 45,000 km",
   },
   {
-    id: "srv2",
+    id: 2,
     ordenTrabajoId: "ot2",
     numeroOrden: "OT-2025-002",
     vehiculo: {
@@ -63,7 +63,7 @@ export const mockClientServices: ClientService[] = [
 // Mock completed services (history)
 export const mockCompletedServices: ClientService[] = [
   {
-    id: "srv3",
+    id: 3,
     ordenTrabajoId: "ot3",
     numeroOrden: "OT-2024-156",
     vehiculo: {
@@ -88,7 +88,7 @@ export const mockCompletedServices: ClientService[] = [
     servicioSolicitado: "Mantenimiento 40,000 km",
   },
   {
-    id: "srv4",
+    id: 4,
     ordenTrabajoId: "ot4",
     numeroOrden: "OT-2024-120",
     vehiculo: {
@@ -205,7 +205,7 @@ export const mockTimelineEvents: TimelineEvent[] = [
 // Mock additional work items
 export const mockAdditionalWork: AdditionalWork[] = [
   {
-    id: "aw1",
+    id: 1,
     titulo: "Cambio de pastillas de freno delanteras",
     descripcion: "Las pastillas de freno delanteras presentan desgaste del 60%",
     justificacionTecnica: "El desgaste actual está por debajo del umbral de seguridad recomendado (30% restante). Se recomienda el reemplazo preventivo para evitar daños en los discos de freno y garantizar la seguridad del vehículo.",
@@ -227,7 +227,7 @@ export const mockAdditionalWork: AdditionalWork[] = [
     fechaSolicitud: new Date("2025-12-10T11:45:00"),
   },
   {
-    id: "aw2",
+    id: 2,
     titulo: "Cambio de filtro de cabina",
     descripcion: "El filtro de cabina está saturado y con olores",
     justificacionTecnica: "El filtro de aire de cabina presenta acumulación de polvo y humedad. Esto puede afectar la calidad del aire interior y el rendimiento del aire acondicionado.",
@@ -252,7 +252,7 @@ export const mockAdditionalWork: AdditionalWork[] = [
 // Mock approved additional work
 export const mockApprovedWork: AdditionalWork[] = [
   {
-    id: "aw3",
+    id: 3,
     titulo: "Cambio de líquido refrigerante",
     descripcion: "El líquido refrigerante necesita reemplazo",
     justificacionTecnica: "El refrigerante ha perdido propiedades según los intervalos de mantenimiento.",
@@ -278,7 +278,7 @@ export const mockApprovedWork: AdditionalWork[] = [
 // Mock rejected additional work
 export const mockRejectedWork: AdditionalWork[] = [
   {
-    id: "aw4",
+    id: 4,
     titulo: "Limpieza de inyectores",
     descripcion: "Servicio de limpieza preventiva de inyectores",
     justificacionTecnica: "Se recomienda limpieza para optimizar el consumo de combustible.",
@@ -333,8 +333,9 @@ export const mockServiceDetail: ServiceDetail = {
 }
 
 // Helper to get service by ID
-export function getMockServiceById(id: string): ServiceDetail | null {
-  if (id === "srv1" || id === "ot1") {
+export function getMockServiceById(id: string | number): ServiceDetail | null {
+  // Support both string and number IDs for backward compatibility
+  if (id === 1 || id === "1" || id === "srv1" || id === "ot1") {
     return mockServiceDetail
   }
   return null

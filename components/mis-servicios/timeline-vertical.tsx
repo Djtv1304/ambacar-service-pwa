@@ -136,6 +136,21 @@ export function TimelineVertical({ events, simplified = true, className }: Timel
     })
   }
 
+  // Empty state when no timeline events
+  if (events.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+          <Clock className="h-6 w-6 text-muted-foreground" />
+        </div>
+        <p className="font-medium text-foreground">Sin eventos en la línea de tiempo</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Los eventos del servicio aparecerán aquí conforme avance el proceso
+        </p>
+      </div>
+    )
+  }
+
   return (
     <>
       <div className={cn("relative", className)}>
@@ -275,15 +290,23 @@ export function TimelineVertical({ events, simplified = true, className }: Timel
                       className="overflow-hidden"
                     >
                       <div className="pt-3 mt-3 border-t space-y-2">
-                        {event.responsable && (
+                        {event.responsable ? (
                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
                             <User className="h-3.5 w-3.5" />
                             <span>Responsable: {event.responsable}</span>
                           </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">
+                            Sin responsable asignado
+                          </p>
                         )}
-                        {event.notas && (
+                        {event.notas ? (
                           <p className="text-xs text-muted-foreground">
                             {event.notas}
+                          </p>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">
+                            Sin notas adicionales
                           </p>
                         )}
                       </div>
@@ -292,7 +315,7 @@ export function TimelineVertical({ events, simplified = true, className }: Timel
                 </AnimatePresence>
 
                 {/* Evidence thumbnails */}
-                {event.evidencia && event.evidencia.length > 0 && (
+                {event.evidencia && event.evidencia.length > 0 ? (
                   <div className="mt-3 pt-3 border-t">
                     <p className="text-xs text-muted-foreground mb-2">
                       Evidencia ({event.evidencia.length})
@@ -306,6 +329,12 @@ export function TimelineVertical({ events, simplified = true, className }: Timel
                         />
                       ))}
                     </div>
+                  </div>
+                ) : event.completada && (
+                  <div className="mt-3 pt-3 border-t">
+                    <p className="text-xs text-muted-foreground italic">
+                      Sin evidencia fotográfica registrada
+                    </p>
                   </div>
                 )}
               </div>

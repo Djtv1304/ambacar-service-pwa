@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { MapPin, Clock, AlertCircle } from "lucide-react"
+import { MapPin, Clock, AlertCircle, AlertTriangle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import type { ClientService } from "@/lib/mis-servicios/types"
@@ -19,6 +19,11 @@ interface ServiceCardProps {
 export function ServiceCard({ service, className }: ServiceCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const statusInfo = SERVICE_STATUS_MAP[service.estado]
+
+  // Check if delivery date is overdue (only for non-delivered services)
+  const isOverdue = service.fechaEstimadaEntrega &&
+    service.estado !== "entregado" &&
+    new Date(service.fechaEstimadaEntrega) < new Date()
 
   // Format date
   const formatDate = (date: Date) => {
@@ -121,9 +126,27 @@ export function ServiceCard({ service, className }: ServiceCardProps) {
             </div>
 
             {service.fechaEstimadaEntrega && (
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 shrink-0" />
-                <span>Entrega: {formatDate(service.fechaEstimadaEntrega)}</span>
+              <div
+                className={cn(
+                  "flex items-center gap-1.5 px-2 py-1 rounded-md transition-colors",
+                  isOverdue && "bg-red-500/10"
+                )}
+              >
+                <Clock className={cn(
+                  "h-3.5 w-3.5 shrink-0",
+                  isOverdue && "text-red-600 dark:text-red-400"
+                )} />
+                <span className={cn(
+                  isOverdue && "text-red-600 dark:text-red-400"
+                )}>
+                  Entrega Estimada: {formatDate(service.fechaEstimadaEntrega)}
+                </span>
+                {isOverdue && (
+                  <span className="flex items-center gap-1 text-red-600 dark:text-red-400 font-medium">
+                    <AlertTriangle className="h-3 w-3" />
+                    Vencido
+                  </span>
+                )}
               </div>
             )}
           </div>

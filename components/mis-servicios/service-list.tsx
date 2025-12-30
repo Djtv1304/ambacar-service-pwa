@@ -1,24 +1,40 @@
 "use client"
 
+import { useState, useCallback, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Car, History, Inbox, User, ArrowLeft } from "lucide-react"
+import { Car, History, Inbox, User, ArrowLeft, RefreshCw, Hand } from "lucide-react"
 import { ScrollableTabs, TabsContent } from "@/components/ui/scrollable-tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ServiceCard } from "@/components/mis-servicios/service-card"
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh"
+import { useIsMobile } from "@/hooks/use-mobile"
+import { toast } from "sonner"
 import type { ClientService } from "@/lib/mis-servicios/types"
+
+const PULL_TO_REFRESH_HINT_KEY = "mis-servicios-pull-refresh-hint-shown"
 
 interface ServiceListProps {
   activeServices: ClientService[]
   completedServices: ClientService[]
   isLoading?: boolean
+  /** Separate loading state for active tab */
+  activeLoading?: boolean
+  /** Separate loading state for history tab */
+  historialLoading?: boolean
   /** When true, hides client-specific CTAs like the big approval banner */
   isInternalUser?: boolean
   /** Name of the client being viewed (for internal users) */
   clientName?: string
   /** Callback to clear client selection (for internal users) */
   onClearClient?: () => void
+  /** Callback when tab changes - used for lazy loading */
+  onTabChange?: (tab: "active" | "history") => void
+  /** Callback to refresh active services */
+  onRefreshActive?: () => Promise<void>
+  /** Callback to refresh history services */
+  onRefreshHistorial?: () => Promise<void>
 }
 
 // Animation variants for staggered list
@@ -104,11 +120,68 @@ export function ServiceList({
   activeServices,
   completedServices,
   isLoading,
+  activeLoading,
+  historialLoading,
   isInternalUser = false,
   clientName,
-  onClearClient
+  onClearClient,
+  onTabChange,
+  onRefreshActive,
+  onRefreshHistorial,
 }: ServiceListProps) {
+  const [currentTab, setCurrentTab] = useState<"active" | "history">("active")
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const totalPending = activeServices.reduce((acc, s) => acc + s.pendingApprovals, 0)
+
+  // Handle tab change with lazy loading
+  const handleTabChange = useCallback((value: string) => {
+    const tab = value as "active" | "history"
+    setCurrentTab(tab)
+    onTabChange?.(tab)
+  }, [onTabChange])
+
+  // Handle refresh for current tab
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true)
+    try {
+      if (currentTab === "active" && onRefreshActive) {
+        await onRefreshActive()
+      } else if (currentTab === "history" && onRefreshHistorial) {
+        await onRefreshHistorial()
+      }
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [currentTab, onRefreshActive, onRefreshHistorial])
+
+  // Pull-to-refresh hook
+  const { pullToRefreshProps, isPulling, pullDistance } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    disabled: isLoading || isRefreshing,
+  })
+
+  // Check if on mobile/tablet for pull-to-refresh hint
+  const isMobile = useIsMobile()
+
+  // Show pull-to-refresh hint toast on first visit (mobile/tablet only)
+  useEffect(() => {
+    if (!isMobile) return
+
+    const hasShownHint = localStorage.getItem(PULL_TO_REFRESH_HINT_KEY)
+    if (hasShownHint) return
+
+    // Show hint after a short delay
+    const timeoutId = setTimeout(() => {
+      toast.info("Desliza hacia abajo para actualizar", {
+        description: "Puedes refrescar los datos deslizando desde arriba",
+        icon: <Hand className="h-5 w-5" />,
+        duration: 5000,
+      })
+      localStorage.setItem(PULL_TO_REFRESH_HINT_KEY, "true")
+    }, 1500)
+
+    return () => clearTimeout(timeoutId)
+  }, [isMobile])
 
   // Tab configuration for ScrollableTabs
   const tabs = [
@@ -178,9 +251,74 @@ export function ServiceList({
         </div>
       )}
 
-      <ScrollableTabs tabs={tabs} defaultValue="active">
-        {/* Alert for pending approvals - ONLY for clients, NOT internal users */}
-        {!isInternalUser && totalPending > 0 && (
+      {/* Refresh button for desktop */}
+      <div className="hidden sm:flex justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing || activeLoading || historialLoading}
+          className="gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          Actualizar
+        </Button>
+      </div>
+
+      {/* Pull-to-refresh indicator for mobile */}
+      <div className="sm:hidden overflow-hidden">
+        <AnimatePresence mode="wait">
+          {(isPulling || isRefreshing) && (
+            <motion.div
+              key="pull-indicator"
+              initial={{ opacity: 0, y: -40 }}
+              animate={{
+                opacity: 1,
+                y: 0,
+                scale: isRefreshing ? 1 : Math.min(1, 0.85 + (pullDistance / 80) * 0.15)
+              }}
+              exit={{ opacity: 0, y: -40 }}
+              transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 30,
+              }}
+              className="flex justify-center py-3"
+            >
+              <motion.div
+                className="flex items-center gap-2 text-sm bg-muted/50 backdrop-blur-sm px-4 py-2 rounded-full border shadow-sm"
+                animate={{
+                  backgroundColor: isRefreshing
+                    ? "hsl(var(--primary) / 0.1)"
+                    : "hsl(var(--muted) / 0.5)"
+                }}
+                transition={{ duration: 0.2 }}
+              >
+                <motion.div
+                  animate={{
+                    rotate: isRefreshing ? 360 : pullDistance * 3,
+                  }}
+                  transition={{
+                    rotate: isRefreshing
+                      ? { duration: 1, repeat: Infinity, ease: "linear" }
+                      : { duration: 0 }
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4 text-primary" />
+                </motion.div>
+                <span className="text-muted-foreground font-medium">
+                  {isRefreshing ? "Actualizando..." : "Suelta para actualizar"}
+                </span>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <div {...pullToRefreshProps}>
+        <ScrollableTabs tabs={tabs} value={currentTab} onValueChange={handleTabChange}>
+          {/* Alert for pending approvals - ONLY for clients, NOT internal users */}
+          {!isInternalUser && totalPending > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -203,47 +341,56 @@ export function ServiceList({
         )}
 
         <TabsContent value="active" className="mt-0">
-          <AnimatePresence mode="wait">
-            {activeServices.length === 0 ? (
-              <EmptyState type="active" />
-            ) : (
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="space-y-4"
-              >
-                {activeServices.map((service) => (
-                  <motion.div key={service.id} variants={itemVariants}>
-                    <ServiceCard service={service} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {activeLoading ? (
+            <ServiceListSkeleton />
+          ) : (
+            <AnimatePresence mode="wait">
+              {activeServices.length === 0 ? (
+                <EmptyState type="active" />
+              ) : (
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-4"
+                >
+                  {activeServices.map((service) => (
+                    <motion.div key={service.id} variants={itemVariants}>
+                      <ServiceCard service={service} />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
         </TabsContent>
 
         <TabsContent value="history" className="mt-0">
-          <AnimatePresence mode="wait">
-            {completedServices.length === 0 ? (
-              <EmptyState type="history" />
-            ) : (
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="space-y-4"
-              >
-                {completedServices.map((service) => (
-                  <motion.div key={service.id} variants={itemVariants}>
-                    <ServiceCard service={service} />
-                  </motion.div>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {historialLoading ? (
+            <ServiceListSkeleton />
+          ) : (
+            <AnimatePresence mode="wait">
+              {completedServices.length === 0 ? (
+                <EmptyState type="history" />
+              ) : (
+                <motion.div
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="space-y-4"
+                >
+                  {completedServices.map((service) => (
+                    <motion.div key={service.id} variants={itemVariants}>
+                      <ServiceCard service={service} />
+                    </motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
         </TabsContent>
-      </ScrollableTabs>
+        </ScrollableTabs>
+      </div>
     </div>
   )
 }

@@ -71,7 +71,7 @@ export const SERVICE_STATUS_MAP: Record<ServiceStatus, ServiceStatusInfo> = {
 
 // Client Service represents a vehicle currently in service
 export interface ClientService {
-  id: string
+  id: number
   ordenTrabajoId: string
   numeroOrden: string
   vehiculo: {
@@ -120,10 +120,10 @@ export interface TimelineEvidence {
 
 // Additional Work Item (Trabajo Adicional)
 export interface AdditionalWork {
-  id: string
+  id: number
   titulo: string
   descripcion: string
-  justificacionTecnica: string
+  justificacionTecnica: string | null
   severidad: "critico" | "importante" | "recomendado" | "opcional"
   costoManoObra: number
   costoRepuestos: number
@@ -223,7 +223,96 @@ export interface UseServiceDataReturn {
   isLoading: boolean
   error: string | null
   refetch: () => Promise<void>
-  approveWork: (workId: string) => Promise<void>
-  rejectWork: (workId: string) => Promise<void>
+  approveWork: (workId: number) => Promise<void>
+  rejectWork: (workId: number) => Promise<void>
+}
+
+// ===========================================
+// API Response Types (raw data from backend)
+// ===========================================
+
+// Trabajo adicional como viene de la API (costos y fechas como strings)
+export interface AdditionalWorkAPIResponse {
+  id: number
+  titulo: string
+  descripcion: string
+  justificacionTecnica: string | null
+  severidad: "critico" | "importante" | "recomendado" | "opcional"
+  costoManoObra: string  // "80.00"
+  costoRepuestos: string // "220.00"
+  costoTotal: string     // "300.00"
+  repuestos: AdditionalWorkPart[]
+  fotos: string[]
+  estado: "pendiente" | "aprobado" | "rechazado"
+  fechaSolicitud: string  // ISO string
+  fechaRespuesta: string | null  // ISO string or null
+}
+
+// Evento de timeline como viene de la API (fecha como string)
+export interface TimelineEventAPIResponse {
+  id: string
+  fase: string
+  descripcion: string
+  fecha: string  // ISO string
+  completada: boolean
+  enProgreso: boolean
+  evidencia: TimelineEvidence[]
+  responsable: string
+  notas: string | null
+}
+
+// Detalle del servicio como viene de la API
+export interface ServiceDetailAPIResponse {
+  id: number
+  ordenTrabajoId: string
+  numeroOrden: string
+  vehiculo: {
+    id: string
+    placa: string
+    marca: string
+    modelo: string
+    anio: number
+    color: string
+  }
+  estado: ServiceStatus
+  progreso: number
+  fechaIngreso: string
+  fechaEstimadaEntrega: string
+  taller: { nombre: string; direccion: string }
+  pendingApprovals: number
+  totalEstimado: number
+  servicioSolicitado: string
+  cliente: {
+    id: string
+    nombre: string
+    apellido: string
+    email: string
+    telefono: string
+  }
+  recepcion: {
+    kilometraje: number
+    nivelCombustible: number
+    observaciones: string
+    fotosIngreso: string[]
+  }
+  timeline: TimelineEventAPIResponse[]
+  trabajosAdicionales: AdditionalWorkAPIResponse[]
+  trabajosAprobados: AdditionalWorkAPIResponse[]
+  trabajosRechazados: AdditionalWorkAPIResponse[]
+  subtotal: number
+  descuento: string  // "0.00"
+  iva: number
+  total: number
+  tecnicoAsignado: {
+    id: string
+    nombre: string
+    especialidad: string | null
+  } | null
+}
+
+// Respuesta de aprobar/rechazar trabajo
+export interface WorkActionAPIResponse {
+  message: string
+  trabajo: AdditionalWorkAPIResponse
 }
 

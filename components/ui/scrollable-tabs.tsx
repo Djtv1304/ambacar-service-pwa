@@ -14,13 +14,18 @@ interface TabItem {
 
 interface ScrollableTabsProps {
   tabs: TabItem[]
-  defaultValue: string
+  /** Initial value (uncontrolled mode) */
+  defaultValue?: string
+  /** Controlled value - use this with onValueChange for controlled mode */
+  value?: string
   children: ReactNode
   className?: string
   /** Enable bounce animation on mount to hint scroll capability */
   showScrollHint?: boolean
   /** Delay before bounce animation starts (ms) */
   scrollHintDelay?: number
+  /** Callback when tab changes */
+  onValueChange?: (value: string) => void
 }
 
 /**
@@ -30,10 +35,12 @@ interface ScrollableTabsProps {
 export function ScrollableTabs({
   tabs,
   defaultValue,
+  value,
   children,
   className,
   showScrollHint = true,
   scrollHintDelay = 500,
+  onValueChange,
 }: ScrollableTabsProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const hasAnimatedRef = useRef(false)
@@ -74,8 +81,13 @@ export function ScrollableTabs({
     return () => clearTimeout(timeoutId)
   }, [showScrollHint, scrollHintDelay])
 
+  // Use controlled mode if value is provided, otherwise uncontrolled with defaultValue
+  const tabsProps = value !== undefined
+    ? { value, onValueChange }
+    : { defaultValue, onValueChange }
+
   return (
-    <Tabs defaultValue={defaultValue} className={cn("space-y-6", className)}>
+    <Tabs {...tabsProps} className={cn("space-y-6", className)}>
       <TabsList className="h-auto p-1 w-full sm:w-auto sm:inline-flex">
         <div
           ref={scrollContainerRef}
