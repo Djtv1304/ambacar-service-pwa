@@ -3,6 +3,7 @@
 export type UserRole = "admin" | "operator" | "technician" | "manager" | "customer"
 
 export interface User {
+  cedula: string;
   id: number
   email: string
   username: string

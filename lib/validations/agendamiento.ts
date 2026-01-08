@@ -48,6 +48,7 @@ export const citaSchema = z.object({
     .min(5, "Describe el servicio que necesitas (mínimo 5 caracteres)")
     .max(200, "La descripción no puede exceder 200 caracteres"),
   observaciones: z.string().max(500, "Las observaciones no pueden exceder 500 caracteres").optional(),
+  sucursal: z.string().min(1, "La sucursal es requerida"),
 })
 
 export const cancelacionSchema = z.object({

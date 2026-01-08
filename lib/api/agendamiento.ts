@@ -4,6 +4,20 @@ import { citas, disponibilidadTaller } from "../fixtures/citas"
 import { clientes } from "../fixtures/clientes"
 
 // ============================================================================
+// Types
+// ============================================================================
+
+/**
+ * Representa una sucursal/sede del taller
+ */
+export interface Sucursal {
+  id: number
+  codigo: string
+  nombre: string
+  ciudad: string
+}
+
+// ============================================================================
 // API Integration
 // ============================================================================
 
@@ -86,8 +100,8 @@ export async function fetchVehiculosByClienteId(clienteId: number, token: string
     id: veh.id.toString(),
     clienteId: veh.cliente.toString(),
     placa: veh.placa,
-    marca: veh.marca_display,
-    modelo: veh.modelo_display,
+    marca: veh.marca_display || veh.marca_nombre || "",
+    modelo: veh.modelo_display || veh.modelo_nombre || "",
     anio: veh.anio_fabricacion,
     color: veh.color || "",
     vin: veh.vin || "",
@@ -161,12 +175,10 @@ export async function prefetchDisponibilidad(
   // Simular horarios ocupados por fecha
   const horariosOcupados: Record<string, string[]> = {}
   citas.forEach((cita) => {
-    if (cita.estado !== "cancelada") {
-      if (!horariosOcupados[cita.fecha]) {
-        horariosOcupados[cita.fecha] = []
-      }
-      horariosOcupados[cita.fecha].push(cita.hora)
+    if (!horariosOcupados[cita.fecha]) {
+      horariosOcupados[cita.fecha] = []
     }
+    horariosOcupados[cita.fecha].push(cita.hora)
   })
 
   return { fechasNoDisponibles, horariosOcupados }
@@ -187,32 +199,6 @@ export async function reservarSlot(data: {
     success: true,
     reservaId: `RESERVA-${Date.now()}`,
   }
-}
-
-/**
- * Crea una nueva cita
- */
-export async function crearCita(data: {
-  clienteId: string
-  vehiculoPlaca: string
-  fecha: string
-  hora: string
-  servicio: string
-  observaciones?: string
-}): Promise<Cita> {
-  // TODO: Integrar con API real
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-
-  const nuevaCita: Cita = {
-    id: `CITA-${Date.now()}`,
-    ...data,
-    estado: "confirmada",
-    sucursal: "Principal",
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  }
-
-  return nuevaCita
 }
 
 /**
@@ -312,6 +298,16 @@ export async function getTiposServicio(): Promise<any[]> {
 }
 
 /**
+ * Obtiene el catálogo de sucursales disponibles
+ */
+export async function getSucursales(token: string): Promise<Sucursal[]> {
+  return apiRequest<Sucursal[]>("/api/recepciones/sucursales/", {
+    method: "GET",
+    token,
+  })
+}
+
+/**
  * Crea una nueva cita en el sistema
  */
 export async function crearCitaAPI(
@@ -322,6 +318,7 @@ export async function crearCitaAPI(
     fecha_cita: string
     hora_cita: string
     observaciones?: string
+    sucursal?: number
   },
   token: string
 ): Promise<any> {

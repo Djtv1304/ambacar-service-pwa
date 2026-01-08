@@ -21,9 +21,11 @@ import {
   crearCitaAPI,
   getCatalogo,
   registrarVehiculoAPI,
+  getSucursales,
 } from "@/lib/api/agendamiento"
 import { useAuthToken } from "@/hooks/use-auth-token"
 import type { Cliente, Vehiculo, Cita, HorarioDisponible, TipoServicio } from "@/lib/types"
+import type { Sucursal } from "@/lib/api/agendamiento"
 import { toast as sonnerToast } from "sonner"
 import { logoutClient } from "@/lib/auth/actions"
 
@@ -55,6 +57,11 @@ export default function NuevaCitaPage() {
   const [tiposServicio, setTiposServicio] = useState<TipoServicio[]>([])
   const [selectedServicio, setSelectedServicio] = useState<string>("")
   const [loadingServicios, setLoadingServicios] = useState(false)
+
+  // Sucursales state
+  const [sucursales, setSucursales] = useState<Sucursal[]>([])
+  const [selectedSucursal, setSelectedSucursal] = useState<string>("")
+  const [loadingSucursales, setLoadingSucursales] = useState(false)
 
   // Catalog state for vehicle brands and models
   const [catalogoMarcas, setCatalogoMarcas] = useState<
@@ -93,6 +100,7 @@ export default function NuevaCitaPage() {
       hora: "",
       servicio: "",
       observaciones: "",
+      sucursal: "",
     },
   })
 
@@ -208,6 +216,45 @@ export default function NuevaCitaPage() {
       }
     }
   }, [selectedServicio, tiposServicio, citaForm])
+
+  // Fetch sucursales when step 2 is reached
+  useEffect(() => {
+    if (currentStep === 2 && sucursales.length === 0) {
+      const fetchSucursales = async () => {
+        setLoadingSucursales(true)
+        try {
+          // Obtener token de autenticación
+          const token = await getToken()
+          if (!token) {
+            sonnerToast.error("Error de autenticación", {
+              description: "No se pudo obtener el token de acceso",
+            })
+            setLoadingSucursales(false)
+            return
+          }
+
+          const sucursalesData = await getSucursales(token)
+          setSucursales(sucursalesData)
+        } catch (error) {
+          console.error("Error cargando sucursales:", error)
+          sonnerToast.error("Error", {
+            description: "No se pudieron cargar las sucursales",
+          })
+        } finally {
+          setLoadingSucursales(false)
+        }
+      }
+
+      fetchSucursales()
+    }
+  }, [currentStep, sucursales.length, getToken])
+
+  // Sync selectedSucursal with form field
+  useEffect(() => {
+    if (selectedSucursal) {
+      citaForm.setValue("sucursal", selectedSucursal)
+    }
+  }, [selectedSucursal, citaForm])
 
   // Fetch available hours when date is selected
   useEffect(() => {
@@ -332,7 +379,7 @@ export default function NuevaCitaPage() {
   }
 
   const handleCitaSubmit = async () => {
-    if (!cliente || !vehiculoSeleccionado || !selectedDate || !selectedHora || !selectedServicio) {
+    if (!cliente || !vehiculoSeleccionado || !selectedDate || !selectedHora || !selectedServicio || !selectedSucursal) {
       sonnerToast.error("Error", {
         description: "Por favor completa todos los campos requeridos",
       })
@@ -344,7 +391,7 @@ export default function NuevaCitaPage() {
   }
 
   const handleConfirmarCita = async () => {
-    if (!cliente || !vehiculoSeleccionado || !selectedDate || !selectedHora || !selectedServicio) return
+    if (!cliente || !vehiculoSeleccionado || !selectedDate || !selectedHora || !selectedServicio || !selectedSucursal) return
 
     setLoading(true)
     try {
@@ -367,6 +414,7 @@ export default function NuevaCitaPage() {
         fecha_cita: selectedDate.toISOString().split("T")[0],
         hora_cita: selectedHora,
         observaciones: citaForm.getValues("observaciones") || undefined,
+        sucursal: parseInt(selectedSucursal),
       }
 
       const citaResponse = await crearCitaAPI(citaData, token)
@@ -456,7 +504,14 @@ export default function NuevaCitaPage() {
             </div>
             <Button
               variant="ghost"
-              onClick={() => router.push("/agendamiento")}
+              onClick={async () => {
+                // If user successfully created an appointment, clean tokens before going back
+                if (citaCreada) {
+                  sessionStorage.clear()
+                  await logoutClient()
+                }
+                router.push("/agendamiento")
+              }}
               className="text-gray-600 hover:text-[#ED1C24] transition-colors text-sm sm:text-base px-2 sm:px-4"
             >
               <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
@@ -816,6 +871,34 @@ export default function NuevaCitaPage() {
                     />
                   </div>
 
+                  <div>
+                    <Label htmlFor="sucursal" className="text-[#202020] font-medium">
+                      Sucursal <span className="text-[#ED1C24]">*</span>
+                    </Label>
+                    {loadingSucursales ? (
+                      <div className="mt-2 p-3 border border-gray-200 dark:border-gray-800 rounded-lg flex items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-[#ED1C24] mr-2" />
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Cargando sucursales...</span>
+                      </div>
+                    ) : (
+                      <Select value={selectedSucursal} onValueChange={setSelectedSucursal}>
+                        <SelectTrigger className="w-full mt-2 border-gray-300 dark:border-gray-700 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                          <SelectValue placeholder="Selecciona una sucursal" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {sucursales.map((sucursal) => (
+                            <SelectItem key={sucursal.id} value={sucursal.id.toString()}>
+                              {sucursal.nombre} - {sucursal.ciudad}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    {citaForm.formState.errors.sucursal && (
+                      <p className="text-sm text-[#ED1C24] mt-1">{citaForm.formState.errors.sucursal.message}</p>
+                    )}
+                  </div>
+
                   <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-0 pt-4">
                     <Button
                       type="button"
@@ -829,7 +912,7 @@ export default function NuevaCitaPage() {
                     <Button
                       type="button"
                       onClick={handleCitaSubmit}
-                      disabled={loading || !selectedDate || !selectedHora || !selectedServicio}
+                      disabled={loading || !selectedDate || !selectedHora || !selectedServicio || !selectedSucursal}
                       className="bg-[#ED1C24] hover:bg-[#c41820] active:scale-95 text-white px-6 sm:px-8 cursor-pointer transition-all duration-150 w-full sm:w-auto"
                     >
                       Revisar Datos
@@ -998,6 +1081,7 @@ export default function NuevaCitaPage() {
                         setSelectedDate(undefined)
                         setSelectedHora("")
                         setSelectedServicio("")
+                        setSelectedSucursal("")
                         citaForm.reset()
                       }}
                       className="flex-1 cursor-pointer text-sm sm:text-base"
@@ -1107,6 +1191,12 @@ export default function NuevaCitaPage() {
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                           <span className="text-gray-600 text-xs sm:text-sm">Servicio:</span>
                           <span className="font-medium text-[#202020] text-sm sm:text-base text-right">{selectedServicioData?.nombre}</span>
+                        </div>
+                        <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                          <span className="text-gray-600 text-xs sm:text-sm">Sucursal:</span>
+                          <span className="font-medium text-[#202020] text-sm sm:text-base text-right">
+                            {sucursales.find((s) => s.id.toString() === selectedSucursal)?.nombre} - {sucursales.find((s) => s.id.toString() === selectedSucursal)?.ciudad}
+                          </span>
                         </div>
                         {citaForm.getValues("observaciones") && (
                           <div className="pt-2 border-t border-gray-200">

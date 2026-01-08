@@ -56,6 +56,13 @@ This file provides context, architectural guidelines, and coding standards for t
     - For now, simulate data fetching using `lib/fixtures` until the API is ready.
     - Use `useEffect` or `SWR` patterns (simulated) for async data loading with Skeleton states.
 - **Error Handling:** Use `sonner` or `use-toast` for user feedback on actions (Success/Error).
+- **Type Organization:**
+    - **Module-Specific Types:** Types that are specific to a business module should be defined in the same file where they're used (e.g., API files in `lib/api/`).
+    - **Shared/Global Types:** Only types used across multiple modules should live in `lib/types.ts`.
+    - **Examples:**
+        - ✅ `Sucursal` type used only in agendamiento → Define in `lib/api/agendamiento.ts`
+        - ✅ `Cliente`, `Vehiculo` used across multiple features → Keep in `lib/types.ts`
+    - This approach maintains better modularity and reduces coupling between business domains.
 
 ## 🔒 Roles & Permissions (RBAC)
 The system has distinct views based on `UserRole`:
