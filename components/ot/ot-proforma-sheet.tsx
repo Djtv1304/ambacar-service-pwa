@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Download, Mail, Printer, FileWarning, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import type { OrdenTrabajoDetalle } from "@/lib/types"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -26,6 +25,49 @@ interface ProformaItem {
 
 export function OTProformaSheet({ ot, open, onClose }: OTProformaSheetProps) {
   const isMobile = useIsMobile()
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [showScrollIndicator, setShowScrollIndicator] = useState(false)
+  const [hasSeenBottom, setHasSeenBottom] = useState(false)
+
+  // Reset hasSeenBottom when modal opens
+  useEffect(() => {
+    if (open) {
+      setHasSeenBottom(false)
+    }
+  }, [open])
+
+  // Check if content is scrollable and update scroll indicators
+  useEffect(() => {
+    if (!open || hasSeenBottom) return
+
+    const checkScrollable = () => {
+      const element = scrollRef.current
+      if (element) {
+        const hasScroll = element.scrollHeight > element.clientHeight
+        setShowScrollIndicator(hasScroll)
+      }
+    }
+
+    // Check initially and after content loads
+    setTimeout(checkScrollable, 100)
+    window.addEventListener('resize', checkScrollable)
+
+    return () => window.removeEventListener('resize', checkScrollable)
+  }, [open, hasSeenBottom])
+
+  // Handle scroll to update indicators
+  const handleScroll = () => {
+    if (hasSeenBottom) return
+
+    const element = scrollRef.current
+    if (element) {
+      const isAtBottom = Math.abs(element.scrollHeight - element.clientHeight - element.scrollTop) < 10
+      if (isAtBottom) {
+        setHasSeenBottom(true)
+        setShowScrollIndicator(false)
+      }
+    }
+  }
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -220,9 +262,14 @@ export function OTProformaSheet({ ot, open, onClose }: OTProformaSheetProps) {
               </div>
             </div>
 
-            {/* Content - Scrollable */}
-            <ScrollArea className="flex-1 overflow-auto">
-              <div className="py-4 px-6 space-y-4">
+            {/* Content - Scrollable with visual indicators */}
+            <div className="flex-1 relative overflow-hidden">
+              <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="h-full overflow-y-auto scrollbar-thin scrollbar-thumb-border/60 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent hover:scrollbar-thumb-border/80 dark:hover:scrollbar-thumb-gray-600"
+              >
+                <div className="py-4 px-6 space-y-4">
                 {/* Client & Branch Info */}
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
@@ -296,8 +343,38 @@ export function OTProformaSheet({ ot, open, onClose }: OTProformaSheetProps) {
                     </div>
                   )}
                 </div>
+                </div>
               </div>
-            </ScrollArea>
+
+              {/* Scroll indicator gradient - shows when there's more content below */}
+              <AnimatePresence>
+                {showScrollIndicator && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none z-10 bg-gradient-to-t from-background dark:from-gray-950 via-background/90 dark:via-gray-950/90 to-transparent border-t border-border/20 dark:border-gray-800/20"
+                  >
+                    {/* Down arrow indicator */}
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 animate-bounce">
+                      <div className="text-xs font-medium text-muted-foreground dark:text-gray-400">
+                        Más contenido
+                      </div>
+                      <svg
+                        className="w-4 h-4 text-muted-foreground dark:text-gray-400"
+                        fill="none"
+                        strokeWidth="2"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                      </svg>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Footer - Total */}
             <div className="shrink-0 border-t dark:border-gray-800 bg-muted/20 dark:bg-gray-900/30 px-6 py-4">
