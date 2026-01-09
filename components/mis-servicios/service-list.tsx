@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { Car, History, Inbox, User, ArrowLeft, RefreshCw, Hand } from "lucide-react"
+import { Car, History, Inbox, User, ArrowLeft, RefreshCw, Hand, Wrench } from "lucide-react"
 import { ScrollableTabs, TabsContent } from "@/components/ui/scrollable-tabs"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,8 @@ import type { ClientService } from "@/lib/mis-servicios/types"
 
 const PULL_TO_REFRESH_HINT_KEY = "mis-servicios-pull-refresh-hint-shown"
 
+type ServiceViewContext = "customer" | "operator-own" | "operator-client"
+
 interface ServiceListProps {
   activeServices: ClientService[]
   completedServices: ClientService[]
@@ -25,10 +27,16 @@ interface ServiceListProps {
   historialLoading?: boolean
   /** When true, hides client-specific CTAs like the big approval banner */
   isInternalUser?: boolean
+  /** Context of the service view - determines UI behavior */
+  viewContext?: ServiceViewContext
   /** Name of the client being viewed (for internal users) */
   clientName?: string
+  /** Name of the operator viewing their own services */
+  operatorName?: string
   /** Callback to clear client selection (for internal users) */
   onClearClient?: () => void
+  /** Callback to go back to mode selector (for operators) */
+  onBackToSelector?: () => void
   /** Callback when tab changes - used for lazy loading */
   onTabChange?: (tab: "active" | "history") => void
   /** Callback to refresh active services */
@@ -123,8 +131,11 @@ export function ServiceList({
   activeLoading,
   historialLoading,
   isInternalUser = false,
+  viewContext = "customer",
   clientName,
+  operatorName,
   onClearClient,
+  onBackToSelector,
   onTabChange,
   onRefreshActive,
   onRefreshHistorial,
@@ -132,6 +143,38 @@ export function ServiceList({
   const [currentTab, setCurrentTab] = useState<"active" | "history">("active")
   const [isRefreshing, setIsRefreshing] = useState(false)
   const totalPending = activeServices.reduce((acc, s) => acc + s.pendingApprovals, 0)
+
+  // Banner configuration based on view context
+  const bannerConfig = useMemo(() => {
+    // Operador viendo servicios de cliente
+    if (viewContext === "operator-client" && clientName) {
+      return {
+        icon: <User className="h-5 w-5 text-primary" />,
+        bgColor: "bg-primary/10 dark:bg-primary/20",
+        label: "Viendo servicios de",
+        name: clientName,
+        buttonLabel: "Volver al menú",
+        onAction: onBackToSelector || onClearClient,
+      }
+    }
+
+    // Operador viendo servicios propios
+    if (viewContext === "operator-own" && operatorName) {
+      return {
+        icon: <Wrench className="h-5 w-5 text-green-600 dark:text-green-400" />,
+        bgColor: "bg-green-500/10 dark:bg-green-500/20",
+        label: "Mis servicios personales",
+        name: operatorName,
+        buttonLabel: "Volver al menú",
+        onAction: onBackToSelector,
+      }
+    }
+
+    return null
+  }, [viewContext, clientName, operatorName, onBackToSelector, onClearClient])
+
+  // Mostrar botones de aprobación solo para customers y operadores viendo servicios propios
+  const showApprovalActions = viewContext === "customer" || viewContext === "operator-own"
 
   // Handle tab change with lazy loading
   const handleTabChange = useCallback((value: string) => {
@@ -213,38 +256,40 @@ export function ServiceList({
 
   return (
     <div className="space-y-6">
-      {/* Internal user header - Shows which client they're viewing */}
-      {isInternalUser && clientName && (
+      {/* Banner dinámico según el contexto */}
+      {bannerConfig && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border bg-muted/30"
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg border bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
         >
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-5 w-5 text-primary" />
+            <div className={`h-10 w-10 rounded-full ${bannerConfig.bgColor} flex items-center justify-center`}>
+              {bannerConfig.icon}
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Viendo servicios de</p>
-              <p className="font-semibold">{clientName}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{bannerConfig.label}</p>
+              <p className="font-semibold text-gray-900 dark:text-white">{bannerConfig.name}</p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClearClient}
-            className="shrink-0"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1.5" />
-            Nueva búsqueda
-          </Button>
+          {bannerConfig.onAction && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={bannerConfig.onAction}
+              className="shrink-0"
+            >
+              <ArrowLeft className="h-4 w-4 mr-1.5" />
+              {bannerConfig.buttonLabel}
+            </Button>
+          )}
         </motion.div>
       )}
 
-      {/* Internal user info badge about pending approvals (non-actionable) */}
-      {isInternalUser && totalPending > 0 && (
+      {/* Badge de aprobaciones pendientes */}
+      {!showApprovalActions && totalPending > 0 && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-600">
+          <Badge variant="outline" className="border-amber-500/50 bg-amber-500/10 text-amber-600 dark:text-amber-400">
             {totalPending} pendiente{totalPending > 1 ? "s" : ""}
           </Badge>
           <span>de aprobación por el cliente</span>

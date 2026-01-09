@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
+import { buscarServiciosPorCedula } from "@/lib/api/mis-servicios"
+import { getClientAccessToken } from "@/lib/auth/actions"
+import type { ClientService } from "@/lib/mis-servicios/types"
 
 interface ClientSearchFormProps {
-  onClientFound: (clientId: string, clientName: string) => void
+  onClientFound: (clientId: string, clientName: string, servicios?: ClientService[]) => void
   isLoading?: boolean
 }
 
@@ -30,15 +33,23 @@ export function ClientSearchForm({ onClientFound, isLoading = false }: ClientSea
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!searchValue.trim()) {
+    const cleanValue = searchValue.trim()
+
+    // Validar que no esté vacío
+    if (!cleanValue) {
       setError("Ingrese una cédula o RUC válido")
       return
     }
 
-    // Validate format (Ecuador: 10 digits for cédula, 13 for RUC)
-    const cleanValue = searchValue.replace(/\D/g, "")
-    if (cleanValue.length < 10) {
-      setError("La cédula debe tener al menos 10 dígitos")
+    // Validar formato: solo números
+    if (!/^\d+$/.test(cleanValue)) {
+      setError("La cédula solo debe contener números")
+      return
+    }
+
+    // Validar longitud: 10-13 dígitos
+    if (cleanValue.length < 10 || cleanValue.length > 13) {
+      setError("La cédula debe tener entre 10 y 13 dígitos")
       return
     }
 
@@ -46,39 +57,44 @@ export function ClientSearchForm({ onClientFound, isLoading = false }: ClientSea
     setIsSearching(true)
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await searchClientByCedula(cleanValue, token)
+      const token = await getClientAccessToken()
 
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 800))
-
-      // Mock response - In production, this would come from the API
-      // Simulating found client for demo
-      if (cleanValue === "1712345678" || cleanValue.startsWith("17")) {
-        const mockClient: ClientInfo = {
-          id: "c1",
-          nombre: "Pedro",
-          apellido: "González",
-          cedula: cleanValue,
-          email: "pedro.gonzalez@email.com",
-          telefono: "0991234567",
-        }
-
-        toast.success("Cliente encontrado", {
-          description: `${mockClient.nombre} ${mockClient.apellido}`,
-        })
-
-        onClientFound(mockClient.id, `${mockClient.nombre} ${mockClient.apellido}`)
-      } else {
-        setError("No se encontró un cliente con esa cédula o RUC")
-        toast.error("Cliente no encontrado", {
-          description: "Verifique el número ingresado",
-        })
+      if (!token) {
+        setError("Sesión expirada. Por favor inicia sesión nuevamente.")
+        return
       }
-    } catch (err) {
-      console.error("Error searching client:", err)
-      setError("Error al buscar el cliente. Intente nuevamente.")
-      toast.error("Error de búsqueda")
+
+      const response = await buscarServiciosPorCedula(cleanValue, token)
+
+      // Notificar al componente padre con los datos del cliente
+      const clienteCompleto = `${response.cliente.nombre} ${response.cliente.apellido}`
+
+      onClientFound(
+        response.cliente.id.toString(),
+        clienteCompleto,
+        response.servicios // Pasar servicios encontrados
+      )
+
+      toast.success("Cliente encontrado", {
+        description: `${response.servicios.length} servicio(s) encontrado(s) para ${clienteCompleto}`,
+      })
+    } catch (err: any) {
+      console.error("Error buscando cliente:", err)
+
+      // Manejar errores específicos por código HTTP
+      if (err.status === 404) {
+        setError("No se encontró un cliente con esa cédula")
+      } else if (err.status === 403) {
+        setError("No tienes permisos para realizar esta búsqueda")
+      } else if (err.status === 400) {
+        setError("Formato de cédula inválido")
+      } else {
+        setError("Error al buscar el cliente. Por favor intenta nuevamente.")
+      }
+
+      toast.error("Error en la búsqueda", {
+        description: error || "No se pudo completar la búsqueda",
+      })
     } finally {
       setIsSearching(false)
     }

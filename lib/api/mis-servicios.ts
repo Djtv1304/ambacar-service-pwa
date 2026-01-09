@@ -197,3 +197,55 @@ export async function rejectAdditionalWork(
     trabajo: transformAdditionalWork(data.trabajo),
   }
 }
+
+// ===========================================
+// API para Búsqueda de Servicios por Cédula
+// ===========================================
+
+/**
+ * Busca servicios de un cliente por su cédula
+ * GET /api/mis-servicios/buscar-por-cedula/?cedula=XXX
+ *
+ * Solo accesible por usuarios internos (operator, manager, technician)
+ *
+ * @param cedula - Número de cédula del cliente (10-13 dígitos)
+ * @param token - Token de autenticación del usuario interno
+ * @returns Información del cliente y su lista de servicios
+ */
+export async function buscarServiciosPorCedula(
+  cedula: string,
+  token: string
+): Promise<{
+  cliente: {
+    id: number
+    nombre: string
+    apellido: string
+    cedula: string
+    email: string
+    telefono: string
+  }
+  servicios: ClientService[]
+}> {
+  const response = await apiRequest<{
+    cliente: {
+      id: number
+      nombre: string
+      apellido: string
+      cedula: string
+      email: string
+      telefono: string
+    }
+    servicios: MisServicioAPIResponse[]
+  }>(`/api/mis-servicios/buscar-por-cedula/?cedula=${cedula}`, {
+    method: "GET",
+    token,
+  })
+
+  // Transformar servicios al formato ClientService
+  const servicios: ClientService[] = response.servicios.map(transformToClientService)
+
+  return {
+    cliente: response.cliente,
+    servicios,
+  }
+}
