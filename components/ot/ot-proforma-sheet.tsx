@@ -155,11 +155,11 @@ export function OTProformaSheet({ ot, open, onClose }: OTProformaSheetProps) {
               duration: 0.3
             }}
             className={cn(
-              "fixed z-50 bg-background dark:bg-gray-950 overflow-hidden flex flex-col",
+              "fixed z-50 bg-background dark:bg-gray-950 flex flex-col",
               // Mobile: Bottom sheet
               "inset-x-0 bottom-0 rounded-t-2xl max-h-[90vh]",
-              // Desktop: Floating side panel
-              "md:inset-auto md:right-4 md:top-4 md:bottom-4 md:w-[480px] md:max-w-[calc(100vw-2rem)]",
+              // Desktop: Floating side panel with fixed height
+              "md:inset-auto md:right-4 md:top-4 md:bottom-4 md:w-[480px] md:max-w-[calc(100vw-2rem)] md:h-[calc(100vh-2rem)]",
               "md:rounded-2xl md:border md:border-border/50 dark:md:border-gray-800 md:shadow-2xl"
             )}
           >
@@ -221,8 +221,8 @@ export function OTProformaSheet({ ot, open, onClose }: OTProformaSheetProps) {
             </div>
 
             {/* Content - Scrollable */}
-            <ScrollArea className="flex-1 px-6">
-              <div className="py-4 space-y-4">
+            <ScrollArea className="flex-1 overflow-auto">
+              <div className="py-4 px-6 space-y-4">
                 {/* Client & Branch Info */}
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
@@ -236,8 +236,16 @@ export function OTProformaSheet({ ot, open, onClose }: OTProformaSheetProps) {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground dark:text-gray-500 uppercase tracking-wide mb-1">Sucursal</p>
-                    <p className="font-medium dark:text-gray-100">{ot.sucursal_detalle.nombre}</p>
-                    <p className="text-muted-foreground dark:text-gray-400 text-xs">{ot.sucursal_detalle.direccion}</p>
+                    {ot.sucursal_detalle ? (
+                      <>
+                        <p className="font-medium dark:text-gray-100">{ot.sucursal_detalle.nombre}</p>
+                        <p className="text-muted-foreground dark:text-gray-400 text-xs">{ot.sucursal_detalle.direccion}</p>
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground dark:text-gray-400 text-xs italic">
+                        No disponible
+                      </p>
+                    )}
                   </div>
                 </div>
 
