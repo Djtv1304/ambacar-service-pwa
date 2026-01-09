@@ -100,8 +100,10 @@ export async function fetchVehiculosByClienteId(clienteId: number, token: string
     id: veh.id.toString(),
     clienteId: veh.cliente.toString(),
     placa: veh.placa,
-    marca: veh.marca_display || veh.marca_nombre || "",
-    modelo: veh.modelo_display || veh.modelo_nombre || "",
+    // La API devuelve marca y modelo directamente como strings (nombres)
+    // Si son números (IDs), usar los campos _display o _nombre como fallback
+    marca: typeof veh.marca === 'string' ? veh.marca : (veh.marca_display || veh.marca_nombre || ""),
+    modelo: typeof veh.modelo === 'string' ? veh.modelo : (veh.modelo_display || veh.modelo_nombre || ""),
     anio: veh.anio_fabricacion,
     color: veh.color || "",
     vin: veh.vin || "",

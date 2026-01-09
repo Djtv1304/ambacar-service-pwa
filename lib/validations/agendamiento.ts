@@ -37,7 +37,7 @@ export const vehiculoSchema = z.object({
     .number()
     .min(1990, "El año debe ser mayor a 1990")
     .max(new Date().getFullYear() + 1, "El año no puede ser futuro"),
-  kilometraje: z.number().min(0, "El kilometraje no puede ser negativo").max(999999, "El kilometraje es muy alto"),
+  kilometraje: z.number().min(1, "El kilometraje debe ser mayor a 0").max(999999, "El kilometraje es muy alto"),
 })
 
 export const citaSchema = z.object({

@@ -356,8 +356,8 @@ export interface VehiculoAgendamientoAPI {
   updated_at: string
   cliente: number
   modelo_tecnico: number | null
-  marca: number
-  modelo: number
+  marca: number | string  // Puede ser ID (number) o nombre (string)
+  modelo: number | string // Puede ser ID (number) o nombre (string)
 }
 
 // Citas - Horarios Disponibles

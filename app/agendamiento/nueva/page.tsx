@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ArrowLeft, ArrowRight, Car, CheckCircle2, Loader2, Calendar as CalendarIcon } from "lucide-react"
+import { ArrowLeft, ArrowRight, Car, CheckCircle2, Loader2, Calendar as CalendarIcon, AlertCircle, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -46,6 +46,12 @@ export default function NuevaCitaPage() {
   const [loading, setLoading] = useState(false)
   const [loadingVehiculos, setLoadingVehiculos] = useState(true)
   const [citaCreada, setCitaCreada] = useState<Cita | null>(null)
+
+  // Notification state for vehicle registration
+  const [vehiculoNotification, setVehiculoNotification] = useState<{
+    type: "success" | "error"
+    message: string
+  } | null>(null)
 
   // Calendar state
   const [selectedDate, setSelectedDate] = useState<Date>()
@@ -283,6 +289,15 @@ export default function NuevaCitaPage() {
     }
   }, [selectedDate])
 
+  // Clear error notifications when switching to list mode
+  // Success notifications persist until manually closed
+  useEffect(() => {
+    if (vehiculoNotification?.type === "error" && !nuevoVehiculo) {
+      // Clear error notifications when going back to list
+      setVehiculoNotification(null)
+    }
+  }, [nuevoVehiculo, vehiculoNotification?.type])
+
   const handleVehiculoSubmit = async (data: VehiculoFormData) => {
     if (!cliente) return
 
@@ -337,15 +352,41 @@ export default function NuevaCitaPage() {
 
         setVehiculoSeleccionado(nuevoVeh)
         setVehiculos([...vehiculos, nuevoVeh])
-        sonnerToast.success("Vehículo registrado", {
-          description: "Tu vehículo ha sido guardado correctamente.",
+
+        // Mostrar notificación de éxito inline
+        setVehiculoNotification({
+          type: "success",
+          message: `¡Vehículo registrado exitosamente! ${nuevoVeh.marca} ${nuevoVeh.modelo} (${nuevoVeh.placa}) ha sido agregado a tu lista.`,
         })
-        setCurrentStep(2)
+
+        // Volver a la lista de vehículos en lugar de avanzar al paso 2
+        setNuevoVehiculo(false)
+
+        // Limpiar el formulario
+        vehiculoForm.reset({
+          placa: "",
+          marca: "",
+          modelo: "",
+          anio: new Date().getFullYear(),
+          kilometraje: 0,
+        })
+        setSelectedMarca("")
+        setSelectedModelo("")
       } catch (error: any) {
         console.error("Error registrando vehículo:", error)
-        const errorMessage = error?.message || "No se pudo registrar el vehículo."
-        sonnerToast.error("Error", {
-          description: errorMessage,
+
+        // Determinar mensaje de error
+        let errorMessage = "No se pudo registrar el vehículo. Por favor intenta nuevamente."
+
+        // Si el error tiene errors.placa, es error de placa duplicada
+        if (error?.errors?.placa) {
+          errorMessage = "Un vehículo con esta placa ya se encuentra registrado. Por favor verifica el número de placa."
+        }
+
+        // Mostrar notificación de error inline
+        setVehiculoNotification({
+          type: "error",
+          message: errorMessage,
         })
       } finally {
         setLoading(false)
@@ -534,8 +575,74 @@ export default function NuevaCitaPage() {
               exit={{ opacity: 0, x: -20 }}
               className="max-w-2xl mx-auto"
             >
-              <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 md:p-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-[#202020] mb-4 sm:mb-6">Selecciona tu Vehículo</h2>
+              <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-6 md:p-8">
+                <AnimatePresence mode="wait">
+                  <motion.h2
+                    key={nuevoVehiculo ? "nuevo" : "selecciona"}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="text-xl sm:text-2xl font-bold text-[#202020] dark:text-white mb-4 sm:mb-6"
+                  >
+                    {nuevoVehiculo ? "Registra tu Vehículo" : "Selecciona tu Vehículo"}
+                  </motion.h2>
+                </AnimatePresence>
+
+                {/* Inline Notification */}
+                <AnimatePresence mode="wait">
+                  {vehiculoNotification && (
+                    <motion.div
+                      key={`notification-${vehiculoNotification.type}`}
+                      initial={{ opacity: 0, y: -10, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: "auto" }}
+                      exit={{ opacity: 0, y: -10, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mb-4 sm:mb-6"
+                    >
+                      <div
+                        className={`relative rounded-lg p-4 ${
+                          vehiculoNotification.type === "success"
+                            ? "bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800"
+                            : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0">
+                            {vehiculoNotification.type === "success" ? (
+                              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                            ) : (
+                              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p
+                              className={`text-sm font-medium leading-relaxed ${
+                                vehiculoNotification.type === "success"
+                                  ? "text-green-800 dark:text-green-200"
+                                  : "text-red-800 dark:text-red-200"
+                              }`}
+                            >
+                              {vehiculoNotification.message}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setVehiculoNotification(null)}
+                            className={`flex-shrink-0 inline-flex items-center justify-center rounded-md p-1.5 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                              vehiculoNotification.type === "success"
+                                ? "text-green-500 hover:bg-green-100 dark:hover:bg-green-900/40 focus:ring-green-600 focus:ring-offset-green-50 dark:focus:ring-offset-green-900/20"
+                                : "text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40 focus:ring-red-600 focus:ring-offset-red-50 dark:focus:ring-offset-red-900/20"
+                            }`}
+                          >
+                            <span className="sr-only">Cerrar</span>
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {loadingVehiculos ? (
                   <div className="flex justify-center py-8">
@@ -543,179 +650,213 @@ export default function NuevaCitaPage() {
                   </div>
                 ) : (
                   <form onSubmit={vehiculoForm.handleSubmit(handleVehiculoSubmit)} className="space-y-6">
-                    {vehiculos.length > 0 && !nuevoVehiculo && (
-                      <div>
-                        <Label className="text-[#202020] font-medium">Vehículos Registrados</Label>
-                        <div className="grid gap-3 mt-2">
-                          {vehiculos.map((veh) => (
-                            <button
-                              key={veh.id}
-                              type="button"
-                              onClick={() => setVehiculoSeleccionado(veh)}
-                              className={`p-4 rounded-lg border-2 text-left transition-all ${
-                                vehiculoSeleccionado?.id === veh.id
-                                  ? "border-[#ED1C24] bg-[#ED1C24]/5"
-                                  : "border-gray-200 hover:border-gray-300"
-                              }`}
-                            >
-                              <div className="font-semibold text-[#202020]">
-                                {veh.marca} {veh.modelo} ({veh.anio})
-                              </div>
-                              <div className="text-sm text-gray-600 mt-1">
-                                Placa: {veh.placa} • {veh.color} • {veh.kilometraje.toLocaleString()} km
-                              </div>
-                            </button>
-                          ))}
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setNuevoVehiculo(true)}
-                          className="mt-4 w-full"
+                    <AnimatePresence mode="wait">
+                      {vehiculos.length > 0 && !nuevoVehiculo && (
+                        <motion.div
+                          key="lista-vehiculos"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -20 }}
+                          transition={{ duration: 0.3 }}
                         >
-                          + Agregar Nuevo Vehículo
-                        </Button>
-                      </div>
-                    )}
-
-                    {nuevoVehiculo && (
-                      <div className="space-y-5">
-                        <div className="flex items-center justify-between">
-                          <Label className="text-[#202020] font-medium">Nuevo Vehículo</Label>
-                          {vehiculos.length > 0 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setNuevoVehiculo(false)}
-                              className="text-[#ED1C24]"
-                            >
-                              Usar vehículo existente
-                            </Button>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <Label htmlFor="placa" className="mb-2 block">
-                              Placa <span className="text-[#ED1C24]">*</span>
-                            </Label>
-                            <Input id="placa" {...vehiculoForm.register("placa")} placeholder="ABC-1234" />
-                            {vehiculoForm.formState.errors.placa && (
-                              <p className="text-sm text-[#ED1C24] mt-1">
-                                {vehiculoForm.formState.errors.placa.message}
-                              </p>
-                            )}
-                          </div>
-
-                          <div>
-                            <Label htmlFor="marca" className="mb-2 block">
-                              Marca <span className="text-[#ED1C24]">*</span>
-                            </Label>
-                            {loadingCatalogo ? (
-                              <div className="flex items-center justify-center h-10 border border-gray-200 rounded-lg">
-                                <Loader2 className="h-4 w-4 animate-spin text-[#ED1C24]" />
-                              </div>
-                            ) : (
-                              <Select
-                                value={selectedMarca}
-                                onValueChange={(value) => {
-                                  setSelectedMarca(value)
-                                  setSelectedModelo("") // Reset modelo when marca changes
-                                }}
+                          <Label className="text-[#202020] dark:text-white font-medium">Vehículos Registrados</Label>
+                          <div className="grid gap-3 mt-2">
+                            {vehiculos.map((veh) => (
+                              <button
+                                key={veh.id}
+                                type="button"
+                                onClick={() => setVehiculoSeleccionado(veh)}
+                                className={`p-4 rounded-lg border-2 text-left transition-all ${
+                                  vehiculoSeleccionado?.id === veh.id
+                                    ? "border-[#ED1C24] bg-[#ED1C24]/5"
+                                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
+                                }`}
                               >
-                                <SelectTrigger className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
-                                  <SelectValue placeholder="Selecciona una marca" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {catalogoMarcas.map((marca) => (
-                                    <SelectItem key={marca.id} value={marca.id.toString()}>
-                                      {marca.nombre}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                            {vehiculoForm.formState.errors.marca && (
-                              <p className="text-sm text-[#ED1C24] mt-1">
-                                {vehiculoForm.formState.errors.marca.message}
-                              </p>
+                                <div className="font-semibold text-[#202020] dark:text-white">
+                                  {veh.marca} {veh.modelo} ({veh.anio})
+                                </div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                  {(() => {
+                                    const details = []
+                                    details.push(`Placa: ${veh.placa}`)
+                                    if (veh.color) details.push(veh.color)
+                                    details.push(`${veh.kilometraje.toLocaleString()} km`)
+                                    return details.join(" • ")
+                                  })()}
+                                </div>
+                              </button>
+                            ))}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setVehiculoNotification(null) // Clear notifications when manually switching modes
+                              setNuevoVehiculo(true)
+                            }}
+                            className="mt-4 w-full"
+                          >
+                            + Agregar Nuevo Vehículo
+                          </Button>
+                        </motion.div>
+                      )}
+
+                      {nuevoVehiculo && (
+                        <motion.div
+                          key="formulario-nuevo"
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: 20 }}
+                          transition={{ duration: 0.3 }}
+                          className="space-y-5"
+                        >
+                          <div className="flex items-center justify-between">
+                            <Label className="text-[#202020] dark:text-white font-medium">Nuevo Vehículo</Label>
+                            {vehiculos.length > 0 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setVehiculoNotification(null) // Clear notifications when manually switching modes
+                                  setNuevoVehiculo(false)
+                                }}
+                                className="text-[#ED1C24]"
+                              >
+                                Usar vehículo existente
+                              </Button>
                             )}
                           </div>
 
-                          <div>
-                            <Label htmlFor="modelo" className="mb-2 block">
-                              Modelo <span className="text-[#ED1C24]">*</span>
-                            </Label>
-                            {loadingCatalogo ? (
-                              <div className="flex items-center justify-center h-10 border border-gray-200 rounded-lg">
-                                <Loader2 className="h-4 w-4 animate-spin text-[#ED1C24]" />
-                              </div>
-                            ) : !selectedMarca ? (
-                              <Select disabled>
-                                <SelectTrigger className="border-gray-300">
-                                  <SelectValue placeholder="Primero selecciona una marca" />
-                                </SelectTrigger>
-                              </Select>
-                            ) : (
-                              <Select value={selectedModelo} onValueChange={setSelectedModelo}>
-                                <SelectTrigger className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
-                                  <SelectValue placeholder="Selecciona un modelo" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {catalogoMarcas
-                                    .find((m) => m.id.toString() === selectedMarca)
-                                    ?.modelos.map((modelo) => (
-                                      <SelectItem key={modelo.id} value={modelo.id.toString()}>
-                                        {modelo.nombre}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="col-span-1 sm:col-span-2">
+                              <Label htmlFor="placa" className="mb-2 block">
+                                Placa <span className="text-[#ED1C24]">*</span>
+                              </Label>
+                              <Input
+                                id="placa"
+                                {...vehiculoForm.register("placa")}
+                                placeholder="ABC-1234"
+                                className="w-full"
+                              />
+                              {vehiculoForm.formState.errors.placa && (
+                                <p className="text-sm text-[#ED1C24] mt-1">
+                                  {vehiculoForm.formState.errors.placa.message}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="col-span-1">
+                              <Label htmlFor="marca" className="mb-2 block">
+                                Marca <span className="text-[#ED1C24]">*</span>
+                              </Label>
+                              {loadingCatalogo ? (
+                                <div className="flex items-center justify-center h-10 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                  <Loader2 className="h-4 w-4 animate-spin text-[#ED1C24]" />
+                                </div>
+                              ) : (
+                                <Select
+                                  value={selectedMarca}
+                                  onValueChange={(value) => {
+                                    setSelectedMarca(value)
+                                    setSelectedModelo("") // Reset modelo when marca changes
+                                  }}
+                                >
+                                  <SelectTrigger className="w-full border-gray-300 dark:border-gray-700 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                                    <SelectValue placeholder="Selecciona una marca" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {catalogoMarcas.map((marca) => (
+                                      <SelectItem key={marca.id} value={marca.id.toString()}>
+                                        {marca.nombre}
                                       </SelectItem>
                                     ))}
-                                </SelectContent>
-                              </Select>
-                            )}
-                            {vehiculoForm.formState.errors.modelo && (
-                              <p className="text-sm text-[#ED1C24] mt-1">
-                                {vehiculoForm.formState.errors.modelo.message}
-                              </p>
-                            )}
-                          </div>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              {vehiculoForm.formState.errors.marca && (
+                                <p className="text-sm text-[#ED1C24] mt-1">
+                                  {vehiculoForm.formState.errors.marca.message}
+                                </p>
+                              )}
+                            </div>
 
-                          <div>
-                            <Label htmlFor="anio" className="mb-2 block">
-                              Año <span className="text-[#ED1C24]">*</span>
-                            </Label>
-                            <Input
-                              id="anio"
-                              type="number"
-                              {...vehiculoForm.register("anio", { valueAsNumber: true })}
-                              placeholder="2020"
-                            />
-                            {vehiculoForm.formState.errors.anio && (
-                              <p className="text-sm text-[#ED1C24] mt-1">
-                                {vehiculoForm.formState.errors.anio.message}
-                              </p>
-                            )}
-                          </div>
+                            <div className="col-span-1">
+                              <Label htmlFor="modelo" className="mb-2 block">
+                                Modelo <span className="text-[#ED1C24]">*</span>
+                              </Label>
+                              {loadingCatalogo ? (
+                                <div className="flex items-center justify-center h-10 border border-gray-200 dark:border-gray-700 rounded-lg">
+                                  <Loader2 className="h-4 w-4 animate-spin text-[#ED1C24]" />
+                                </div>
+                              ) : !selectedMarca ? (
+                                <Select disabled>
+                                  <SelectTrigger className="w-full border-gray-300 dark:border-gray-700">
+                                    <SelectValue placeholder="Primero selecciona una marca" />
+                                  </SelectTrigger>
+                                </Select>
+                              ) : (
+                                <Select value={selectedModelo} onValueChange={setSelectedModelo}>
+                                  <SelectTrigger className="w-full border-gray-300 dark:border-gray-700 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                                    <SelectValue placeholder="Selecciona un modelo" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {catalogoMarcas
+                                      .find((m) => m.id.toString() === selectedMarca)
+                                      ?.modelos.map((modelo) => (
+                                        <SelectItem key={modelo.id} value={modelo.id.toString()}>
+                                          {modelo.nombre}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              {vehiculoForm.formState.errors.modelo && (
+                                <p className="text-sm text-[#ED1C24] mt-1">
+                                  {vehiculoForm.formState.errors.modelo.message}
+                                </p>
+                              )}
+                            </div>
 
-                          <div>
-                            <Label htmlFor="kilometraje" className="mb-2 block">
-                              Kilometraje <span className="text-[#ED1C24]">*</span>
-                            </Label>
-                            <Input
-                              id="kilometraje"
-                              type="number"
-                              {...vehiculoForm.register("kilometraje", { valueAsNumber: true })}
-                              placeholder="50000"
-                            />
-                            {vehiculoForm.formState.errors.kilometraje && (
-                              <p className="text-sm text-[#ED1C24] mt-1">
-                                {vehiculoForm.formState.errors.kilometraje.message}
-                              </p>
-                            )}
+                            <div className="col-span-1">
+                              <Label htmlFor="anio" className="mb-2 block">
+                                Año <span className="text-[#ED1C24]">*</span>
+                              </Label>
+                              <Input
+                                id="anio"
+                                type="number"
+                                {...vehiculoForm.register("anio", { valueAsNumber: true })}
+                                placeholder="2020"
+                                className="w-full"
+                              />
+                              {vehiculoForm.formState.errors.anio && (
+                                <p className="text-sm text-[#ED1C24] mt-1">
+                                  {vehiculoForm.formState.errors.anio.message}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="col-span-1">
+                              <Label htmlFor="kilometraje" className="mb-2 block">
+                                Kilometraje <span className="text-[#ED1C24]">*</span>
+                              </Label>
+                              <Input
+                                id="kilometraje"
+                                type="number"
+                                {...vehiculoForm.register("kilometraje", { valueAsNumber: true })}
+                                placeholder="50000"
+                                className="w-full"
+                              />
+                              {vehiculoForm.formState.errors.kilometraje && (
+                                <p className="text-sm text-[#ED1C24] mt-1">
+                                  {vehiculoForm.formState.errors.kilometraje.message}
+                                </p>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    )}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     <div className="flex justify-end pt-4">
                       <Button
