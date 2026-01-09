@@ -1,7 +1,16 @@
 // API functions for Ordenes de Trabajo
 
 import { apiRequest } from "./client"
-import type { User, TipoOT, ClienteAPI, VehiculoAPI, CreateOrdenTrabajoData, OrdenTrabajoDetalle } from "@/lib/types"
+import type {
+  User,
+  TipoOT,
+  ClienteAPI,
+  VehiculoAPI,
+  CreateOrdenTrabajoData,
+  OrdenTrabajoDetalle,
+  EstadoOrdenTrabajo,
+  CambioEstadoResponse
+} from "@/lib/types"
 
 export interface OrdenTrabajoAPI {
   id: number
@@ -134,5 +143,37 @@ export async function getTestData(token: string) {
     method: "GET",
     token,
   })
+}
+
+/**
+ * Obtiene la lista de estados disponibles para Órdenes de Trabajo
+ * GET /api/estados-orden-trabajo/
+ */
+export async function getEstadosOrdenTrabajo(
+  token: string
+): Promise<EstadoOrdenTrabajo[]> {
+  return apiRequest<EstadoOrdenTrabajo[]>("/api/estados-orden-trabajo/", {
+    method: "GET",
+    token,
+  })
+}
+
+/**
+ * Cambia el estado de una Orden de Trabajo
+ * POST /api/ordenes-trabajo/{id}/cambiar-estado/
+ */
+export async function cambiarEstadoOrdenTrabajo(
+  ordenId: number,
+  estadoId: number,
+  token: string
+): Promise<CambioEstadoResponse> {
+  return apiRequest<CambioEstadoResponse>(
+    `/api/ordenes-trabajo/${ordenId}/cambiar-estado/`,
+    {
+      method: "POST",
+      token,
+      body: JSON.stringify({ estado_id: estadoId }),
+    }
+  )
 }
 

@@ -13,9 +13,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { OTInfoCard } from "@/components/ot/ot-info-card"
 import { OTPhasesStepper, type Phase } from "@/components/ot/ot-phases-stepper"
 import { RepuestosList, type Repuesto } from "@/components/ot/ot-repuestos-list"
-import { getOrdenTrabajoDetalle } from "@/lib/api/ordenes-trabajo"
+import { OTStatusSelector } from "@/components/ot/ot-status-selector"
+import { getOrdenTrabajoDetalle, cambiarEstadoOrdenTrabajo } from "@/lib/api/ordenes-trabajo"
 import { useAuthToken } from "@/hooks/use-auth-token"
-import type { OrdenTrabajoDetalle, HallazgoOT } from "@/lib/types"
+import type { OrdenTrabajoDetalle, HallazgoOT, EstadoOrdenTrabajo } from "@/lib/types"
 import { toast } from "sonner"
 import { RegistroHallazgoDialog } from "@/components/hallazgos/registro-hallazgo-dialog"
 import { OTProformaSheet } from "@/components/ot/ot-proforma-sheet"
@@ -122,12 +123,30 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
     }
   }, [otId, getToken])
 
-  const handleEstadoChange = (newEstado: string) => {
-    setCurrentEstado(newEstado)
-    setPhases(getMockPhases(newEstado))
-    toast.success("Estado actualizado", {
-      description: `La orden de trabajo ahora está en estado: ${newEstado}`,
-    })
+  const handleEstadoChange = async (nuevoEstado: EstadoOrdenTrabajo) => {
+    try {
+      const token = await getToken()
+      if (!token) throw new Error("No autorizado")
+
+      const response = await cambiarEstadoOrdenTrabajo(
+        ot!.id,
+        nuevoEstado.id,
+        token
+      )
+
+      // Actualizar estado local
+      setOt((prev) => ({
+        ...prev!,
+        estado_detalle: nuevoEstado,
+      }))
+      setCurrentEstado(nuevoEstado.codigo)
+      setPhases(getMockPhases(nuevoEstado.codigo))
+
+      // Mostrar mensaje de éxito de la API
+      toast.success(response.message)
+    } catch (error: any) {
+      toast.error(error.message || "Error al cambiar estado")
+    }
   }
 
   const handleCompletePhase = async (phaseId: string, data: { observaciones: string; evidencia: File[] }) => {
@@ -223,36 +242,28 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
             onClick={() => setHallazgoDialogOpen(true)}
             variant="outline"
             size="sm"
-            className="border-orange-500 text-orange-600 hover:bg-orange-50"
+            className="w-full sm:w-auto border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/30 dark:text-orange-500 dark:border-orange-500/60"
           >
             <AlertTriangle className="mr-2 h-4 w-4" />
             <span className="hidden xs:inline">Registrar</span> Hallazgos
           </Button>
           {currentEstado === "CTRL-CAL" && (
-            <Button asChild size="sm" className="bg-blue-600 hover:bg-blue-700">
+            <Button asChild size="sm" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700">
               <Link href={`/dashboard/inspecciones/${ot.id}`}>
                 <ClipboardCheck className="mr-2 h-4 w-4" />
                 Inspección
               </Link>
             </Button>
           )}
-          <Select value={currentEstado} onValueChange={handleEstadoChange}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ABIERTA">Abierta</SelectItem>
-              <SelectItem value="DIAGNOST">En Diagnóstico</SelectItem>
-              <SelectItem value="APROB-CLI">Pendiente Aprobación</SelectItem>
-              <SelectItem value="PROCESO">En Proceso</SelectItem>
-              <SelectItem value="PAUSADA">Pausada</SelectItem>
-              <SelectItem value="CTRL-CAL">Control de Calidad</SelectItem>
-              <SelectItem value="COMPLETA">Completada</SelectItem>
-              <SelectItem value="CERRADA">Cerrada</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
       </div>
+
+      {/* Status Selector Card - Prominent UI */}
+      <OTStatusSelector
+        currentEstado={ot.estado_detalle}
+        ordenId={ot.id}
+        onEstadoChanged={handleEstadoChange}
+      />
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Content */}

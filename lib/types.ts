@@ -386,6 +386,32 @@ export interface TipoServicio {
   updated_at: string
 }
 
+// Estado de Orden de Trabajo
+export interface EstadoOrdenTrabajo {
+  id: number
+  codigo: string
+  nombre: string
+  descripcion: string | null
+  color: string
+  orden: number
+  es_inicial: boolean
+  es_final: boolean
+  permite_edicion: boolean
+  estado: "A" | "I"
+  created_at: string
+  updated_at: string
+}
+
+// Request/Response para cambio de estado
+export interface CambioEstadoRequest {
+  estado_id: number
+}
+
+export interface CambioEstadoResponse {
+  message: string
+  orden: OrdenTrabajoDetalle
+}
+
 // Detailed OT types
 export interface OrdenTrabajoDetalle {
   id: number
@@ -425,20 +451,7 @@ export interface OrdenTrabajoDetalle {
     codigo: string
     nombre: string
   } | null
-  estado_detalle: {
-    id: number
-    codigo: string
-    nombre: string
-    descripcion: string | null
-    color: string
-    orden: number
-    es_inicial: boolean
-    es_final: boolean
-    permite_edicion: boolean
-    estado: string
-    created_at: string
-    updated_at: string
-  }
+  estado_detalle: EstadoOrdenTrabajo
   presupuesto_detalle: any | null
   sucursal_detalle: {
     id: number
