@@ -26,7 +26,10 @@ export const registerSchema = z
     password_confirm: z.string().min(1, "Confirma tu contraseña"),
     first_name: z.string().min(1, "El nombre es requerido"),
     last_name: z.string().min(1, "El apellido es requerido"),
-    phone: z.string().optional(),
+    phone: z
+      .string()
+      .min(1, "El teléfono es requerido")
+      .regex(/^\+593 0\d{2} \d{3} \d{4}$/, "Formato inválido. Debe ser +593 0XX XXX XXXX"),
   })
   .refine((data) => data.password === data.password_confirm, {
     message: "Las contraseñas no coinciden",

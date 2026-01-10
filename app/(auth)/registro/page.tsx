@@ -4,7 +4,7 @@ import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Lock, Mail, UserIcon, Phone, Loader2, AlertCircle } from "lucide-react"
+import { Lock, Mail, UserIcon, Phone, Loader2, AlertCircle, Eye, EyeOff } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,8 @@ export default function RegistroPage() {
   const [isPending, startTransition] = useTransition()
   const [serverError, setServerError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
+  const [showPassword, setShowPassword] = useState(false)
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
 
   const {
     register,
@@ -54,7 +56,7 @@ export default function RegistroPage() {
       formData.append("password_confirm", data.password_confirm)
       formData.append("first_name", data.first_name)
       formData.append("last_name", data.last_name)
-      if (data.phone) formData.append("phone", data.phone)
+      formData.append("phone", data.phone)
 
       const result = await registerAction(formData)
 
@@ -171,7 +173,7 @@ export default function RegistroPage() {
                   <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="username"
-                    placeholder="juanperez"
+                    placeholder="Juanperez"
                     className="pl-10 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
                     {...register("username")}
                     disabled={isPending}
@@ -183,17 +185,78 @@ export default function RegistroPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-[#202020]">
-                  Teléfono (opcional)
+                  Teléfono
                 </Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="3001234567"
+                    placeholder="+593 099 123 4567"
                     className="pl-10 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
                     {...register("phone")}
                     disabled={isPending}
+                    onFocus={(e) => {
+                      if (!e.target.value || e.target.value === "") {
+                        e.target.value = "+593 0"
+                        // Posicionar cursor al final
+                        setTimeout(() => {
+                          e.target.setSelectionRange(e.target.value.length, e.target.value.length)
+                        }, 0)
+                      }
+                    }}
+                    onChange={(e) => {
+                      let value = e.target.value
+                      const prefix = "+593 0"
+
+                      // Si el valor no comienza con el prefijo, restaurarlo
+                      if (!value.startsWith(prefix)) {
+                        value = prefix
+                      }
+
+                      // Obtener solo la parte después del prefijo
+                      let numberPart = value.slice(prefix.length)
+
+                      // Remover todo lo que no sea dígito (espacios, letras, etc.)
+                      numberPart = numberPart.replace(/\D/g, '')
+
+                      // Limitar a 9 dígitos
+                      numberPart = numberPart.slice(0, 9)
+
+                      // Formatear con espacios: XX XXX XXXX
+                      let formattedNumber = ""
+                      if (numberPart.length > 0) {
+                        formattedNumber = numberPart.slice(0, 2) // Primeros 2 dígitos
+                      }
+                      if (numberPart.length > 2) {
+                        formattedNumber += " " + numberPart.slice(2, 5) // Siguientes 3 dígitos
+                      }
+                      if (numberPart.length > 5) {
+                        formattedNumber += " " + numberPart.slice(5, 9) // Últimos 4 dígitos
+                      }
+
+                      // Actualizar el valor del input: +593 0XX XXX XXXX
+                      e.target.value = prefix + formattedNumber
+                    }}
+                    onKeyDown={(e) => {
+                      // Prevenir borrar el prefijo
+                      const input = e.currentTarget
+                      const cursorPosition = input.selectionStart || 0
+                      const prefix = "+593 0"
+
+                      if (
+                        (e.key === "Backspace" || e.key === "Delete") &&
+                        cursorPosition <= prefix.length
+                      ) {
+                        e.preventDefault()
+                      }
+
+                      // Solo permitir números, backspace, delete, tab, flechas
+                      const allowedKeys = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]
+                      if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key)) {
+                        e.preventDefault()
+                      }
+                    }}
                   />
                 </div>
                 {errors.phone && <p className="text-sm text-red-600">{errors.phone.message}</p>}
@@ -207,12 +270,24 @@ export default function RegistroPage() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
-                    className="pl-10 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                    className="pl-10 pr-10 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
                     {...register("password")}
                     disabled={isPending}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    disabled={isPending}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
                 {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
                 {fieldErrors.password && <p className="text-sm text-red-600">{fieldErrors.password[0]}</p>}
@@ -226,12 +301,24 @@ export default function RegistroPage() {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
                   <Input
                     id="password_confirm"
-                    type="password"
+                    type={showPasswordConfirm ? "text" : "password"}
                     placeholder="••••••••"
-                    className="pl-10 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                    className="pl-10 pr-10 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
                     {...register("password_confirm")}
                     disabled={isPending}
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
+                    className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 focus:outline-none"
+                    disabled={isPending}
+                  >
+                    {showPasswordConfirm ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
                 </div>
                 {errors.password_confirm && <p className="text-sm text-red-600">{errors.password_confirm.message}</p>}
               </div>
@@ -243,7 +330,7 @@ export default function RegistroPage() {
               </div>
             </CardContent>
 
-            <CardFooter className="flex flex-col gap-4">
+            <CardFooter className="flex flex-col gap-4 mt-6">
               <Button type="submit" className="w-full bg-[#ED1C24] hover:bg-[#c41820] text-white" disabled={isPending}>
                 {isPending ? (
                   <>
