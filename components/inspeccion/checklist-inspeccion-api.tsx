@@ -516,10 +516,10 @@ export function ChecklistInspeccionApi({
     return fotosActuales < MIN_FOTOS_INSPECCION
   }
 
-  const getItemId = (puntoId: number): number | null => {
-    const item = itemsInspeccion.find((i) => i.item_catalogo === puntoId)
-    return item?.id || null
-  }
+  // const getItemId = (puntoId: number): number | null => {
+  //   const item = itemsInspeccion.find((i) => i.item_catalogo === puntoId)
+  //   return item?.id || null
+  // }
 
   const getEstadoIcon = (puntoId: number) => {
     const evaluacion = evaluaciones.find((e) => e.punto_id === puntoId)

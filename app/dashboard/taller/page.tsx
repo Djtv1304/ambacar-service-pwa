@@ -6,10 +6,6 @@ import { isTechnician, isInternalUser } from "@/lib/auth/roles"
 import { TechnicianOrdersList } from "@/components/taller/technician-orders-list"
 import { KanbanBoardView } from "@/components/taller/kanban-board"
 import { motion } from "framer-motion"
-import {
-  mockTechnicianOrder,
-  type TechnicianOrder,
-} from "@/lib/fixtures/technical-progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
