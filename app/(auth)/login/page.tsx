@@ -10,7 +10,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
@@ -31,18 +30,13 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-    watch,
-    setValue,
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
-      rememberMe: false,
     },
   })
-
-  const rememberMe = watch("rememberMe")
 
   const onSubmit = async (data: LoginFormData) => {
     setServerError(null)
@@ -51,7 +45,6 @@ export default function LoginPage() {
       const formData = new FormData()
       formData.append("email", data.email)
       formData.append("password", data.password)
-      formData.append("rememberMe", String(data.rememberMe))
 
       const result = await loginAction(formData)
 
@@ -160,19 +153,6 @@ export default function LoginPage() {
                   </button>
                 </div>
                 {errors.password && <p className="text-sm text-red-600">{errors.password.message}</p>}
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="rememberMe"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setValue("rememberMe", checked as boolean)}
-                  disabled={isPending}
-                  className="border-gray-300 data-[state=checked]:bg-[#ED1C24] data-[state=checked]:border-[#ED1C24]"
-                />
-                <Label htmlFor="rememberMe" className="text-sm font-normal text-[#202020] cursor-pointer">
-                  Recordarme por 30 días
-                </Label>
               </div>
 
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
