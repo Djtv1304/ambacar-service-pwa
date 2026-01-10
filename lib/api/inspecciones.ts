@@ -185,3 +185,40 @@ export async function completarInspeccion(
     token,
   })
 }
+
+/**
+ * Respuesta del endpoint de sugerencias inteligentes
+ */
+export interface SugerenciaInteligente {
+  success: boolean
+  tiene_sugerencias: boolean
+  sugerencias: {
+    observaciones: string[]
+    recomendaciones: string[]
+    puntos_atencion: string[]
+    estado_general: string
+  }
+  contexto: {
+    tipo: string
+    fase: string
+    punto_inspeccion: string
+    vehiculo: string
+  }
+}
+
+/**
+ * Obtiene sugerencias inteligentes basadas en IA para una foto de inspección
+ * @param fotoId - ID de la foto de inspección
+ * @param token - JWT token for authentication
+ * @returns Sugerencias inteligentes con observaciones, recomendaciones y puntos de atención
+ */
+export async function getSugerenciaInteligente(
+  fotoId: number,
+  token: string
+): Promise<SugerenciaInteligente> {
+  return apiRequest<SugerenciaInteligente>("/api/sugerencia-inteligente/", {
+    method: "POST",
+    token,
+    body: JSON.stringify({ tipo: "foto_inspeccion", id: fotoId }),
+  })
+}

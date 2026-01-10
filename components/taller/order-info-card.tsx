@@ -180,13 +180,17 @@ export function OrderInfoCard({ order }: OrderInfoCardProps) {
               {/* Asesor */}
               <div>
                 <p className="text-xs text-muted-foreground">Asesor</p>
-                <p className="text-sm font-medium">{order.asesor.nombre}</p>
+                <p className="text-sm font-medium">
+                  {order.asesor?.nombre || "No asignado"}
+                </p>
               </div>
 
               {/* Técnico */}
               <div>
                 <p className="text-xs text-muted-foreground">Técnico</p>
-                <p className="text-sm font-medium">{order.tecnicoAsignado.nombre}</p>
+                <p className="text-sm font-medium">
+                  {order.tecnicoAsignado?.nombre || "No asignado"}
+                </p>
               </div>
             </div>
           </CollapsibleContent>

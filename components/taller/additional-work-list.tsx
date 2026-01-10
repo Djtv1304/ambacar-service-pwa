@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { CheckCircle2, Clock, Loader2 } from "lucide-react"
+import { CheckCircle2, Clock, Loader2, Wrench } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -31,6 +31,32 @@ export function AdditionalWorkList({ items, onToggleComplete }: AdditionalWorkLi
   const completedCount = items.filter(i => i.completado).length
   const totalCount = items.length
 
+  if (items.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Wrench className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Trabajos Adicionales</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+            <div className="h-16 w-16 rounded-full bg-muted/50 dark:bg-muted/30 flex items-center justify-center mb-4">
+              <Wrench className="h-8 w-8 text-muted-foreground/50 dark:text-muted-foreground/40" />
+            </div>
+            <h3 className="font-medium text-sm mb-1 dark:text-gray-200">
+              Sin trabajos adicionales
+            </h3>
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/80 max-w-[280px]">
+              Los trabajos adicionales identificados durante el servicio aparecerán aquí.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   const handleConfirmComplete = async () => {
     if (!confirmingItem) return
 
@@ -49,16 +75,15 @@ export function AdditionalWorkList({ items, onToggleComplete }: AdditionalWorkLi
     }
   }
 
-  if (items.length === 0) {
-    return null
-  }
-
   return (
     <>
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Trabajos Adicionales</CardTitle>
+            <div className="flex items-center gap-2">
+              <Wrench className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-base">Trabajos Adicionales</CardTitle>
+            </div>
             <Badge variant="secondary" className="font-normal">
               {completedCount}/{totalCount} completados
             </Badge>
@@ -89,7 +114,7 @@ export function AdditionalWorkList({ items, onToggleComplete }: AdditionalWorkLi
                       {item.titulo}
                     </h4>
                     <span className="text-sm font-semibold shrink-0">
-                      ${item.costoTotal.toFixed(2)}
+                      ${typeof item.costoTotal === 'number' ? item.costoTotal.toFixed(2) : Number(item.costoTotal || 0).toFixed(2)}
                     </span>
                   </div>
                   <p className={cn(

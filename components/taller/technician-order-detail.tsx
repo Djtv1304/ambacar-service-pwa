@@ -108,29 +108,25 @@ export function TechnicianOrderDetail({ order: initialOrder }: TechnicianOrderDe
         </motion.div>
 
         {/* Additional Work */}
-        {order.trabajosAdicionales.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <AdditionalWorkList
-              items={order.trabajosAdicionales}
-              onToggleComplete={handleToggleWork}
-            />
-          </motion.div>
-        )}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <AdditionalWorkList
+            items={order.trabajosAdicionales}
+            onToggleComplete={handleToggleWork}
+          />
+        </motion.div>
 
         {/* Parts Used */}
-        {order.repuestosUtilizados.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <PartsUsedList parts={order.repuestosUtilizados} />
-          </motion.div>
-        )}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <PartsUsedList parts={order.repuestosUtilizados} />
+        </motion.div>
       </div>
 
       {/* Floating Action Button - Register Finding */}

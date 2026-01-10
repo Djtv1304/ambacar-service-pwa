@@ -25,7 +25,29 @@ export function PartsUsedList({ parts }: PartsUsedListProps) {
   const totalCost = parts.reduce((acc, p) => acc + (p.cantidad * p.precioUnitario), 0)
 
   if (parts.length === 0) {
-    return null
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Repuestos Utilizados</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+            <div className="h-16 w-16 rounded-full bg-muted/50 dark:bg-muted/30 flex items-center justify-center mb-4">
+              <Package className="h-8 w-8 text-muted-foreground/50 dark:text-muted-foreground/40" />
+            </div>
+            <h3 className="font-medium text-sm mb-1 dark:text-gray-200">
+              Sin repuestos registrados
+            </h3>
+            <p className="text-xs text-muted-foreground dark:text-muted-foreground/80 max-w-[280px]">
+              Los repuestos utilizados se agregarán conforme avance el servicio.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (

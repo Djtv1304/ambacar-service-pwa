@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 import Link from "next/link"
-import type { KanbanBoard, KanbanCard, WorkOrderPhase } from "@/lib/fixtures/technical-progress"
+import type { WorkOrderPhase } from "@/lib/fixtures/technical-progress"
+import type { KanbanBoardAPI as KanbanBoard, KanbanCardAPI as KanbanCard } from "@/lib/api/taller"
 import { PHASE_CONFIG, formatDuration } from "@/lib/fixtures/technical-progress"
 import { cn } from "@/lib/utils"
 
@@ -137,8 +138,8 @@ function KanbanColumn({ phase, cards }: KanbanColumnProps) {
       </div>
 
       {/* Cards container */}
-      <div className="flex-1 border rounded-b-lg bg-muted/20 p-2 overflow-y-auto">
-        <div className="space-y-2">
+      <div className="flex-1 border rounded-b-lg bg-muted/20 p-3 overflow-y-auto">
+        <div className="space-y-3">
           {cards.length === 0 ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
               Sin vehículos

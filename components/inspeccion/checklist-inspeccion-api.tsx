@@ -1,14 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { CheckCircle2, Circle, AlertTriangle, XCircle, Ruler, Camera, ImagePlus, ChevronDown, Eye, User, Calendar as CalendarIcon } from "lucide-react"
+import { CheckCircle2, Circle, AlertTriangle, XCircle, Ruler, Camera, ImagePlus, ChevronDown, Eye, User, Calendar as CalendarIcon, Sparkles, Loader2, Lightbulb, Target, CheckCircle, AlertCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { toast } from "sonner"
 import type { PuntoInspeccionEvaluado, PuntoInspeccionCatalogo, ItemInspeccion, FotoInspeccionAPI } from "@/lib/types"
+import { useAuthToken } from "@/hooks/use-auth-token"
+import { getSugerenciaInteligente, type SugerenciaInteligente } from "@/lib/api/inspecciones"
 import { MIN_FOTOS_INSPECCION } from "@/lib/inspeccion/constants"
 import { EvaluacionPuntoDialog } from "./evaluacion-punto-dialog"
 import { EvaluacionConMedicionesDialog } from "./evaluacion-con-mediciones-dialog"
@@ -55,8 +58,91 @@ interface FotoModalProps {
   onClose: () => void
 }
 
+// Helper function to determine estado config based on estado_general text
+function getEstadoConfig(estadoGeneral: string | undefined) {
+  if (!estadoGeneral) return null
+
+  const lowerEstado = estadoGeneral.toLowerCase()
+
+  // Map various possible values to our config
+  if (lowerEstado.includes("conforme") && !lowerEstado.includes("no conforme")) {
+    return {
+      bg: "bg-green-100 dark:bg-green-950/50",
+      border: "border-green-300 dark:border-green-800",
+      text: "text-green-700 dark:text-green-400",
+      icon: CheckCircle,
+    }
+  } else if (lowerEstado.includes("no conforme") || lowerEstado.includes("malo") || lowerEstado.includes("critico") || lowerEstado.includes("crítico")) {
+    return {
+      bg: "bg-red-100 dark:bg-red-950/50",
+      border: "border-red-300 dark:border-red-800",
+      text: "text-red-700 dark:text-red-400",
+      icon: AlertTriangle,
+    }
+  } else if (lowerEstado.includes("regular") || lowerEstado.includes("atención") || lowerEstado.includes("atencion")) {
+    return {
+      bg: "bg-yellow-100 dark:bg-yellow-950/50",
+      border: "border-yellow-300 dark:border-yellow-800",
+      text: "text-yellow-700 dark:text-yellow-400",
+      icon: AlertTriangle,
+    }
+  } else if (lowerEstado.includes("bueno") || lowerEstado.includes("bien") || lowerEstado.includes("ok")) {
+    return {
+      bg: "bg-green-100 dark:bg-green-950/50",
+      border: "border-green-300 dark:border-green-800",
+      text: "text-green-700 dark:text-green-400",
+      icon: CheckCircle,
+    }
+  }
+
+  // Default to amber/warning for unknown states
+  return {
+    bg: "bg-amber-100 dark:bg-amber-950/50",
+    border: "border-amber-300 dark:border-amber-800",
+    text: "text-amber-700 dark:text-amber-400",
+    icon: AlertCircle,
+  }
+}
+
+// Animation variants for AI panel
+const panelVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      staggerChildren: 0.12,
+    }
+  }
+}
+
+const sectionVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: { opacity: 1, x: 0 }
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 5 },
+  visible: { opacity: 1, y: 0 }
+}
+
 function FotoModal({ foto, open, onClose }: FotoModalProps) {
   const [showOverlay, setShowOverlay] = useState(false)
+  const [suggestion, setSuggestion] = useState<SugerenciaInteligente | null>(null)
+  const [isLoadingSuggestion, setIsLoadingSuggestion] = useState(false)
+  const [suggestionError, setSuggestionError] = useState<string | null>(null)
+  const { getToken } = useAuthToken()
+
+  // Reset state when modal closes or photo changes
+  useEffect(() => {
+    if (!open) {
+      setSuggestion(null)
+      setSuggestionError(null)
+      setIsLoadingSuggestion(false)
+      setShowOverlay(false)
+    }
+  }, [open])
 
   if (!foto) return null
 
@@ -72,14 +158,62 @@ function FotoModal({ foto, open, onClose }: FotoModalProps) {
     setShowOverlay(false)
   }
 
+  const handleAnalyzeWithAI = async () => {
+    if (!foto) return
+
+    setIsLoadingSuggestion(true)
+    setSuggestionError(null)
+
+    try {
+      const token = await getToken()
+      if (!token) {
+        toast.error("Sesión expirada", { description: "Por favor inicia sesión nuevamente" })
+        return
+      }
+
+      const result = await getSugerenciaInteligente(foto.id, token)
+      console.log("AI Suggestion Response:", result)
+      setSuggestion(result)
+      toast.success("Análisis completado", { description: "Se generaron sugerencias inteligentes" })
+    } catch (error: any) {
+      console.error("Error getting AI suggestion:", error)
+
+      let errorMessage = "Error al obtener sugerencias. Intenta nuevamente."
+      if (error.status === 404) {
+        errorMessage = "No se encontró la foto para analizar"
+      } else if (error.status === 400) {
+        errorMessage = "Solicitud inválida"
+      }
+
+      setSuggestionError(errorMessage)
+      toast.error("Error al analizar", { description: errorMessage })
+    } finally {
+      setIsLoadingSuggestion(false)
+    }
+  }
+
+  // Access the nested sugerencias object
+  const sugerencias = suggestion?.sugerencias
+  const contexto = suggestion?.contexto
+
+  const hasSuggestions = suggestion?.tiene_sugerencias && sugerencias && (
+    (sugerencias.observaciones?.length ?? 0) > 0 ||
+    (sugerencias.recomendaciones?.length ?? 0) > 0 ||
+    (sugerencias.puntos_atencion?.length ?? 0) > 0
+  )
+
+  const estadoConfig = getEstadoConfig(sugerencias?.estado_general)
+  const EstadoIcon = estadoConfig?.icon
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[95vh] overflow-y-auto dark:bg-gray-950 dark:border-gray-800">
         <DialogHeader>
-          <DialogTitle>{foto.descripcion || "Foto de Inspección"}</DialogTitle>
+          <DialogTitle className="dark:text-gray-100">{foto.descripcion || "Foto de Inspección"}</DialogTitle>
         </DialogHeader>
         <div className="mt-4 space-y-4">
-          <div className="flex items-center justify-center bg-muted rounded-lg p-2 min-h-[200px]">
+          {/* Photo section */}
+          <div className="flex items-center justify-center bg-muted dark:bg-gray-900/50 rounded-lg p-2 min-h-[200px]">
             <div
               className="relative rounded-lg overflow-hidden cursor-pointer group"
               onClick={handleImageClick}
@@ -90,7 +224,10 @@ function FotoModal({ foto, open, onClose }: FotoModalProps) {
               <img
                 src={foto.url_imagen}
                 alt={foto.descripcion || "Foto de inspección"}
-                className="max-h-[60vh] md:max-h-[70vh] w-auto max-w-full object-contain rounded-lg"
+                className={cn(
+                  "w-auto max-w-full object-contain rounded-lg transition-all duration-300",
+                  suggestion ? "max-h-[40vh] md:max-h-[50vh]" : "max-h-[60vh] md:max-h-[70vh]"
+                )}
               />
               <div
                 className={cn(
@@ -108,16 +245,213 @@ function FotoModal({ foto, open, onClose }: FotoModalProps) {
             </div>
           </div>
 
-          <div className="space-y-2 text-sm bg-muted/50 dark:bg-muted/20 p-3 rounded-lg">
-            <div className="flex items-center gap-2 text-muted-foreground">
+          {/* Metadata section */}
+          <div className="space-y-2 text-sm bg-muted/50 dark:bg-gray-900/30 p-3 rounded-lg">
+            <div className="flex items-center gap-2 text-muted-foreground dark:text-gray-400">
               <CalendarIcon className="h-4 w-4 shrink-0" />
               <span>{new Date(foto.fecha_captura).toLocaleString("es-EC")}</span>
             </div>
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-muted-foreground dark:text-gray-400">
               <User className="h-4 w-4 shrink-0" />
               <span>Capturada por: {foto.usuario_nombre}</span>
             </div>
           </div>
+
+          {/* AI Analysis Button */}
+          {!suggestion && (
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleAnalyzeWithAI}
+              disabled={isLoadingSuggestion}
+              className={cn(
+                "w-full flex items-center justify-center gap-2.5 py-3.5 px-4 rounded-xl",
+                "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700",
+                "dark:from-purple-700 dark:to-blue-700 dark:hover:from-purple-600 dark:hover:to-blue-600",
+                "text-white font-medium shadow-lg shadow-purple-500/25 dark:shadow-purple-900/40",
+                "transition-all duration-300",
+                "disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+              )}
+            >
+              {isLoadingSuggestion ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Sparkles className="h-5 w-5" />
+              )}
+              <span className="text-sm sm:text-base">
+                {isLoadingSuggestion ? "Analizando imagen..." : "Analizar con IA"}
+              </span>
+            </motion.button>
+          )}
+
+          {/* Error state */}
+          {suggestionError && !suggestion && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900"
+            >
+              <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0" />
+              <span className="text-sm text-red-700 dark:text-red-300">{suggestionError}</span>
+            </motion.div>
+          )}
+
+          {/* AI Suggestions Panel */}
+          <AnimatePresence>
+            {suggestion && (
+              <motion.div
+                variants={panelVariants}
+                initial="hidden"
+                animate="visible"
+                className="rounded-xl border border-purple-200 dark:border-purple-900/50 bg-gradient-to-b from-purple-50/80 to-white dark:from-purple-950/30 dark:to-gray-950 overflow-hidden"
+              >
+                {/* Panel Header */}
+                <div className="flex items-center justify-between px-4 py-3 bg-purple-100/50 dark:bg-purple-900/30 border-b border-purple-200 dark:border-purple-900/50">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+                      <Sparkles className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="font-semibold text-purple-900 dark:text-purple-100">Análisis Inteligente</span>
+                  </div>
+                </div>
+
+                {/* Panel Content */}
+                <div className="p-4 space-y-4">
+                  {/* Estado General - Shown prominently first */}
+                  {sugerencias?.estado_general && estadoConfig && EstadoIcon && (
+                    <motion.div
+                      variants={sectionVariants}
+                      className={cn(
+                        "flex items-center gap-3 p-4 rounded-lg border-2",
+                        estadoConfig.bg,
+                        estadoConfig.border
+                      )}
+                    >
+                      <div className={cn(
+                        "h-10 w-10 rounded-full flex items-center justify-center shrink-0",
+                        estadoConfig.bg
+                      )}>
+                        <EstadoIcon className={cn("h-6 w-6", estadoConfig.text)} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-muted-foreground dark:text-gray-400 uppercase tracking-wider mb-0.5">
+                          Estado General
+                        </p>
+                        <p className={cn("text-lg font-bold", estadoConfig.text)}>
+                          {sugerencias.estado_general}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Context info */}
+                  {contexto && (contexto.punto_inspeccion || contexto.vehiculo) && (
+                    <motion.div variants={sectionVariants} className="text-xs text-muted-foreground dark:text-gray-500 bg-muted/30 dark:bg-gray-900/30 px-3 py-2 rounded-lg">
+                      {contexto.punto_inspeccion && (
+                        <span className="font-medium">{contexto.punto_inspeccion}</span>
+                      )}
+                      {contexto.punto_inspeccion && contexto.vehiculo && <span> • </span>}
+                      {contexto.vehiculo && <span>{contexto.vehiculo}</span>}
+                    </motion.div>
+                  )}
+
+                  {/* No suggestions state - only show if API says no suggestions */}
+                  {!hasSuggestions && !suggestion.tiene_sugerencias && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-center py-6"
+                    >
+                      <CheckCircle className="h-12 w-12 text-green-500 dark:text-green-400 mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground dark:text-gray-400">
+                        No se detectaron problemas o recomendaciones para esta imagen.
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {/* Observaciones */}
+                  {sugerencias?.observaciones && sugerencias.observaciones.length > 0 && (
+                    <motion.div variants={sectionVariants} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <span className="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-300">
+                          Observaciones ({sugerencias.observaciones.length})
+                        </span>
+                      </div>
+                      <motion.ul className="space-y-2 pl-6">
+                        {sugerencias.observaciones.map((obs, idx) => (
+                          <motion.li
+                            key={idx}
+                            variants={itemVariants}
+                            className="text-sm text-gray-700 dark:text-gray-300 list-disc marker:text-blue-500 dark:marker:text-blue-400"
+                          >
+                            {obs}
+                          </motion.li>
+                        ))}
+                      </motion.ul>
+                    </motion.div>
+                  )}
+
+                  {/* Recomendaciones */}
+                  {sugerencias?.recomendaciones && sugerencias.recomendaciones.length > 0 && (
+                    <motion.div variants={sectionVariants} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                        <span className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                          Recomendaciones ({sugerencias.recomendaciones.length})
+                        </span>
+                      </div>
+                      <motion.ul className="space-y-2 pl-6">
+                        {sugerencias.recomendaciones.map((rec, idx) => (
+                          <motion.li
+                            key={idx}
+                            variants={itemVariants}
+                            className="text-sm text-gray-700 dark:text-gray-300 list-disc marker:text-amber-500 dark:marker:text-amber-400"
+                          >
+                            {rec}
+                          </motion.li>
+                        ))}
+                      </motion.ul>
+                    </motion.div>
+                  )}
+
+                  {/* Puntos de Atención */}
+                  {sugerencias?.puntos_atencion && sugerencias.puntos_atencion.length > 0 && (
+                    <motion.div variants={sectionVariants} className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Target className="h-4 w-4 text-red-600 dark:text-red-400" />
+                        <span className="text-xs font-semibold uppercase tracking-wider text-red-700 dark:text-red-300">
+                          Puntos de Atención ({sugerencias.puntos_atencion.length})
+                        </span>
+                      </div>
+                      <motion.ul className="space-y-2 pl-6">
+                        {sugerencias.puntos_atencion.map((punto, idx) => (
+                          <motion.li
+                            key={idx}
+                            variants={itemVariants}
+                            className="text-sm text-gray-700 dark:text-gray-300 list-disc marker:text-red-500 dark:marker:text-red-400"
+                          >
+                            {punto}
+                          </motion.li>
+                        ))}
+                      </motion.ul>
+                    </motion.div>
+                  )}
+
+                  {/* Re-analyze button */}
+                  <motion.div variants={sectionVariants} className="pt-2 border-t border-purple-100 dark:border-purple-900/30">
+                    <button
+                      onClick={handleAnalyzeWithAI}
+                      disabled={isLoadingSuggestion}
+                      className="text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium transition-colors disabled:opacity-50"
+                    >
+                      {isLoadingSuggestion ? "Analizando..." : "Volver a analizar"}
+                    </button>
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </DialogContent>
     </Dialog>

@@ -9,7 +9,8 @@ import {
   Camera,
   Mic,
   ChevronDown,
-  Loader2
+  Loader2,
+  ClipboardList
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -92,11 +93,27 @@ export function PhaseTimeline({ phases, onCompletePhase }: PhaseTimelineProps) {
     <>
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Fases del Servicio</CardTitle>
+          <div className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-base">Fases del Servicio</CardTitle>
+          </div>
         </CardHeader>
         <CardContent className="pt-0">
-          <div className="relative">
-            {phases.map((phase, index) => {
+          {phases.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+              <div className="h-16 w-16 rounded-full bg-muted/50 dark:bg-muted/30 flex items-center justify-center mb-4">
+                <Clock className="h-8 w-8 text-muted-foreground/50 dark:text-muted-foreground/40" />
+              </div>
+              <h3 className="font-medium text-sm mb-1 dark:text-gray-200">
+                Fases en configuración
+              </h3>
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground/80 max-w-[280px]">
+                Las fases del servicio se configurarán próximamente y aparecerán aquí.
+              </p>
+            </div>
+          ) : (
+            <div className="relative">
+              {phases.map((phase, index) => {
               const isLast = index === phases.length - 1
               const config = PHASE_CONFIG[phase.fase]
               const isExpanded = expandedPhases.has(phase.id)
@@ -245,7 +262,8 @@ export function PhaseTimeline({ phases, onCompletePhase }: PhaseTimelineProps) {
                 </div>
               )
             })}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
