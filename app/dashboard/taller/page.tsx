@@ -5,6 +5,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { isTechnician, isInternalUser } from "@/lib/auth/roles"
 import { TechnicianOrdersList } from "@/components/taller/technician-orders-list"
 import { KanbanBoardView } from "@/components/taller/kanban-board"
+import { motion } from "framer-motion"
 import {
   mockTechnicianOrder,
   type TechnicianOrder,
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { useKanbanBoard } from "@/hooks/use-kanban-board"
+import { useOrdenesTaller } from "@/hooks/use-ordenes-taller"
 import { RefreshCw, Search, User, Flag, Filter, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { KanbanBoardAPI, KanbanCardAPI } from "@/lib/api/taller"
@@ -39,14 +41,7 @@ export default function TallerPage() {
 
   // Technician View - Show their assigned orders
   if (userIsTechnician) {
-    // TODO: Fetch real orders from API
-    const technicianOrders: TechnicianOrder[] = [mockTechnicianOrder]
-
-    return (
-      <div className="p-4 md:p-6">
-        <TechnicianOrdersList orders={technicianOrders} />
-      </div>
-    )
+    return <TechnicianOrdersView />
   }
 
   // Admin/Manager/Operator View - Show Kanban Board
@@ -250,7 +245,7 @@ function KanbanBoardContent() {
       )}
 
       {/* Tablero Kanban */}
-      <KanbanBoardView board={filteredBoard} />
+      <KanbanBoardView board={filteredBoard!} />
     </div>
   )
 }
@@ -281,6 +276,147 @@ function getTotalFilteredCards(board: KanbanBoardAPI): number {
   return Object.values(board.columnas).reduce(
     (total, columna) => total + columna.length,
     0
+  )
+}
+
+/**
+ * Vista de órdenes para técnicos (y ADMIN cuando forceShowTechnicianView = true)
+ * Consume API /api/taller/ que filtra órdenes según usuario autenticado
+ */
+function TechnicianOrdersView() {
+  const { ordenes, isLoading, error, refetch } = useOrdenesTaller()
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    await refetch()
+    setIsRefreshing(false)
+  }
+
+  if (isLoading) {
+    return <TechnicianOrdersListSkeleton />
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 md:p-6">
+        <div className="flex flex-col items-center justify-center h-96 space-y-4">
+          <p className="text-lg text-muted-foreground dark:text-gray-400">
+            {error}
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            Reintentar
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (ordenes.length === 0) {
+    return (
+      <div className="p-4 md:p-6">
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
+          {/* Icon */}
+          <div className="relative">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="h-24 w-24 rounded-full bg-primary/10 dark:bg-primary/5 flex items-center justify-center"
+            >
+              <svg
+                className="h-12 w-12 text-primary dark:text-primary/80"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
+              </svg>
+            </motion.div>
+            {/* Decorative pulse - only once */}
+            <motion.div
+              initial={{ scale: 1, opacity: 0.5 }}
+              animate={{ scale: 2, opacity: 0 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="absolute inset-0 h-24 w-24 rounded-full bg-primary/20 dark:bg-primary/10"
+            />
+          </div>
+
+          {/* Text content */}
+          <div className="text-center space-y-2 max-w-md">
+            <h3 className="text-xl font-semibold text-foreground dark:text-gray-100">
+              No tienes órdenes asignadas
+            </h3>
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground/80">
+              Parece que no hay órdenes de trabajo para ti en este momento. Las nuevas órdenes aparecerán aquí automáticamente al actualizar.
+            </p>
+          </div>
+
+          {/* Action button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="dark:border-gray-700 dark:hover:bg-gray-800"
+          >
+            <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
+            Actualizar
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-4 md:p-6 space-y-4">
+      {/* Header con botón de actualizar */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold dark:text-gray-100">Mis Órdenes</h1>
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground/80">
+            {ordenes.length} {ordenes.length === 1 ? 'orden' : 'órdenes'} asignadas
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="dark:border-gray-700 dark:hover:bg-gray-800"
+        >
+          <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
+          Actualizar
+        </Button>
+      </div>
+
+      {/* Lista de órdenes */}
+      <TechnicianOrdersList orders={ordenes} />
+    </div>
+  )
+}
+
+/**
+ * Skeleton para la vista de técnico mientras carga
+ */
+function TechnicianOrdersListSkeleton() {
+  return (
+    <div className="p-4 md:p-6 space-y-4">
+      <div className="space-y-2">
+        <Skeleton className="h-8 w-48 dark:bg-gray-800" />
+        <Skeleton className="h-4 w-32 dark:bg-gray-800" />
+      </div>
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <Skeleton key={i} className="h-48 w-full dark:bg-gray-800" />
+        ))}
+      </div>
+    </div>
   )
 }
 

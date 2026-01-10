@@ -123,3 +123,59 @@ export async function getOrdenTallerDetalle(
     token,
   })
 }
+
+/**
+ * Interfaz para la respuesta de lista de órdenes de taller
+ * Endpoint: GET /api/taller/
+ */
+export interface OrdenTallerListaAPI {
+  id: string
+  codigo: string
+  estado: "abierta" | "en_proceso" | "pausada" | "cerrada"
+  tipoOrden: "mantenimiento" | "reparacion" | "garantia"
+  fechaCreacion: string  // ISO string
+  fechaEstimadaEntrega: string  // ISO string
+  cliente: {
+    id: string
+    nombre: string
+    apellido: string
+    telefono: string
+    email: string
+  }
+  vehiculo: {
+    id: string
+    placa: string
+    marca: string
+    modelo: string
+    anio: number
+    color: string
+    vin: string
+    kilometraje: number
+  }
+  asesor: {
+    id: string
+    nombre: string
+  } | null
+  tecnicoAsignado: {
+    id: string
+    nombre: string
+  } | null
+  fases: any[]
+  trabajosAdicionales: any[]
+  repuestosUtilizados: any[]
+  descripcionProblema: string
+  diagnosticoInicial: string | null
+}
+
+/**
+ * Obtiene la lista de órdenes de taller del usuario autenticado
+ * El backend filtra las órdenes según el rol y permisos del usuario (basado en token)
+ * @param token - JWT token para autenticación
+ * @returns Array de órdenes de taller asignadas al usuario
+ */
+export async function getOrdenesTaller(token: string): Promise<OrdenTallerListaAPI[]> {
+  return apiRequest<OrdenTallerListaAPI[]>("/api/taller/", {
+    method: "GET",
+    token,
+  })
+}

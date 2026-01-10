@@ -170,7 +170,7 @@ function OrderCard({ order, index }: OrderCardProps) {
           <CardContent className="p-0">
             <div className="flex">
               {/* Left - Vehicle Thumbnail */}
-              <div className="relative w-20 sm:w-24 shrink-0 bg-muted flex items-center justify-center">
+              <div className="relative w-28 sm:w-32 shrink-0 bg-muted flex items-center justify-center ml-3 rounded-lg">
                 {/* Placeholder vehicle icon */}
                 <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
                   <Car className="h-6 w-6 text-primary" />
@@ -278,23 +278,10 @@ export function TechnicianOrdersList({ orders }: TechnicianOrdersListProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Mis Órdenes</h1>
-          <p className="text-sm text-muted-foreground">
-            {orders.length} orden{orders.length !== 1 ? "es" : ""} asignada{orders.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-      </div>
-
-      {/* Orders list */}
-      <div className="space-y-3">
-        {orders.map((order, index) => (
-          <OrderCard key={order.id} order={order} index={index} />
-        ))}
-      </div>
+    <div className="flex flex-col gap-4">
+      {orders.map((order, index) => (
+        <OrderCard key={order.id} order={order} index={index} />
+      ))}
     </div>
   )
 }

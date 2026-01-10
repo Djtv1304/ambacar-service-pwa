@@ -98,12 +98,12 @@ export interface TechnicianOrder {
   asesor: {
     id: string
     nombre: string
-  }
+  } | null
   tecnicoAsignado: {
     id: string
     nombre: string
     especialidad: string
-  }
+  } | null
   fases: PhaseTimelineItem[]
   trabajosAdicionales: AdditionalWorkItem[]
   repuestosUtilizados: PartUsed[]
