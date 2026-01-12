@@ -14,6 +14,7 @@ import {
   Variable,
   Sparkles,
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -229,39 +230,28 @@ function EmailPreview({ content, subject }: { content: string; subject?: string 
   )
 }
 
-// Stats Card Component - Full width matching preview container
-function TemplateStatsCard({ body }: { body: string }) {
+// Inline Stats Component - Compact version
+function InlineStats({ body }: { body: string }) {
   const stats = getTemplateStats(body)
 
   return (
-    <Card className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm w-full">
-      <CardContent className="p-4">
-        <h4 className="text-xs font-medium text-muted-foreground mb-3">Estadísticas</h4>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="flex items-center justify-center gap-1 text-blue-600 dark:text-blue-400 mb-1">
-              <Type className="h-4 w-4" />
-            </div>
-            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.characters}</p>
-            <p className="text-[10px] text-muted-foreground">Caracteres</p>
-          </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="flex items-center justify-center gap-1 text-green-600 dark:text-green-400 mb-1">
-              <Hash className="h-4 w-4" />
-            </div>
-            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.words}</p>
-            <p className="text-[10px] text-muted-foreground">Palabras</p>
-          </div>
-          <div className="text-center p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="flex items-center justify-center gap-1 text-purple-600 dark:text-purple-400 mb-1">
-              <Variable className="h-4 w-4" />
-            </div>
-            <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{stats.variables}</p>
-            <p className="text-[10px] text-muted-foreground">Variables</p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="flex items-center gap-4">
+      <div className="flex items-center gap-1.5">
+        <Type className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.characters}</span>
+        <span className="text-xs text-muted-foreground">Caracteres</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <Hash className="h-4 w-4 text-green-600 dark:text-green-400" />
+        <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.words}</span>
+        <span className="text-xs text-muted-foreground">Palabras</span>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <Variable className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+        <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{stats.variables}</span>
+        <span className="text-xs text-muted-foreground">Variables</span>
+      </div>
+    </div>
   )
 }
 
@@ -279,6 +269,11 @@ export function TemplateEditorDialog({
   const [previewTab, setPreviewTab] = React.useState<"email" | "push" | "whatsapp">("whatsapp")
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
 
+  // Track initial values for change detection
+  const [initialName, setInitialName] = React.useState("")
+  const [initialSubject, setInitialSubject] = React.useState("")
+  const [initialBody, setInitialBody] = React.useState("")
+
   // Initialize form when template changes
   React.useEffect(() => {
     if (template) {
@@ -286,13 +281,29 @@ export function TemplateEditorDialog({
       setSubject(template.subject || "")
       setBody(template.body)
       setPreviewTab(template.channel)
+      // Save initial values
+      setInitialName(template.name)
+      setInitialSubject(template.subject || "")
+      setInitialBody(template.body)
     } else {
       setName("")
       setSubject("")
       setBody("")
       setPreviewTab("whatsapp")
+      setInitialName("")
+      setInitialSubject("")
+      setInitialBody("")
     }
   }, [template])
+
+  // Check if form has changes
+  const hasChanges = React.useMemo(() => {
+    return (
+      name.trim() !== initialName.trim() ||
+      subject.trim() !== initialSubject.trim() ||
+      body.trim() !== initialBody.trim()
+    )
+  }, [name, subject, body, initialName, initialSubject, initialBody])
 
   const handleInsertVariable = (variable: TemplateVariable) => {
     const textarea = textareaRef.current
@@ -368,7 +379,12 @@ export function TemplateEditorDialog({
               <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="hidden sm:flex">
                 Cancelar
               </Button>
-              <Button size="sm" onClick={handleSave} disabled={isSaving}>
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={!hasChanges || isSaving}
+                className="mr-2"
+              >
                 {isSaving ? (
                   "Guardando..."
                 ) : (
@@ -478,11 +494,16 @@ export function TemplateEditorDialog({
             {/* Right Column - Preview (No individual scroll) */}
             <div className="p-4 sm:p-6 bg-gray-100 dark:bg-gray-950">
               <div className="space-y-6">
-                {/* Preview Tabs */}
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                {/* Preview Header with Inline Stats */}
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Vista Previa
                   </h3>
+                  <InlineStats body={body} />
+                </div>
+
+                {/* Preview Tabs */}
+                <div>
                   <Tabs value={previewTab} onValueChange={(v) => setPreviewTab(v as typeof previewTab)}>
                     <TabsList className="grid w-full grid-cols-3 mb-6">
                       <TabsTrigger value="whatsapp" className="gap-2">
@@ -499,22 +520,45 @@ export function TemplateEditorDialog({
                       </TabsTrigger>
                     </TabsList>
 
-                    <div className="py-4">
-                      <TabsContent value="whatsapp" className="mt-0">
-                        <WhatsAppPreview content={body} />
-                      </TabsContent>
-                      <TabsContent value="push" className="mt-0">
-                        <PushPreview content={body} title={subject} />
-                      </TabsContent>
-                      <TabsContent value="email" className="mt-0">
-                        <EmailPreview content={body} subject={subject} />
-                      </TabsContent>
+                    <div className="py-4 relative min-h-[300px]">
+                      <AnimatePresence mode="wait">
+                        {previewTab === "whatsapp" && (
+                          <motion.div
+                            key="whatsapp"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <WhatsAppPreview content={body} />
+                          </motion.div>
+                        )}
+                        {previewTab === "push" && (
+                          <motion.div
+                            key="push"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <PushPreview content={body} title={subject} />
+                          </motion.div>
+                        )}
+                        {previewTab === "email" && (
+                          <motion.div
+                            key="email"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <EmailPreview content={body} subject={subject} />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </Tabs>
                 </div>
-
-                {/* Stats - Full width */}
-                <TemplateStatsCard body={body} />
 
                 {/* Channel Badge */}
                 {template && (

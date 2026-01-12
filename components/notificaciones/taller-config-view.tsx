@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   Bell,
   Mail,
@@ -10,6 +11,8 @@ import {
   UserCog,
   Plus,
   Edit,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -21,10 +24,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import { OrchestrationMatrix } from "./orchestration-matrix"
 import { TemplateEditorDialog } from "./template-editor-dialog"
-import {
-  NOTIFICATION_TEMPLATES,
-  type NotificationTemplate,
-} from "@/lib/fixtures/notification-orchestration"
+import { TemplatesPagination } from "./templates-pagination"
+import { useNotificationTemplates } from "@/hooks/use-notification-templates"
+import { fetchNotificationTemplateById, type NotificationTemplateAPI } from "@/lib/api/notifications"
+import { type NotificationTemplate } from "@/lib/fixtures/notification-orchestration"
+import { toast } from "sonner"
 
 // Tab indicator component for visual feedback
 function TabIndicator({ type }: { type: "clients" | "staff" }) {
@@ -51,12 +55,12 @@ function TabIndicator({ type }: { type: "clients" | "staff" }) {
   )
 }
 
-// Template Card Component
+// Template Card Component - Actualizado para API
 function TemplateCard({
   template,
   onEdit,
 }: {
-  template: NotificationTemplate
+  template: NotificationTemplateAPI
   onEdit: () => void
 }) {
   const channelIcons = {
@@ -79,16 +83,21 @@ function TemplateCard({
       <CardContent className="p-4">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Badge className={`${channelColors[template.channel]} text-xs`}>
                 {channelIcons[template.channel]}
                 <span className="ml-1 capitalize">
                   {template.channel === "whatsapp" ? "WhatsApp" : template.channel}
                 </span>
               </Badge>
-              {template.isDefault && (
+              {template.is_default && (
                 <Badge variant="outline" className="text-xs px-1.5 py-0">
                   Default
+                </Badge>
+              )}
+              {!template.is_active && (
+                <Badge variant="secondary" className="text-xs px-1.5 py-0 opacity-60">
+                  Inactivo
                 </Badge>
               )}
             </div>
@@ -103,6 +112,20 @@ function TemplateCard({
           <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">
             {template.name}
           </h4>
+          {/* Mostrar servicio y fase si están disponibles */}
+          {(template.service_type_name || template.phase_name) && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              {template.service_type_name && (
+                <span>{template.service_type_name}</span>
+              )}
+              {template.service_type_name && template.phase_name && (
+                <span>•</span>
+              )}
+              {template.phase_name && (
+                <span>{template.phase_name}</span>
+              )}
+            </div>
+          )}
           <p className="text-xs text-muted-foreground line-clamp-2">{template.body}</p>
         </div>
       </CardContent>
@@ -110,80 +133,122 @@ function TemplateCard({
   )
 }
 
-// Loading Skeleton
-function LoadingSkeleton() {
+// Templates Loading Skeleton
+function TemplatesLoadingSkeleton() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-4 w-96" />
-      </div>
-      <Skeleton className="h-12 w-full max-w-md" />
-      <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <Skeleton key={i} className="h-24" />
-        ))}
-      </div>
+    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Card key={i} className="dark:bg-gray-900">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-5 w-12 rounded-full" />
+            </div>
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-3 w-2/3" />
+          </CardContent>
+        </Card>
+      ))}
     </div>
+  )
+}
+
+// Empty State Component
+function EmptyTemplatesState({ target }: { target: "clients" | "staff" }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex flex-col items-center justify-center py-12 text-center"
+    >
+      <FileText className="h-12 w-12 text-muted-foreground/50 mb-4" />
+      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+        No hay plantillas
+      </h3>
+      <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+        {target === "clients"
+          ? "No se encontraron plantillas para notificaciones a clientes."
+          : "No se encontraron plantillas para el personal interno."}
+      </p>
+    </motion.div>
+  )
+}
+
+// Error State Component
+function ErrorState({
+  error,
+  onRetry,
+}: {
+  error: string
+  onRetry: () => void
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="flex flex-col items-center justify-center py-12 text-center"
+    >
+      <AlertCircle className="h-12 w-12 text-destructive/50 mb-4" />
+      <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+        Error al cargar plantillas
+      </h3>
+      <p className="text-sm text-muted-foreground mt-1 max-w-sm">{error}</p>
+      <Button variant="outline" onClick={onRetry} className="mt-4 gap-2">
+        <RefreshCw className="h-4 w-4" />
+        Reintentar
+      </Button>
+    </motion.div>
   )
 }
 
 // Main Component
 export function TallerConfigView() {
-  const [isLoading, setIsLoading] = React.useState(true)
   const [orchestrationTab, setOrchestrationTab] = React.useState<"clients" | "staff">("clients")
   const [templatesTab, setTemplatesTab] = React.useState<"clients" | "staff">("clients")
-  const [templates, setTemplates] = React.useState<NotificationTemplate[]>([])
   const [editingTemplate, setEditingTemplate] = React.useState<NotificationTemplate | null>(null)
   const [isEditorOpen, setIsEditorOpen] = React.useState(false)
+  const [isLoadingTemplate, setIsLoadingTemplate] = React.useState(false)
 
-  // Simulate loading
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setTemplates(NOTIFICATION_TEMPLATES)
-      setIsLoading(false)
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [])
+  // Hooks para cada tab de plantillas (cache independiente)
+  const clientsHook = useNotificationTemplates("clients")
+  const staffHook = useNotificationTemplates("staff")
 
-  const handleEditTemplate = (template: NotificationTemplate) => {
-    setEditingTemplate(template)
-    setIsEditorOpen(true)
-  }
+  const handleViewTemplate = async (templateId: string) => {
+    setIsLoadingTemplate(true)
+    try {
+      const apiTemplate = await fetchNotificationTemplateById(templateId)
 
-  const handleNewTemplate = () => {
-    setEditingTemplate(null)
-    setIsEditorOpen(true)
+      // Convertir de formato API a formato del mock para el editor
+      const editorTemplate: NotificationTemplate = {
+        id: apiTemplate.id,
+        name: apiTemplate.name,
+        subject: apiTemplate.subject || undefined,
+        body: apiTemplate.body,
+        channel: apiTemplate.channel,
+        target: apiTemplate.target,
+        isDefault: apiTemplate.is_default,
+        createdAt: apiTemplate.created_at,
+        updatedAt: apiTemplate.updated_at,
+      }
+
+      setEditingTemplate(editorTemplate)
+      setIsEditorOpen(true)
+    } catch (error) {
+      toast.error("Error al cargar plantilla", {
+        description: error instanceof Error ? error.message : "No se pudo cargar la plantilla",
+      })
+    } finally {
+      setIsLoadingTemplate(false)
+    }
   }
 
   const handleSaveTemplate = (template: NotificationTemplate) => {
-    setTemplates((prev) => {
-      const existingIndex = prev.findIndex((t) => t.id === template.id)
-      if (existingIndex >= 0) {
-        const updated = [...prev]
-        updated[existingIndex] = template
-        return updated
-      }
-      return [...prev, template]
+    // TODO: Implementar guardado via API
+    console.log("Save template:", template)
+    toast.info("Guardado pendiente", {
+      description: "La funcionalidad de guardado se implementará próximamente",
     })
-  }
-
-  const filteredTemplates = templates.filter((t) => t.target === templatesTab)
-
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-            Configuración de Notificaciones
-          </h1>
-          <p className="text-muted-foreground">
-            Configura los canales de notificación disponibles para tu taller
-          </p>
-        </div>
-        <LoadingSkeleton />
-      </div>
-    )
   }
 
   return (
@@ -250,10 +315,6 @@ export function TallerConfigView() {
               Plantillas de Mensajes
             </h2>
           </div>
-          <Button onClick={handleNewTemplate}>
-            <Plus className="mr-2 h-4 w-4" />
-            Nueva Plantilla
-          </Button>
         </div>
 
         <Tabs
@@ -275,30 +336,96 @@ export function TallerConfigView() {
             <p className="text-sm text-muted-foreground mb-4">
               Plantillas de mensajes para notificaciones automáticas a clientes.
             </p>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredTemplates.map((template) => (
-                <TemplateCard
-                  key={template.id}
-                  template={template}
-                  onEdit={() => handleEditTemplate(template)}
-                />
-              ))}
-            </div>
+
+            {clientsHook.error ? (
+              <ErrorState error={clientsHook.error} onRetry={clientsHook.refresh} />
+            ) : clientsHook.isLoading ? (
+              <TemplatesLoadingSkeleton />
+            ) : clientsHook.templates.length === 0 ? (
+              <EmptyTemplatesState target="clients" />
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <AnimatePresence mode="popLayout">
+                    {clientsHook.templates.map((template, index) => (
+                      <motion.div
+                        key={template.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2, delay: index * 0.03 }}
+                      >
+                        <TemplateCard
+                          template={template}
+                          onEdit={() => handleViewTemplate(template.id)}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+
+                {clientsHook.totalPages > 1 && (
+                  <TemplatesPagination
+                    currentPage={clientsHook.currentPage}
+                    totalPages={clientsHook.totalPages}
+                    onPageChange={clientsHook.setPage}
+                    isLoading={clientsHook.isLoading}
+                  />
+                )}
+              </motion.div>
+            )}
           </TabsContent>
 
           <TabsContent value="staff" className="mt-4">
             <p className="text-sm text-muted-foreground mb-4">
               Plantillas para notificaciones internas al equipo de trabajo.
             </p>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {filteredTemplates.map((template) => (
-                <TemplateCard
-                  key={template.id}
-                  template={template}
-                  onEdit={() => handleEditTemplate(template)}
-                />
-              ))}
-            </div>
+
+            {staffHook.error ? (
+              <ErrorState error={staffHook.error} onRetry={staffHook.refresh} />
+            ) : staffHook.isLoading ? (
+              <TemplatesLoadingSkeleton />
+            ) : staffHook.templates.length === 0 ? (
+              <EmptyTemplatesState target="staff" />
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <AnimatePresence mode="popLayout">
+                    {staffHook.templates.map((template, index) => (
+                      <motion.div
+                        key={template.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.2, delay: index * 0.03 }}
+                      >
+                        <TemplateCard
+                          template={template}
+                          onEdit={() => handleViewTemplate(template.id)}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+
+                {staffHook.totalPages > 1 && (
+                  <TemplatesPagination
+                    currentPage={staffHook.currentPage}
+                    totalPages={staffHook.totalPages}
+                    onPageChange={staffHook.setPage}
+                    isLoading={staffHook.isLoading}
+                  />
+                )}
+              </motion.div>
+            )}
           </TabsContent>
         </Tabs>
       </section>

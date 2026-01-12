@@ -29,5 +29,8 @@ next-env.d.ts
 # JetBrains IDE
 /.idea/workspace.xml
 /.idea/shelf/
+/tmpclaude-*
 /tmpclaude-93d8-cwd
 /nul
+/tmpclaude-0d32-cwd
+/tmpclaude-320d-cwd

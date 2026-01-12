@@ -131,3 +131,153 @@ export function buildRegistrationContext(params: { customerName: string }): Reco
     nombre: params.customerName,
   }
 }
+
+// ============================================================================
+// TEMPLATES API - Consulta de plantillas de mensajes
+// ============================================================================
+
+export type NotificationChannel = "push" | "email" | "whatsapp"
+
+/**
+ * Plantilla de notificación desde la API
+ */
+export interface NotificationTemplateAPI {
+  id: string
+  name: string
+  subject: string | null
+  body: string
+  channel: NotificationChannel
+  target: NotificationTarget
+  is_default: boolean
+  is_active: boolean
+  taller_id: string | null
+  service_type_id: string | null
+  service_type_name: string | null
+  phase_id: string | null
+  phase_name: string | null
+  subtype_id: string | null
+  subtype_name: string | null
+  variables: string[]
+  preview: string
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * Respuesta paginada de plantillas desde Django
+ */
+export interface TemplatesAPIResponse {
+  count: number
+  next: string | null
+  previous: string | null
+  results: NotificationTemplateAPI[]
+}
+
+/**
+ * Parámetros para fetch de plantillas
+ */
+export interface FetchTemplatesParams {
+  target: NotificationTarget
+  page?: number
+}
+
+/**
+ * Obtiene las plantillas de notificación desde el microservicio
+ *
+ * @param params - Parámetros de búsqueda (target, page)
+ * @param token - JWT token de autenticación (opcional - endpoint actualmente público)
+ * @returns Respuesta paginada con plantillas
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function fetchNotificationTemplates(
+  params: FetchTemplatesParams,
+  token?: string,
+): Promise<TemplatesAPIResponse> {
+  const { target, page = 1 } = params
+
+  const url = new URL(`${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/templates/`)
+  url.searchParams.set("target", target)
+  url.searchParams.set("page", page.toString())
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  }
+
+  // Preparado para cuando la API requiera autenticación
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers,
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorMessage =
+        data.detail ?? data.message ?? data.error ?? `HTTP ${response.status}`
+
+      throw new ApiError(errorMessage, response.status, data)
+    }
+
+    return data
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
+
+/**
+ * Obtiene una plantilla de notificación específica por su ID
+ *
+ * @param templateId - ID de la plantilla
+ * @param token - JWT token de autenticación (opcional - endpoint actualmente público)
+ * @returns Plantilla con todos sus detalles
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function fetchNotificationTemplateById(
+  templateId: string,
+  token?: string,
+): Promise<NotificationTemplateAPI> {
+  const url = `${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/templates/${templateId}/`
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  }
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorMessage =
+        data.detail ?? data.message ?? data.error ?? `HTTP ${response.status}`
+
+      throw new ApiError(errorMessage, response.status, data)
+    }
+
+    return data
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
