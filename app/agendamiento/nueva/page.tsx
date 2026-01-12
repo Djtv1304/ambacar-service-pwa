@@ -27,7 +27,9 @@ import { useAuthToken } from "@/hooks/use-auth-token"
 import type { Cliente, Vehiculo, Cita, HorarioDisponible, TipoServicio } from "@/lib/types"
 import type { Sucursal } from "@/lib/api/agendamiento"
 import { toast as sonnerToast } from "sonner"
-import { logoutClient } from "@/lib/auth/actions"
+import { logoutClient, getCurrentUser } from "@/lib/auth/actions"
+import { dispatchNotificationEvent, buildAppointmentContext } from "@/lib/api/notifications"
+import { syncVehicle } from "@/lib/api/sync"
 
 const steps = [
   { number: 1, title: "Vehículo" },
@@ -353,6 +355,22 @@ export default function NuevaCitaPage() {
         setVehiculoSeleccionado(nuevoVeh)
         setVehiculos([...vehiculos, nuevoVeh])
 
+        // Sincronizar vehículo nuevo con microservicio de notificaciones
+        try {
+          const currentUser = await getCurrentUser()
+          if (currentUser) {
+            console.log("🔄 Sincronizando vehículo nuevo con microservicio...")
+            const syncResult = await syncVehicle(nuevoVeh, currentUser.id.toString())
+            if (syncResult.success) {
+              console.log("✅ Vehículo sincronizado correctamente")
+            } else {
+              console.warn("⚠️ Error sincronizando vehículo:", syncResult.error)
+            }
+          }
+        } catch (syncError) {
+          console.error("⚠️ Error en sincronización de vehículo:", syncError)
+        }
+
         // Mostrar notificación de éxito inline
         setVehiculoNotification({
           type: "success",
@@ -475,6 +493,46 @@ export default function NuevaCitaPage() {
       }
 
       setCitaCreada(cita)
+
+      // Disparar notificación de cita agendada
+      try {
+        const currentUser = await getCurrentUser()
+
+        if (!currentUser) {
+          console.warn("⚠️ No se pudo obtener usuario para notificación")
+        } else {
+          const customerName = `${cliente.nombre} ${cliente.apellido}`
+          const vehicleInfo = `${vehiculoSeleccionado.marca} ${vehiculoSeleccionado.modelo}`
+          const sucursalName = sucursales.find((s) => s.id.toString() === selectedSucursal)?.nombre || "Ambacar"
+
+          await dispatchNotificationEvent(
+            {
+              event_type: "custom",
+              service_type_id: null,
+              phase_id: null,
+              customer_id: currentUser.id.toString(),
+              target: "clients",
+              context: buildAppointmentContext({
+                customerName,
+                placa: vehiculoSeleccionado.placa,
+                vehiculo: vehicleInfo,
+                taller: sucursalName,
+                fecha: selectedDate.toLocaleDateString("es-EC", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }),
+                hora: horariosDisponibles.find((h) => h.hora === selectedHora)?.hora_display || selectedHora,
+              }),
+            },
+            token,
+          )
+
+          console.log("✅ Notificación de cita enviada correctamente")
+        }
+      } catch (notifError) {
+        console.error("⚠️ Error enviando notificación de cita:", notifError)
+      }
 
       sonnerToast.success("¡Cita agendada exitosamente!", {
         description: `Tu cita ${citaResponse.numero_cita} ha sido confirmada.`,

@@ -13,9 +13,11 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
-import { registerAction } from "@/lib/auth/actions"
+import { registerAction, getClientAccessToken } from "@/lib/auth/actions"
 import { useAuth } from "@/components/auth/auth-provider"
 import { registerSchema, type RegisterFormData } from "@/lib/validations/auth"
+import { dispatchNotificationEvent, buildRegistrationContext } from "@/lib/api/notifications"
+import { syncCustomer } from "@/lib/api/sync"
 
 export default function RegistroPage() {
   const router = useRouter()
@@ -56,13 +58,66 @@ export default function RegistroPage() {
       formData.append("password_confirm", data.password_confirm)
       formData.append("first_name", data.first_name)
       formData.append("last_name", data.last_name)
-      formData.append("phone", data.phone)
+      // Limpiar espacios del teléfono antes de enviar a la API
+      formData.append("phone", data.phone.replace(/\s+/g, ""))
 
       const result = await registerAction(formData)
 
       if (result.success) {
         // Refresh user in context
         await refreshUser()
+
+        // Sincronizar nuevo cliente con microservicio antes de enviar notificación
+        try {
+          if (result.user) {
+            console.log("🔄 Sincronizando nuevo cliente con microservicio...")
+
+            // Construir objeto cliente para sincronización (phone ya viene limpio sin espacios)
+            const clienteParaSync = {
+              id: result.user.id,
+              email: result.user.email,
+              first_name: result.user.first_name,
+              last_name: result.user.last_name,
+              phone: data.phone.replace(/\s+/g, ""), // Limpiar espacios del teléfono
+            }
+
+            const syncResult = await syncCustomer(clienteParaSync, result.user.id.toString())
+
+            if (!syncResult.success) {
+              console.warn("⚠️ Error sincronizando cliente:", syncResult.error)
+            } else {
+              console.log("✅ Cliente sincronizado correctamente")
+            }
+          }
+        } catch (syncError) {
+          console.error("⚠️ Error en sincronización:", syncError)
+          // No detener el flujo, continuar con la notificación
+        }
+
+        // Disparar notificación de registro
+        try {
+          const authToken = await getClientAccessToken()
+
+          if (authToken && result.user) {
+            const customerName = `${result.user.first_name} ${result.user.last_name}`
+
+            await dispatchNotificationEvent(
+              {
+                event_type: "custom",
+                service_type_id: null,
+                phase_id: null,
+                customer_id: result.user.id.toString(),
+                target: "clients",
+                context: buildRegistrationContext({ customerName }),
+              },
+              authToken,
+            )
+
+            console.log("✅ Notificación de registro enviada correctamente")
+          }
+        } catch (notifError) {
+          console.error("⚠️ Error enviando notificación de registro:", notifError)
+        }
 
         toast({
           title: "¡Registro exitoso!",

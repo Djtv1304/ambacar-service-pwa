@@ -13,9 +13,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
-import { loginAction } from "@/lib/auth/actions"
+import { loginAction, getClientAccessToken } from "@/lib/auth/actions"
 import { useAuth } from "@/components/auth/auth-provider"
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth"
+import { dispatchNotificationEvent, buildLoginContext } from "@/lib/api/notifications"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -52,6 +53,42 @@ export default function LoginPage() {
         // Set user in context immediately before navigation
         if (result.user) {
           setUser(result.user)
+        }
+
+        // Disparar notificación de login
+        try {
+          const authToken = await getClientAccessToken()
+
+          if (authToken && result.user) {
+            const customerName = `${result.user.first_name} ${result.user.last_name}`
+            const now = new Date()
+            const fecha = now.toLocaleDateString("es-EC", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })
+            const hora = now.toLocaleTimeString("es-EC", {
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: true,
+            })
+
+            await dispatchNotificationEvent(
+              {
+                event_type: "custom",
+                service_type_id: null,
+                phase_id: null,
+                customer_id: result.user.id.toString(),
+                target: "clients",
+                context: buildLoginContext({ customerName, fecha, hora }),
+              },
+              authToken,
+            )
+
+            console.log("✅ Notificación de login enviada correctamente")
+          }
+        } catch (notifError) {
+          console.error("⚠️ Error enviando notificación de login:", notifError)
         }
 
         toast({
