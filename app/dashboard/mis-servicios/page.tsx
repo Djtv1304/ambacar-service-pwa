@@ -29,7 +29,9 @@ export default function MisServiciosPage() {
   )
 
   const operatorServicesHook = useClientServices(
-    viewMode === "mis-servicios" ? null : undefined
+    // Para clientes NO internos: siempre null (fetch propio)
+    // Para internos: null solo si están en modo "mis-servicios"
+    !userIsInternal || viewMode === "mis-servicios" ? null : undefined
   )
 
   // Handlers
