@@ -25,6 +25,12 @@ import {
   Wrench,
   Layers,
   ListTree,
+  Sparkles,
+  User,
+  Car,
+  CreditCard,
+  Calendar,
+  Hash,
 } from "lucide-react"
 import { AnimatePresence, motion } from "framer-motion"
 import { useForm } from "react-hook-form"
@@ -90,6 +96,18 @@ interface TemplateDetailDialogProps {
   templateId: string | null
   onSave?: (updatedTemplate: NotificationTemplateAPI) => void
 }
+
+// Variable definitions with icons
+const DYNAMIC_VARIABLES = [
+  { key: "Nombre", icon: User, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", description: "Nombre del cliente" },
+  { key: "Placa", icon: CreditCard, color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", description: "Placa del vehículo" },
+  { key: "Vehículo", icon: Car, color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", description: "Marca y modelo del vehículo" },
+  { key: "Fecha", icon: Calendar, color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", description: "Fecha del servicio" },
+  { key: "Hora", icon: Clock, color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400", description: "Hora del servicio" },
+  { key: "Taller", icon: Building2, color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400", description: "Nombre del taller" },
+  { key: "Técnico", icon: Wrench, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400", description: "Nombre del técnico" },
+  { key: "Orden", icon: Hash, color: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400", description: "Número de orden" },
+]
 
 // Channel Icons
 const channelIcons = {
@@ -271,6 +289,7 @@ export function TemplateDetailDialog({
 
   const { getToken } = useAuthToken()
   const { serviceTypes, phases, talleres, isLoading: metadataLoading } = useNotificationMetadata()
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
 
   // React Hook Form
   const form = useForm<NotificationTemplateFormData>({
@@ -351,6 +370,72 @@ export function TemplateDetailDialog({
   }, [serviceTypeValue, serviceTypes, form])
 
   const availableSubtypes = selectedServiceType?.subtypes || []
+
+  // Function to render body text with highlighted variables
+  const renderBodyWithHighlightedVariables = (bodyText: string) => {
+    // Regex to match {{Variable}} patterns
+    const variableRegex = /(\{\{[^}]+\}\})/g
+    const parts = bodyText.split(variableRegex)
+
+    return (
+      <>
+        {parts.map((part, index) => {
+          // Check if this part is a variable (matches {{...}})
+          if (part.match(/^\{\{[^}]+\}\}$/)) {
+            // Extract variable name without braces
+            const variableName = part.replace(/^\{\{|\}\}$/g, "")
+
+            // Find matching variable config for color
+            const variableConfig = DYNAMIC_VARIABLES.find(v => v.key === variableName)
+            const Icon = variableConfig?.icon
+
+            return (
+              <span
+                key={index}
+                className={cn(
+                  "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium mx-0.5",
+                  variableConfig?.color || "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                )}
+              >
+                {Icon && <Icon className="h-3 w-3" />}
+                {part}
+              </span>
+            )
+          }
+
+          // Regular text
+          return <span key={index}>{part}</span>
+        })}
+      </>
+    )
+  }
+
+  // Function to insert variable at cursor position
+  const insertVariable = (variableKey: string) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    const cursorPosition = textarea.selectionStart
+    const currentValue = form.getValues("body")
+    const variableText = `{{${variableKey}}}`
+
+    // Insert variable at cursor position
+    const newValue =
+      currentValue.slice(0, cursorPosition) +
+      variableText +
+      currentValue.slice(cursorPosition)
+
+    form.setValue("body", newValue)
+
+    // Move cursor after inserted variable
+    setTimeout(() => {
+      textarea.focus()
+      const newCursorPosition = cursorPosition + variableText.length
+      textarea.setSelectionRange(newCursorPosition, newCursorPosition)
+    }, 0)
+
+    toast.success(`Variable insertada: ${variableText}`)
+  }
 
   // Submit handler
   const onSubmit = async (data: NotificationTemplateFormData) => {
@@ -543,38 +628,81 @@ export function TemplateDetailDialog({
                   className="p-4 sm:p-6"
                 >
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                      {/* Información Básica */}
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                      {/* Configuration Toggles - Compact Header Card */}
+                      <Card className="border-dashed border-2 border-gray-300 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between gap-4 flex-wrap">
+                            <div className="flex items-center gap-4">
+                              <FormField
+                                control={form.control}
+                                name="is_active"
+                                render={({ field }) => (
+                                  <FormItem className="flex items-center gap-2 space-y-0">
+                                    <FormControl>
+                                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-medium cursor-pointer">
+                                      {field.value ? "Activo" : "Inactivo"}
+                                    </FormLabel>
+                                  </FormItem>
+                                )}
+                              />
+                              <div className="h-4 w-px bg-gray-300 dark:bg-gray-700" />
+                              <FormField
+                                control={form.control}
+                                name="is_default"
+                                render={({ field }) => (
+                                  <FormItem className="flex items-center gap-2 space-y-0">
+                                    <FormControl>
+                                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-medium cursor-pointer">
+                                      Por Defecto
+                                    </FormLabel>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Las plantillas inactivas no se enviarán
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Basic Info - Grid Layout */}
                       <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                           Información Básica
                         </h3>
-                        <Separator />
 
+                        {/* Template Name - Full Width */}
                         <FormField
                           control={form.control}
                           name="name"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Nombre de la Plantilla</FormLabel>
+                              <FormLabel className="text-xs font-medium">Nombre de la Plantilla</FormLabel>
                               <FormControl>
-                                <Input placeholder="Ej: Confirmación de cita" {...field} />
+                                <Input placeholder="Ej: Confirmación de cita - Cliente VIP" {...field} className="h-10" />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
 
+                        {/* Channel + Audience - 2 Column Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField
                             control={form.control}
                             name="channel"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Canal</FormLabel>
+                                <FormLabel className="text-xs font-medium">Canal</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value}>
                                   <FormControl>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="h-10">
                                       <SelectValue placeholder="Seleccionar canal" />
                                     </SelectTrigger>
                                   </FormControl>
@@ -609,10 +737,10 @@ export function TemplateDetailDialog({
                             name="target"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Audiencia</FormLabel>
+                                <FormLabel className="text-xs font-medium">Audiencia</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value}>
                                   <FormControl>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="h-10">
                                       <SelectValue placeholder="Seleccionar audiencia" />
                                     </SelectTrigger>
                                   </FormControl>
@@ -671,13 +799,13 @@ export function TemplateDetailDialog({
                         </AnimatePresence>
                       </div>
 
-                      {/* Contexto de Aplicación */}
+                      {/* Context Section - 2 Column Grid */}
                       <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                           Contexto de Aplicación
                         </h3>
-                        <Separator />
 
+                        {/* Service Type + Phase - 2 Column Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {/* Service Type Dropdown */}
                           <FormField
@@ -685,7 +813,7 @@ export function TemplateDetailDialog({
                             name="service_type"
                             render={({ field }) => (
                               <FormItem className="flex flex-col">
-                                <FormLabel>Tipo de Servicio</FormLabel>
+                                <FormLabel className="text-xs font-medium">Tipo de Servicio</FormLabel>
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <FormControl>
@@ -693,13 +821,13 @@ export function TemplateDetailDialog({
                                         variant="outline"
                                         role="combobox"
                                         className={cn(
-                                          "w-full justify-between",
+                                          "w-full justify-between h-10 font-normal",
                                           !field.value && "text-muted-foreground"
                                         )}
                                       >
                                         {field.value
                                           ? serviceTypes.find((st) => st.id === field.value)?.name
-                                          : "Seleccionar tipo de servicio"}
+                                          : "Seleccionar..."}
                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                       </Button>
                                     </FormControl>
@@ -743,7 +871,7 @@ export function TemplateDetailDialog({
                             name="phase"
                             render={({ field }) => (
                               <FormItem className="flex flex-col">
-                                <FormLabel>Fase</FormLabel>
+                                <FormLabel className="text-xs font-medium">Fase</FormLabel>
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <FormControl>
@@ -751,13 +879,13 @@ export function TemplateDetailDialog({
                                         variant="outline"
                                         role="combobox"
                                         className={cn(
-                                          "w-full justify-between",
+                                          "w-full justify-between h-10 font-normal",
                                           !field.value && "text-muted-foreground"
                                         )}
                                       >
                                         {field.value
                                           ? phases.find((p) => p.id === field.value)?.name
-                                          : "Seleccionar fase"}
+                                          : "Seleccionar..."}
                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                       </Button>
                                     </FormControl>
@@ -803,18 +931,18 @@ export function TemplateDetailDialog({
                             name="taller_id"
                             render={({ field }) => (
                               <FormItem className="flex flex-col">
-                                <FormLabel>Taller</FormLabel>
+                                <FormLabel className="text-xs font-medium">Taller</FormLabel>
                                 <Popover>
                                   <PopoverTrigger asChild>
                                     <FormControl>
                                       <Button
                                         variant="outline"
                                         role="combobox"
-                                        className={cn("w-full justify-between")}
+                                        className={cn("w-full justify-between h-10 font-normal")}
                                       >
                                         {field.value
                                           ? talleres.find((t) => t.id.toString() === field.value)?.nombre
-                                          : "🌐 Global (Todos los talleres)"}
+                                          : "🌐 Global (Todos)"}
                                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                       </Button>
                                     </FormControl>
@@ -885,14 +1013,14 @@ export function TemplateDetailDialog({
                                   name="subtype"
                                   render={({ field }) => (
                                     <FormItem className="flex flex-col">
-                                      <FormLabel>Subtipo (opcional)</FormLabel>
+                                      <FormLabel className="text-xs font-medium">Subtipo (opcional)</FormLabel>
                                       <Popover>
                                         <PopoverTrigger asChild>
                                           <FormControl>
                                             <Button
                                               variant="outline"
                                               role="combobox"
-                                              className={cn("w-full justify-between")}
+                                              className={cn("w-full justify-between h-10 font-normal")}
                                             >
                                               {field.value
                                                 ? availableSubtypes.find((st) => st.id === field.value)?.name
@@ -956,74 +1084,69 @@ export function TemplateDetailDialog({
                         </div>
                       </div>
 
-                      {/* Contenido del Mensaje */}
+                      {/* Message Content Section */}
                       <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
                           Contenido del Mensaje
                         </h3>
-                        <Separator />
+
+                        {/* Dynamic Variables Toolkit - Horizontal Scroll on Mobile */}
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                              Variables Dinámicas
+                            </Label>
+                          </div>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Haz clic para insertar en el mensaje
+                          </p>
+                          {/* Mobile: Horizontal scroll, Desktop: Wrap */}
+                          <div className="overflow-x-auto pb-2 -mx-1 px-1">
+                            <div className="flex md:flex-wrap gap-2 min-w-max md:min-w-0">
+                              {DYNAMIC_VARIABLES.map((variable) => {
+                                const Icon = variable.icon
+                                return (
+                                  <Button
+                                    key={variable.key}
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => insertVariable(variable.key)}
+                                    className={cn(
+                                      "gap-1.5 px-3 py-1.5 h-auto text-xs font-medium transition-all hover:scale-105 shrink-0",
+                                      variable.color,
+                                      "border-0 shadow-sm hover:shadow-md"
+                                    )}
+                                    title={variable.description}
+                                  >
+                                    <Icon className="h-3.5 w-3.5" />
+                                    {`{{${variable.key}}}`}
+                                  </Button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
 
                         <FormField
                           control={form.control}
                           name="body"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Cuerpo del Mensaje</FormLabel>
+                              <FormLabel className="text-xs font-medium">Cuerpo del Mensaje</FormLabel>
                               <FormControl>
                                 <Textarea
-                                  placeholder="Escribe el contenido del mensaje aquí..."
-                                  className="min-h-[200px] font-mono text-sm"
+                                  ref={textareaRef}
+                                  placeholder="Escribe el contenido del mensaje aquí. Usa las variables de arriba para personalizar..."
+                                  className="min-h-[180px] text-sm resize-y"
                                   {...field}
                                 />
                               </FormControl>
-                              <FormDescription>
-                                Usa variables con doble llave: {`{{Nombre}}`}, {`{{Placa}}`}, etc.
+                              <FormDescription className="text-xs">
+                                Formato: {`{{Variable}}`} - Las variables se reemplazarán automáticamente
                               </FormDescription>
                               <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-
-                      {/* Configuración */}
-                      <div className="space-y-4">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                          Configuración
-                        </h3>
-                        <Separator />
-
-                        <FormField
-                          control={form.control}
-                          name="is_default"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-800 p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-base">Template por defecto</FormLabel>
-                                <FormDescription>
-                                  Se usará esta plantilla si no hay otra más específica
-                                </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name="is_active"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-800 p-4">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-base">Activo</FormLabel>
-                                <FormDescription>
-                                  Las plantillas inactivas no se enviarán
-                                </FormDescription>
-                              </div>
-                              <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                              </FormControl>
                             </FormItem>
                           )}
                         />
@@ -1032,210 +1155,240 @@ export function TemplateDetailDialog({
                   </Form>
                 </motion.div>
               ) : (
-                // VIEW MODE (existente)
+                // VIEW MODE - High-Density Property Grid
                 <motion.div
                   key="view-mode"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1fr_450px] xl:grid-cols-[1fr_500px]"
+                  className="grid grid-cols-1 lg:grid-cols-[1fr_420px] xl:grid-cols-[1fr_480px]"
                 >
-                  {/* Left Column - Details */}
-                  <div className="p-4 sm:p-6 md:border-r border-gray-200 dark:border-gray-800">
-                    <div className="space-y-6">
-                  {/* Header Badges */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge className={`${channelColors[template.channel]} text-sm`}>
-                      {channelIcons[template.channel]}
-                      <span className="ml-1.5 capitalize">
-                        {template.channel === "whatsapp" ? "WhatsApp" : template.channel}
-                      </span>
-                    </Badge>
-                    <Badge
-                      variant="outline"
-                      className={
-                        template.target === "clients"
-                          ? "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400"
-                          : "border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-400"
-                      }
-                    >
-                      {template.target === "clients" ? (
-                        <>
-                          <Users className="h-3 w-3 mr-1" />
-                          Clientes
-                        </>
-                      ) : (
-                        <>
-                          <UserCog className="h-3 w-3 mr-1" />
-                          Personal
-                        </>
-                      )}
-                    </Badge>
-                    {template.is_default && (
-                      <Badge variant="secondary" className="text-xs">
-                        <Tag className="h-3 w-3 mr-1" />
-                        Por defecto
-                      </Badge>
-                    )}
-                    <Badge
-                      variant={template.is_active ? "default" : "secondary"}
-                      className={
-                        template.is_active
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400"
-                      }
-                    >
-                      {template.is_active ? (
-                        <>
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Activo
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Inactivo
-                        </>
-                      )}
-                    </Badge>
-                  </div>
+                  {/* Left Column - Dense Metadata */}
+                  <div className="p-5 sm:p-6 lg:border-r border-gray-200 dark:border-gray-800">
+                    <div className="space-y-5">
+                      {/* Template Name */}
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                          {template.name}
+                        </h2>
+                      </div>
 
-                  {/* Name */}
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                      {template.name}
-                    </h3>
-                  </div>
-
-                  {/* Context Info */}
-                  {(template.service_type_name || template.phase_name || template.taller_id || template.subtype_name) && (
-                    <Card className="bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900">
-                      <CardContent className="p-4">
-                        <p className="text-xs font-medium text-blue-700 dark:text-blue-400 mb-2">
-                          Contexto de Uso
-                        </p>
-                        <div className="space-y-1.5">
-                          {template.service_type_name && (
-                            <div className="flex items-center gap-2">
-                              <Wrench className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">Servicio:</span>
-                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {template.service_type_name}
-                              </span>
-                            </div>
-                          )}
-                          {template.subtype_name && (
-                            <div className="flex items-center gap-2">
-                              <ListTree className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">Subtipo:</span>
-                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {template.subtype_name}
-                              </span>
-                            </div>
-                          )}
-                          {template.phase_name && (
-                            <div className="flex items-center gap-2">
-                              <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">Fase:</span>
-                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {template.phase_name}
-                              </span>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2">
-                            <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">Taller:</span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                              {template.taller_id ? (
-                                talleres.find(t => t.id.toString() === template.taller_id)?.nombre || template.taller_id
-                              ) : (
-                                "🌐 Global (Todos los talleres)"
-                              )}
+                      {/* Property Grid - High Density */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 py-3 border-y border-gray-200 dark:border-gray-800">
+                        {/* Channel */}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400">
+                            Canal
+                          </span>
+                          <Badge className={cn(channelColors[template.channel], "w-fit text-sm font-medium")}>
+                            {channelIcons[template.channel]}
+                            <span className="ml-1.5 capitalize">
+                              {template.channel === "whatsapp" ? "WhatsApp" : template.channel}
                             </span>
+                          </Badge>
+                        </div>
+
+                        {/* Audience */}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400">
+                            Audiencia
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              "w-fit text-sm font-medium",
+                              template.target === "clients"
+                                ? "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400"
+                                : "border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-400"
+                            )}
+                          >
+                            {template.target === "clients" ? (
+                              <>
+                                <Users className="h-3.5 w-3.5 mr-1" />
+                                Clientes
+                              </>
+                            ) : (
+                              <>
+                                <UserCog className="h-3.5 w-3.5 mr-1" />
+                                Personal
+                              </>
+                            )}
+                          </Badge>
+                        </div>
+
+                        {/* Status */}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400">
+                            Estado
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <Badge
+                              variant={template.is_active ? "default" : "secondary"}
+                              className={cn(
+                                "w-fit text-sm font-medium",
+                                template.is_active
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
+                                  : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700"
+                              )}
+                            >
+                              {template.is_active ? (
+                                <>
+                                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                                  Activo
+                                </>
+                              ) : (
+                                <>
+                                  <XCircle className="h-3.5 w-3.5 mr-1" />
+                                  Inactivo
+                                </>
+                              )}
+                            </Badge>
+                            {template.is_default && (
+                              <Badge variant="secondary" className="w-fit text-xs border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400">
+                                <Tag className="h-3 w-3 mr-1" />
+                                Por defecto
+                              </Badge>
+                            )}
                           </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
-                  <Separator />
-
-                  {/* Subject (for email) */}
-                  {template.subject && (
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground">
-                        Asunto (Email)
-                      </label>
-                      <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">
-                        {template.subject}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Body */}
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground">
-                      Contenido del Mensaje
-                    </label>
-                    <Card className="mt-2 bg-white dark:bg-gray-900">
-                      <CardContent className="p-4">
-                        <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed font-mono">
-                          {template.body}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  </div>
-
-                  {/* Variables */}
-                  {template.variables.length > 0 && (
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground flex items-center gap-2 mb-3">
-                        <Variable className="h-4 w-4" />
-                        Variables Disponibles
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {template.variables.map((variable) => (
-                          <Badge
-                            key={variable}
-                            variant="outline"
-                            className="text-xs bg-white dark:bg-gray-900"
-                          >
-                            {`{{${variable}}}`}
-                          </Badge>
-                        ))}
                       </div>
-                    </div>
-                  )}
 
-                  {/* Timestamps */}
-                  <Card className="bg-gray-50 dark:bg-gray-900/50">
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span>
-                            Creado:{" "}
-                            {new Date(template.created_at).toLocaleDateString("es-ES", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </span>
+                      {/* Context Section - 2-Column Grid */}
+                      {(template.service_type_name || template.phase_name || template.taller_id || template.subtype_name) && (
+                        <div className="space-y-3">
+                          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            Contexto de Aplicación
+                          </h3>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                            {/* Service Type */}
+                            {template.service_type_name && (
+                              <div className="flex items-start gap-2.5">
+                                <div className="mt-0.5 p-1.5 rounded-md bg-gray-100 dark:bg-gray-800">
+                                  <Wrench className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-0.5">
+                                    Servicio
+                                  </p>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                    {template.service_type_name}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Phase */}
+                            {template.phase_name && (
+                              <div className="flex items-start gap-2.5">
+                                <div className="mt-0.5 p-1.5 rounded-md bg-gray-100 dark:bg-gray-800">
+                                  <Layers className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-0.5">
+                                    Fase
+                                  </p>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                    {template.phase_name}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Workshop */}
+                            <div className="flex items-start gap-2.5">
+                              <div className="mt-0.5 p-1.5 rounded-md bg-gray-100 dark:bg-gray-800">
+                                <Building2 className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-0.5">
+                                  Taller
+                                </p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                  {template.taller_id ? (
+                                    talleres.find(t => t.id.toString() === template.taller_id)?.nombre || template.taller_id
+                                  ) : (
+                                    "🌐 Global (Todos)"
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Subtype */}
+                            {template.subtype_name && (
+                              <div className="flex items-start gap-2.5">
+                                <div className="mt-0.5 p-1.5 rounded-md bg-gray-100 dark:bg-gray-800">
+                                  <ListTree className="h-3.5 w-3.5 text-gray-600 dark:text-gray-400" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400 mb-0.5">
+                                    Subtipo
+                                  </p>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                                    {template.subtype_name}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span>
-                            Actualizado:{" "}
-                            {new Date(template.updated_at).toLocaleDateString("es-ES", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })}
-                          </span>
+                      )}
+
+                      {/* Subject (Email Only) */}
+                      {template.subject && (
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                            Asunto (Email)
+                          </label>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {template.subject}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Message Content with Highlighted Variables */}
+                      <div className="space-y-2">
+                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                          Contenido del Mensaje
+                        </label>
+                        <div className="rounded-lg border border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 p-4">
+                          <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                            {renderBodyWithHighlightedVariables(template.body)}
+                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
+
+                      {/* Variables Legend - Color-Coded */}
+                      {template.variables.length > 0 && (
+                        <div className="space-y-2.5">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                              Variables Utilizadas
+                            </label>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {template.variables.map((variableName) => {
+                              const variableConfig = DYNAMIC_VARIABLES.find(v => v.key === variableName)
+                              const Icon = variableConfig?.icon
+
+                              return (
+                                <div
+                                  key={variableName}
+                                  className={cn(
+                                    "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium",
+                                    variableConfig?.color || "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                                  )}
+                                  title={variableConfig?.description || variableName}
+                                >
+                                  {Icon && <Icon className="h-3.5 w-3.5" />}
+                                  <span>{`{{${variableName}}}`}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
                 </div>
               </div>
 
@@ -1284,6 +1437,34 @@ export function TemplateDetailDialog({
                       </TabsContent>
                     </div>
                   </Tabs>
+
+                  {/* Timestamps - Relocated from left column */}
+                  <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>
+                          Creado:{" "}
+                          {new Date(template.created_at).toLocaleDateString("es-ES", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>
+                          Actualizado:{" "}
+                          {new Date(template.updated_at).toLocaleDateString("es-ES", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               </div>
             </motion.div>

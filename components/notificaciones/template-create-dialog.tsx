@@ -16,6 +16,15 @@ import {
   UserCog,
   FileText,
   Settings,
+  Sparkles,
+  User,
+  Car,
+  CreditCard,
+  Calendar,
+  Clock,
+  Building2,
+  Wrench,
+  Hash,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -76,6 +85,18 @@ interface TemplateCreateDialogProps {
   preselectedTarget?: "clients" | "staff"
 }
 
+// Variable definitions with icons
+const DYNAMIC_VARIABLES = [
+  { key: "Nombre", icon: User, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", description: "Nombre del cliente" },
+  { key: "Placa", icon: CreditCard, color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", description: "Placa del vehículo" },
+  { key: "Vehículo", icon: Car, color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", description: "Marca y modelo del vehículo" },
+  { key: "Fecha", icon: Calendar, color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", description: "Fecha del servicio" },
+  { key: "Hora", icon: Clock, color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400", description: "Hora del servicio" },
+  { key: "Taller", icon: Building2, color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400", description: "Nombre del taller" },
+  { key: "Técnico", icon: Wrench, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400", description: "Nombre del técnico" },
+  { key: "Orden", icon: Hash, color: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400", description: "Número de orden" },
+]
+
 export function TemplateCreateDialog({
   open,
   onOpenChange,
@@ -88,6 +109,7 @@ export function TemplateCreateDialog({
   const [tallerOpen, setTallerOpen] = React.useState(false)
   const [subtypeOpen, setSubtypeOpen] = React.useState(false)
   const [selectedServiceType, setSelectedServiceType] = React.useState<ServiceTypeAPI | null>(null)
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
 
   const form = useForm<NotificationTemplateFormData>({
     resolver: zodResolver(notificationTemplateSchema),
@@ -125,6 +147,33 @@ export function TemplateCreateDialog({
   }, [serviceTypeValue, serviceTypes, form])
 
   const availableSubtypes = selectedServiceType?.subtypes || []
+
+  // Function to insert variable at cursor position
+  const insertVariable = (variableKey: string) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    const cursorPosition = textarea.selectionStart
+    const currentValue = form.getValues("body")
+    const variableText = `{{${variableKey}}}`
+
+    // Insert variable at cursor position
+    const newValue =
+      currentValue.slice(0, cursorPosition) +
+      variableText +
+      currentValue.slice(cursorPosition)
+
+    form.setValue("body", newValue)
+
+    // Move cursor after inserted variable
+    setTimeout(() => {
+      textarea.focus()
+      const newCursorPosition = cursorPosition + variableText.length
+      textarea.setSelectionRange(newCursorPosition, newCursorPosition)
+    }, 0)
+
+    toast.success(`Variable insertada: ${variableText}`)
+  }
 
   const handleSubmit = (data: NotificationTemplateFormData) => {
     // TODO: Implementar guardado con POST
@@ -290,17 +339,17 @@ export function TemplateCreateDialog({
               </Card>
 
               {/* Contexto de Aplicación */}
-              <Card className="border-blue-200 dark:border-blue-900/30 bg-blue-50/50 dark:bg-blue-950/20">
+              <Card className="border-gray-200 dark:border-gray-800">
                 <CardContent className="p-4 space-y-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <h3 className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                      Contexto de Aplicación
-                    </h3>
+                    <Settings className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm font-medium">Contexto de Aplicación</h3>
                   </div>
 
-                  {/* Service Type */}
-                  <FormField
+                  {/* Service Type + Phase Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Service Type */}
+                    <FormField
                     control={form.control}
                     name="service_type"
                     render={({ field }) => (
@@ -413,7 +462,8 @@ export function TemplateCreateDialog({
                         <FormMessage />
                       </FormItem>
                     )}
-                  />
+                    />
+                  </div>
 
                   {/* Taller */}
                   <FormField
@@ -580,6 +630,42 @@ export function TemplateCreateDialog({
                     <h3 className="text-sm font-medium">Contenido del Mensaje</h3>
                   </div>
 
+                  {/* Dynamic Variables Section */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Variables Dinámicas
+                      </Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Haz clic en una variable para insertarla en el mensaje
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {DYNAMIC_VARIABLES.map((variable) => {
+                        const Icon = variable.icon
+                        return (
+                          <Button
+                            key={variable.key}
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => insertVariable(variable.key)}
+                            className={cn(
+                              "gap-1.5 px-3 py-1.5 h-auto text-xs font-medium transition-all hover:scale-105",
+                              variable.color,
+                              "border-0 shadow-sm hover:shadow-md"
+                            )}
+                            title={variable.description}
+                          >
+                            <Icon className="h-3.5 w-3.5" />
+                            {`{{${variable.key}}}`}
+                          </Button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
                   <FormField
                     control={form.control}
                     name="body"
@@ -588,13 +674,14 @@ export function TemplateCreateDialog({
                         <FormLabel>Cuerpo del Mensaje *</FormLabel>
                         <FormControl>
                           <Textarea
+                            ref={textareaRef}
                             placeholder="Ej: Hola {{Nombre}}, tu {{Vehículo}} con placa {{Placa}} está listo para recoger..."
-                            className="min-h-[120px] font-mono text-sm"
+                            className="min-h-[200px] font-mono text-sm"
                             {...field}
                           />
                         </FormControl>
-                        <FormDescription className="text-xs">
-                          Variables disponibles: {`{{Nombre}}`}, {`{{Vehículo}}`}, {`{{Placa}}`}, {`{{Fecha}}`}, {`{{Hora}}`}
+                        <FormDescription className="text-xs text-muted-foreground">
+                          Usa las variables de arriba haciendo clic en ellas, o escríbelas manualmente con doble llave: {`{{Variable}}`}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
