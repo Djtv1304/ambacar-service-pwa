@@ -23,11 +23,11 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import { OrchestrationMatrix } from "./orchestration-matrix"
-import { TemplateEditorDialog } from "./template-editor-dialog"
+import { TemplateDetailDialog } from "./template-detail-dialog"
+import { TemplateCreateDialog } from "./template-create-dialog"
 import { TemplatesPagination } from "./templates-pagination"
 import { useNotificationTemplates } from "@/hooks/use-notification-templates"
-import { fetchNotificationTemplateById, type NotificationTemplateAPI } from "@/lib/api/notifications"
-import { type NotificationTemplate } from "@/lib/fixtures/notification-orchestration"
+import { type NotificationTemplateAPI } from "@/lib/api/notifications"
 import { toast } from "sonner"
 
 // Tab indicator component for visual feedback
@@ -206,48 +206,28 @@ function ErrorState({
 export function TallerConfigView() {
   const [orchestrationTab, setOrchestrationTab] = React.useState<"clients" | "staff">("clients")
   const [templatesTab, setTemplatesTab] = React.useState<"clients" | "staff">("clients")
-  const [editingTemplate, setEditingTemplate] = React.useState<NotificationTemplate | null>(null)
-  const [isEditorOpen, setIsEditorOpen] = React.useState(false)
-  const [isLoadingTemplate, setIsLoadingTemplate] = React.useState(false)
+  const [isCreatingTemplate, setIsCreatingTemplate] = React.useState(false)
 
   // Hooks para cada tab de plantillas (cache independiente)
   const clientsHook = useNotificationTemplates("clients")
   const staffHook = useNotificationTemplates("staff")
 
-  const handleViewTemplate = async (templateId: string) => {
-    setIsLoadingTemplate(true)
-    try {
-      const apiTemplate = await fetchNotificationTemplateById(templateId)
+  const [selectedTemplateId, setSelectedTemplateId] = React.useState<string | null>(null)
 
-      // Convertir de formato API a formato del mock para el editor
-      const editorTemplate: NotificationTemplate = {
-        id: apiTemplate.id,
-        name: apiTemplate.name,
-        subject: apiTemplate.subject || undefined,
-        body: apiTemplate.body,
-        channel: apiTemplate.channel,
-        target: apiTemplate.target,
-        isDefault: apiTemplate.is_default,
-        createdAt: apiTemplate.created_at,
-        updatedAt: apiTemplate.updated_at,
-      }
-
-      setEditingTemplate(editorTemplate)
-      setIsEditorOpen(true)
-    } catch (error) {
-      toast.error("Error al cargar plantilla", {
-        description: error instanceof Error ? error.message : "No se pudo cargar la plantilla",
-      })
-    } finally {
-      setIsLoadingTemplate(false)
-    }
+  const handleViewTemplate = (templateId: string) => {
+    setSelectedTemplateId(templateId)
   }
 
-  const handleSaveTemplate = (template: NotificationTemplate) => {
-    // TODO: Implementar guardado via API
-    console.log("Save template:", template)
-    toast.info("Guardado pendiente", {
-      description: "La funcionalidad de guardado se implementará próximamente",
+  const handleSaveTemplate = async (updatedTemplate: NotificationTemplateAPI) => {
+    // Invalidar cache del hook para refrescar la lista
+    if (templatesTab === "clients") {
+      await clientsHook.refresh()
+    } else {
+      await staffHook.refresh()
+    }
+
+    toast.success("Plantilla actualizada correctamente", {
+      description: `${updatedTemplate.name} guardada exitosamente`,
     })
   }
 
@@ -315,6 +295,13 @@ export function TallerConfigView() {
               Plantillas de Mensajes
             </h2>
           </div>
+          <Button
+            onClick={() => setIsCreatingTemplate(true)}
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Nueva Plantilla
+          </Button>
         </div>
 
         <Tabs
@@ -430,12 +417,19 @@ export function TallerConfigView() {
         </Tabs>
       </section>
 
-      {/* Template Editor Dialog */}
-      <TemplateEditorDialog
-        open={isEditorOpen}
-        onOpenChange={setIsEditorOpen}
-        template={editingTemplate}
+      {/* Template Detail Dialog (with edit mode) */}
+      <TemplateDetailDialog
+        open={!!selectedTemplateId}
+        onOpenChange={(open) => !open && setSelectedTemplateId(null)}
+        templateId={selectedTemplateId}
         onSave={handleSaveTemplate}
+      />
+
+      {/* Template Create Dialog */}
+      <TemplateCreateDialog
+        open={isCreatingTemplate}
+        onOpenChange={setIsCreatingTemplate}
+        preselectedTarget={templatesTab}
       />
     </div>
   )

@@ -281,3 +281,327 @@ export async function fetchNotificationTemplateById(
     throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
   }
 }
+
+// ============================================================================
+// TEMPLATES MUTATION API - Crear y actualizar plantillas
+// ============================================================================
+
+/**
+ * Payload para crear/actualizar plantilla completa (PUT/POST)
+ * Todos los campos obligatorios excepto los que son nullable
+ */
+export interface UpdateNotificationTemplatePayload {
+  name: string
+  subject: string | null
+  body: string
+  channel: NotificationChannel
+  target: NotificationTarget
+  is_default: boolean
+  is_active: boolean
+  taller_id: string | null
+  service_type: string // UUID
+  phase: string // UUID
+  subtype: string | null // UUID
+}
+
+/**
+ * Payload para actualización parcial (PATCH)
+ * Todos los campos opcionales
+ */
+export interface PatchNotificationTemplatePayload {
+  name?: string
+  subject?: string | null
+  body?: string
+  channel?: NotificationChannel
+  target?: NotificationTarget
+  is_default?: boolean
+  is_active?: boolean
+  taller_id?: string | null
+  service_type?: string
+  phase?: string
+  subtype?: string | null
+}
+
+/**
+ * Crea una nueva plantilla de notificación
+ *
+ * @param payload - Datos de la plantilla a crear
+ * @param token - JWT token de autenticación
+ * @returns Plantilla creada con ID asignado
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function createNotificationTemplate(
+  payload: UpdateNotificationTemplatePayload,
+  token: string
+): Promise<NotificationTemplateAPI> {
+  const url = `${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/templates/`
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorMessage =
+        data.detail ?? data.message ?? data.error ?? `HTTP ${response.status}`
+
+      throw new ApiError(errorMessage, response.status, data)
+    }
+
+    return data
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
+
+/**
+ * Actualiza una plantilla completa (PUT - requiere todos los campos)
+ *
+ * @param templateId - ID de la plantilla a actualizar
+ * @param payload - Datos completos de la plantilla
+ * @param token - JWT token de autenticación
+ * @returns Plantilla actualizada
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function updateNotificationTemplate(
+  templateId: string,
+  payload: UpdateNotificationTemplatePayload,
+  token: string
+): Promise<NotificationTemplateAPI> {
+  const url = `${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/templates/${templateId}/`
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify(payload),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorMessage =
+        data.detail ?? data.message ?? data.error ?? `HTTP ${response.status}`
+
+      throw new ApiError(errorMessage, response.status, data)
+    }
+
+    return data
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
+
+/**
+ * Actualiza parcialmente una plantilla (PATCH - solo campos modificados)
+ *
+ * @param templateId - ID de la plantilla a actualizar
+ * @param payload - Campos a modificar (solo los que cambiaron)
+ * @param token - JWT token de autenticación
+ * @returns Plantilla actualizada
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function patchNotificationTemplate(
+  templateId: string,
+  payload: PatchNotificationTemplatePayload,
+  token: string
+): Promise<NotificationTemplateAPI> {
+  const url = `${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/templates/${templateId}/`
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(payload),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorMessage =
+        data.detail ?? data.message ?? data.error ?? `HTTP ${response.status}`
+
+      throw new ApiError(errorMessage, response.status, data)
+    }
+
+    return data
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
+
+// ============================================================================
+// METADATA API - Service Types, Phases, etc.
+// ============================================================================
+
+/**
+ * Subtipo de servicio anidado dentro de ServiceType
+ */
+export interface ServiceSubtypeAPI {
+  id: string // UUID
+  slug: string
+  name: string
+  icon: string // NO USAR - Decidir iconos en frontend
+  parent: string // UUID del service_type padre
+  is_active: boolean
+  description: string | null
+}
+
+/**
+ * Tipo de servicio desde API (con subtypes anidados)
+ */
+export interface ServiceTypeAPI {
+  id: string // UUID
+  slug: string
+  name: string
+  icon: string // NO USAR - Decidir iconos en frontend
+  is_active: boolean
+  description: string | null
+  subtypes: ServiceSubtypeAPI[] // Array de subtypes (puede estar vacío)
+}
+
+/**
+ * Response paginada de service types
+ */
+export interface ServiceTypesAPIResponse {
+  count: number
+  next: string | null
+  previous: string | null
+  results: ServiceTypeAPI[]
+}
+
+/**
+ * Fase del servicio
+ */
+export interface PhaseAPI {
+  id: string // UUID
+  name: string
+  slug: string
+  order: number
+}
+
+/**
+ * Obtiene los tipos de servicio con sus subtypes anidados
+ *
+ * @param token - JWT token de autenticación
+ * @returns Lista de tipos de servicio
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function getServiceTypes(token: string): Promise<ServiceTypeAPI[]> {
+  const url = `${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/service-types/`
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    })
+
+    const data: ServiceTypesAPIResponse = await response.json()
+
+    if (!response.ok) {
+      const errorMessage =
+        data.next ?? data.previous ?? `HTTP ${response.status}`
+
+      throw new ApiError(errorMessage as string, response.status, data)
+    }
+
+    return data.results
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
+
+/**
+ * Obtiene las fases del servicio
+ *
+ * @param token - JWT token de autenticación
+ * @returns Lista de fases ordenadas
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function getPhases(token: string): Promise<PhaseAPI[]> {
+  const url = `${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/phases/`
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorMessage =
+        data.detail ?? data.message ?? data.error ?? `HTTP ${response.status}`
+
+      throw new ApiError(errorMessage, response.status, data)
+    }
+
+    // El endpoint puede retornar array directo o estar paginado
+    // Si tiene estructura de paginación, extraer results
+    if (Array.isArray(data)) {
+      return data
+    } else if (data.results && Array.isArray(data.results)) {
+      return data.results
+    }
+
+    // Fallback: retornar array vacío si la estructura no es la esperada
+    console.warn("getPhases returned unexpected format:", data)
+    return []
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
