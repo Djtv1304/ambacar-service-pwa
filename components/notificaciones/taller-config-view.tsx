@@ -13,6 +13,7 @@ import {
   Edit,
   AlertCircle,
   RefreshCw,
+  Trash2,
 } from "lucide-react"
 
 import { Card, CardContent } from "@/components/ui/card"
@@ -21,13 +22,24 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 import { OrchestrationMatrix } from "./orchestration-matrix"
 import { TemplateDetailDialog } from "./template-detail-dialog"
 import { TemplateCreateDialog } from "./template-create-dialog"
 import { TemplatesPagination } from "./templates-pagination"
 import { useNotificationTemplates } from "@/hooks/use-notification-templates"
-import { type NotificationTemplateAPI } from "@/lib/api/notifications"
+import { type NotificationTemplateAPI, deleteNotificationTemplate } from "@/lib/api/notifications"
+import { useAuthToken } from "@/hooks/use-auth-token"
 import { toast } from "sonner"
 
 // Tab indicator component for visual feedback
@@ -59,9 +71,11 @@ function TabIndicator({ type }: { type: "clients" | "staff" }) {
 function TemplateCard({
   template,
   onEdit,
+  onDelete,
 }: {
   template: NotificationTemplateAPI
   onEdit: () => void
+  onDelete: () => void
 }) {
   const channelIcons = {
     push: <Bell className="h-3.5 w-3.5" />,
@@ -77,12 +91,12 @@ function TemplateCard({
 
   return (
     <Card
-      className="dark:bg-gray-900 hover:shadow-md transition-shadow cursor-pointer group"
+      className="dark:bg-gray-900 hover:shadow-md transition-shadow cursor-pointer group min-h-[200px] flex flex-col"
       onClick={onEdit}
     >
-      <CardContent className="p-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+      <CardContent className="px-4 py-4 flex-1 flex flex-col">
+        <div className="space-y-2 flex-1 flex flex-col">
+          <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge className={`${channelColors[template.channel]} text-xs`}>
                 {channelIcons[template.channel]}
@@ -101,13 +115,30 @@ function TemplateCard({
                 </Badge>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Edit className="h-3.5 w-3.5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEdit()
+                }}
+                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Edit className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDelete()
+                }}
+                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
           </div>
           <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">
             {template.name}
@@ -126,7 +157,7 @@ function TemplateCard({
               )}
             </div>
           )}
-          <p className="text-xs text-muted-foreground line-clamp-2">{template.body}</p>
+          <p className="text-xs text-muted-foreground line-clamp-2 flex-1">{template.body}</p>
         </div>
       </CardContent>
     </Card>
@@ -211,8 +242,13 @@ export function TallerConfigView() {
   // Hooks para cada tab de plantillas (cache independiente)
   const clientsHook = useNotificationTemplates("clients")
   const staffHook = useNotificationTemplates("staff")
+  const { token } = useAuthToken()
 
   const [selectedTemplateId, setSelectedTemplateId] = React.useState<string | null>(null)
+
+  // Estados para eliminación
+  const [templateToDelete, setTemplateToDelete] = React.useState<NotificationTemplateAPI | null>(null)
+  const [isDeleting, setIsDeleting] = React.useState(false)
 
   const handleViewTemplate = (templateId: string) => {
     setSelectedTemplateId(templateId)
@@ -229,6 +265,39 @@ export function TallerConfigView() {
     toast.success("Plantilla actualizada correctamente", {
       description: `${updatedTemplate.name} guardada exitosamente`,
     })
+  }
+
+  const handleDeleteTemplate = (template: NotificationTemplateAPI) => {
+    setTemplateToDelete(template)
+  }
+
+  const confirmDeleteTemplate = async () => {
+    if (!templateToDelete || !token) return
+
+    setIsDeleting(true)
+    try {
+      await deleteNotificationTemplate(templateToDelete.id, token)
+
+      // Refrescar la lista
+      if (templatesTab === "clients") {
+        await clientsHook.refresh()
+      } else {
+        await staffHook.refresh()
+      }
+
+      toast.success("Plantilla eliminada", {
+        description: `${templateToDelete.name} fue eliminada correctamente`,
+      })
+
+      setTemplateToDelete(null)
+    } catch (error) {
+      console.error("Error deleting template:", error)
+      toast.error("Error al eliminar plantilla", {
+        description: error instanceof Error ? error.message : "No se pudo eliminar la plantilla",
+      })
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -349,6 +418,7 @@ export function TallerConfigView() {
                         <TemplateCard
                           template={template}
                           onEdit={() => handleViewTemplate(template.id)}
+                          onDelete={() => handleDeleteTemplate(template)}
                         />
                       </motion.div>
                     ))}
@@ -397,6 +467,7 @@ export function TallerConfigView() {
                         <TemplateCard
                           template={template}
                           onEdit={() => handleViewTemplate(template.id)}
+                          onDelete={() => handleDeleteTemplate(template)}
                         />
                       </motion.div>
                     ))}
@@ -431,6 +502,31 @@ export function TallerConfigView() {
         onOpenChange={setIsCreatingTemplate}
         preselectedTarget={templatesTab}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!templateToDelete} onOpenChange={(open) => !open && setTemplateToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar plantilla?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás a punto de eliminar la plantilla <strong>"{templateToDelete?.name}"</strong>.
+              <br />
+              <br />
+              Esta acción no se puede deshacer. La plantilla será eliminada permanentemente del sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteTemplate}
+              disabled={isDeleting}
+              className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

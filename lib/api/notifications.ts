@@ -464,6 +464,57 @@ export async function patchNotificationTemplate(
   }
 }
 
+/**
+ * Elimina una plantilla de notificación
+ *
+ * @param templateId - ID de la plantilla a eliminar
+ * @param token - JWT token de autenticación
+ * @returns void (status 204 No Content en caso de éxito)
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function deleteNotificationTemplate(
+  templateId: string,
+  token: string
+): Promise<void> {
+  const url = `${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/templates/${templateId}/`
+
+  const headers: Record<string, string> = {
+    "Authorization": `Bearer ${token}`,
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers,
+    })
+
+    // Status 204 significa éxito sin contenido
+    if (response.status === 204) {
+      return
+    }
+
+    // Si no es 204, intentar parsear el error
+    let data: any = {}
+    try {
+      data = await response.json()
+    } catch {
+      // Si no hay JSON, continuar con objeto vacío
+    }
+
+    const errorMessage =
+      data.detail ?? data.message ?? data.error ?? `HTTP ${response.status}`
+
+    throw new ApiError(errorMessage, response.status, data)
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
+
 // ============================================================================
 // METADATA API - Service Types, Phases, etc.
 // ============================================================================
