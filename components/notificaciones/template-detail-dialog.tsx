@@ -534,14 +534,14 @@ export function TemplateDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] md:max-w-[90vw] lg:max-w-6xl xl:max-w-7xl p-0 gap-0 overflow-hidden">
+      <DialogContent className="max-w-[95vw] md:max-w-[90vw] lg:max-w-6xl xl:max-w-7xl p-0 gap-0 overflow-hidden [&>button:last-child]:hidden">
         {/* Header */}
         <DialogHeader className="px-4 sm:px-6 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
-          <div className="flex items-center justify-between gap-4">
-            <DialogTitle className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-gray-100">
+          <div className="flex items-center justify-between gap-2 sm:gap-4">
+            <DialogTitle className="text-base sm:text-lg lg:text-xl font-semibold text-gray-900 dark:text-gray-100">
               {isEditMode ? "Editar Plantilla" : "Detalles de la Plantilla"}
             </DialogTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               {template && !isLoading && !error && (
                 <>
                   {isEditMode ? (
@@ -568,32 +568,51 @@ export function TemplateDetailDialog({
                           }
                         }}
                         disabled={isSaving}
-                        className="h-10"
+                        className="gap-1 sm:gap-2 h-9 sm:h-10 text-sm px-3 sm:px-4"
                       >
-                        Cancelar
+                        <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="hidden xs:inline sm:inline">Cancelar</span>
                       </Button>
                       <Button
                         onClick={form.handleSubmit(onSubmit)}
                         disabled={isSaving || metadataLoading}
-                        className="gap-2 h-10"
+                        className="gap-1 sm:gap-2 h-9 sm:h-10 text-sm px-3 sm:px-4"
                       >
                         {isSaving ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin" />
                         ) : (
-                          <Save className="h-4 w-4" />
+                          <Save className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                         )}
-                        Guardar
+                        <span className="hidden xs:inline sm:inline">Guardar</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onOpenChange(false)}
+                        className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0"
+                      >
+                        <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       </Button>
                     </>
                   ) : (
-                    <Button
-                      size="sm"
-                      onClick={() => setIsEditMode(true)}
-                      className="gap-2"
-                    >
-                      <Edit className="h-4 w-4" />
-                      Editar
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => setIsEditMode(true)}
+                        className="gap-1 sm:gap-2 h-8 sm:h-9 text-sm px-2 sm:px-3"
+                      >
+                        <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="hidden xs:inline sm:inline">Editar</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onOpenChange(false)}
+                        className="h-7 w-7 sm:h-8 sm:w-8 hover:bg-gray-100 dark:hover:bg-gray-800 shrink-0"
+                      >
+                        <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      </Button>
+                    </>
                   )}
                 </>
               )}
@@ -625,7 +644,7 @@ export function TemplateDetailDialog({
                   className="grid grid-cols-1 lg:grid-cols-[1fr_420px] xl:grid-cols-[1fr_480px]"
                 >
                   {/* Left Column - Form (Scrollable) */}
-                  <ScrollArea className="max-h-[80vh]">
+                  <div className="max-h-[80vh] overflow-y-auto [&::-webkit-scrollbar]:[width:8px!important] [&::-webkit-scrollbar-track]:[background:transparent!important] [&::-webkit-scrollbar-thumb]:[background:#d1d5db!important] [&::-webkit-scrollbar-thumb]:[border-radius:9999px!important] dark:[&::-webkit-scrollbar-thumb]:[background:#4b5563!important]">
                     <div className="p-5 sm:p-6 lg:border-r border-gray-200 dark:border-gray-800">
                       <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -759,9 +778,9 @@ export function TemplateDetailDialog({
                             </h3>
 
                             {/* Two Column Layout with Vertical Divider */}
-                            <div className="flex gap-6">
+                            <div className="flex flex-col lg:flex-row gap-6 items-start">
                               {/* Left Column */}
-                              <div className="flex-1 space-y-4">
+                              <div className="w-full lg:flex-1 space-y-4">
                                 {/* Channel */}
                                 <FormField
                                   control={form.control}
@@ -774,7 +793,7 @@ export function TemplateDetailDialog({
                                         setPreviewTab(value as typeof previewTab)
                                       }} value={field.value}>
                                         <FormControl>
-                                          <SelectTrigger className="h-10">
+                                          <SelectTrigger className="w-full h-10">
                                             <SelectValue placeholder="Seleccionar canal" />
                                           </SelectTrigger>
                                         </FormControl>
@@ -937,11 +956,11 @@ export function TemplateDetailDialog({
                                 />
                               </div>
 
-                              {/* Vertical Divider */}
-                              <div className="w-px bg-gray-200 dark:bg-gray-700" />
+                              {/* Vertical Divider - Hidden on mobile */}
+                              <div className="hidden lg:block w-px bg-gray-200 dark:bg-gray-700" />
 
                               {/* Right Column */}
-                              <div className="flex-1 space-y-4">
+                              <div className="w-full lg:flex-1 space-y-4">
                                 {/* Audience */}
                                 <FormField
                                   control={form.control}
@@ -951,7 +970,7 @@ export function TemplateDetailDialog({
                                       <FormLabel className="text-xs font-medium">Audiencia</FormLabel>
                                       <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl>
-                                          <SelectTrigger className="h-10">
+                                          <SelectTrigger className="w-full h-10">
                                             <SelectValue placeholder="Seleccionar audiencia" />
                                           </SelectTrigger>
                                         </FormControl>
@@ -1077,7 +1096,7 @@ export function TemplateDetailDialog({
                         </form>
                       </Form>
                     </div>
-                  </ScrollArea>
+                  </div>
 
                   {/* Right Column - Live Preview */}
                   <div className="p-4 sm:p-6 bg-gray-100 dark:bg-gray-950 hidden lg:block">
