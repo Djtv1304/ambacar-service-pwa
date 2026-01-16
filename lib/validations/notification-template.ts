@@ -14,8 +14,8 @@ export const notificationTemplateSchema = z.object({
   target: z.enum(["clients", "staff"], {
     errorMap: () => ({ message: "Audiencia inválida" }),
   }),
-  is_default: z.boolean().default(false),
-  is_active: z.boolean().default(true),
+  is_default: z.boolean(),
+  is_active: z.boolean(),
   taller_id: z.string().uuid().nullable(),
   service_type: z.string().uuid("Debe seleccionar un tipo de servicio válido"),
   phase: z.string().uuid("Debe seleccionar una fase válida"),

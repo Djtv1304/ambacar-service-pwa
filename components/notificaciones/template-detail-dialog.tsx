@@ -53,6 +53,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -542,7 +548,6 @@ export function TemplateDetailDialog({
                     <>
                       <Button
                         variant="outline"
-                        size="sm"
                         onClick={() => {
                           setIsEditMode(false)
                           // Revertir a los valores originales del template
@@ -563,14 +568,14 @@ export function TemplateDetailDialog({
                           }
                         }}
                         disabled={isSaving}
+                        className="h-10"
                       >
                         Cancelar
                       </Button>
                       <Button
-                        size="sm"
                         onClick={form.handleSubmit(onSubmit)}
                         disabled={isSaving || metadataLoading}
-                        className="gap-2"
+                        className="gap-2 h-10"
                       >
                         {isSaving ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -592,14 +597,6 @@ export function TemplateDetailDialog({
                   )}
                 </>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onOpenChange(false)}
-                className="h-8 w-8"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </DialogHeader>
@@ -618,402 +615,260 @@ export function TemplateDetailDialog({
           ) : (
             <AnimatePresence mode="wait">
               {isEditMode ? (
-                // EDIT MODE
+                // EDIT MODE - 2 Column Layout with Preview
                 <motion.div
                   key="edit-mode"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="p-4 sm:p-6"
+                  className="grid grid-cols-1 lg:grid-cols-[1fr_420px] xl:grid-cols-[1fr_480px]"
                 >
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                      {/* Configuration Toggles - Compact Header Card */}
-                      <Card className="border-dashed border-2 border-gray-300 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between gap-4 flex-wrap">
-                            <div className="flex items-center gap-4">
-                              <FormField
-                                control={form.control}
-                                name="is_active"
-                                render={({ field }) => (
-                                  <FormItem className="flex items-center gap-2 space-y-0">
-                                    <FormControl>
-                                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                    </FormControl>
-                                    <FormLabel className="text-sm font-medium cursor-pointer">
-                                      {field.value ? "Activo" : "Inactivo"}
-                                    </FormLabel>
-                                  </FormItem>
-                                )}
-                              />
-                              <div className="h-4 w-px bg-gray-300 dark:bg-gray-700" />
-                              <FormField
-                                control={form.control}
-                                name="is_default"
-                                render={({ field }) => (
-                                  <FormItem className="flex items-center gap-2 space-y-0">
-                                    <FormControl>
-                                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                    </FormControl>
-                                    <FormLabel className="text-sm font-medium cursor-pointer">
-                                      Por Defecto
-                                    </FormLabel>
-                                  </FormItem>
-                                )}
-                              />
+                  {/* Left Column - Form (Scrollable) */}
+                  <ScrollArea className="max-h-[80vh]">
+                    <div className="p-5 sm:p-6 lg:border-r border-gray-200 dark:border-gray-800">
+                      <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                          {/* Template Name */}
+                          <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs font-medium">Nombre de la Plantilla</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Ej: Confirmación de cita - Cliente VIP" {...field} className="h-10" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <Separator />
+
+                          {/* Message Content Section - FIRST as requested */}
+                          <div className="space-y-4">
+                            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                              Contenido del Mensaje
+                            </h3>
+
+                            {/* Subject - Solo para email */}
+                            <AnimatePresence mode="wait">
+                              {channelValue === "email" && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <FormField
+                                    control={form.control}
+                                    name="subject"
+                                    render={({ field }) => (
+                                      <FormItem>
+                                        <FormLabel className="text-xs font-medium">Asunto (Email)</FormLabel>
+                                        <FormControl>
+                                          <Input
+                                            placeholder="Ej: Tu cita ha sido confirmada"
+                                            {...field}
+                                            value={field.value || ""}
+                                          />
+                                        </FormControl>
+                                        <FormDescription className="text-xs">
+                                          Solo se usa para notificaciones por email
+                                        </FormDescription>
+                                        <FormMessage />
+                                      </FormItem>
+                                    )}
+                                  />
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+
+                            {/* Dynamic Variables Toolkit - Horizontal Scroll on Mobile */}
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                                  Variables Dinámicas
+                                </Label>
+                              </div>
+                              <p className="text-xs text-muted-foreground mb-2">
+                                Haz clic para insertar en el mensaje
+                              </p>
+                              {/* Mobile: Horizontal scroll, Desktop: Wrap */}
+                              <div className="overflow-x-auto pb-2 -mx-1 px-1">
+                                <div className="flex md:flex-wrap gap-2 min-w-max md:min-w-0">
+                                  {DYNAMIC_VARIABLES.map((variable) => {
+                                    const Icon = variable.icon
+                                    return (
+                                      <Button
+                                        key={variable.key}
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => insertVariable(variable.key)}
+                                        className={cn(
+                                          "gap-1.5 px-3 py-1.5 h-auto text-xs font-medium transition-all hover:scale-105 shrink-0",
+                                          variable.color,
+                                          "border-0 shadow-sm hover:shadow-md"
+                                        )}
+                                        title={variable.description}
+                                      >
+                                        <Icon className="h-3.5 w-3.5" />
+                                        {`{{${variable.key}}}`}
+                                      </Button>
+                                    )
+                                  })}
+                                </div>
+                              </div>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              Las plantillas inactivas no se enviarán
-                            </p>
+
+                            <FormField
+                              control={form.control}
+                              name="body"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="text-xs font-medium">Cuerpo del Mensaje</FormLabel>
+                                  <FormControl>
+                                    <Textarea
+                                      placeholder="Escribe el contenido del mensaje aquí. Usa las variables de arriba para personalizar..."
+                                      className="min-h-[160px] text-sm resize-y"
+                                      {...field}
+                                      ref={(e) => {
+                                        field.ref(e)
+                                        textareaRef.current = e
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormDescription className="text-xs">
+                                    Formato: {`{{Variable}}`} - Las variables se reemplazarán automáticamente
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
                           </div>
-                        </CardContent>
-                      </Card>
 
-                      {/* Basic Info - Grid Layout */}
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                          Información Básica
-                        </h3>
+                          <Separator />
 
-                        {/* Template Name - Full Width */}
-                        <FormField
-                          control={form.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-xs font-medium">Nombre de la Plantilla</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Ej: Confirmación de cita - Cliente VIP" {...field} className="h-10" />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                          {/* Configuration Section with Vertical Division */}
+                          <div className="space-y-4">
+                            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                              Configuración de la Plantilla
+                            </h3>
 
-                        {/* Channel + Audience - 2 Column Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField
-                            control={form.control}
-                            name="channel"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs font-medium">Canal</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger className="h-10">
-                                      <SelectValue placeholder="Seleccionar canal" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="email">
-                                      <div className="flex items-center gap-2">
-                                        <Mail className="h-4 w-4" />
-                                        <span>Email</span>
-                                      </div>
-                                    </SelectItem>
-                                    <SelectItem value="whatsapp">
-                                      <div className="flex items-center gap-2">
-                                        <MessageCircle className="h-4 w-4" />
-                                        <span>WhatsApp</span>
-                                      </div>
-                                    </SelectItem>
-                                    <SelectItem value="push">
-                                      <div className="flex items-center gap-2">
-                                        <Bell className="h-4 w-4" />
-                                        <span>Push</span>
-                                      </div>
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={form.control}
-                            name="target"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs font-medium">Audiencia</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger className="h-10">
-                                      <SelectValue placeholder="Seleccionar audiencia" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    <SelectItem value="clients">
-                                      <div className="flex items-center gap-2">
-                                        <Users className="h-4 w-4" />
-                                        <span>Clientes</span>
-                                      </div>
-                                    </SelectItem>
-                                    <SelectItem value="staff">
-                                      <div className="flex items-center gap-2">
-                                        <UserCog className="h-4 w-4" />
-                                        <span>Personal</span>
-                                      </div>
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        {/* Subject - Solo para email */}
-                        <AnimatePresence mode="wait">
-                          {channelValue === "email" && (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <FormField
-                                control={form.control}
-                                name="subject"
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <FormLabel>Asunto (Email)</FormLabel>
-                                    <FormControl>
-                                      <Input
-                                        placeholder="Ej: Tu cita ha sido confirmada"
-                                        {...field}
-                                        value={field.value || ""}
-                                      />
-                                    </FormControl>
-                                    <FormDescription>
-                                      Solo se usa para notificaciones por email
-                                    </FormDescription>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
-
-                      {/* Context Section - 2 Column Grid */}
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                          Contexto de Aplicación
-                        </h3>
-
-                        {/* Service Type + Phase - 2 Column Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Service Type Dropdown */}
-                          <FormField
-                            control={form.control}
-                            name="service_type"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-col">
-                                <FormLabel className="text-xs font-medium">Tipo de Servicio</FormLabel>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <FormControl>
-                                      <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        className={cn(
-                                          "w-full justify-between h-10 font-normal",
-                                          !field.value && "text-muted-foreground"
-                                        )}
-                                      >
-                                        {field.value
-                                          ? serviceTypes.find((st) => st.id === field.value)?.name
-                                          : "Seleccionar..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                      </Button>
-                                    </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-[300px] p-0">
-                                    <Command>
-                                      <CommandInput placeholder="Buscar tipo de servicio..." />
-                                      <CommandList>
-                                        <CommandEmpty>No se encontraron resultados</CommandEmpty>
-                                        <CommandGroup>
-                                          {serviceTypes.map((st) => (
-                                            <CommandItem
-                                              key={st.id}
-                                              value={st.name}
-                                              onSelect={() => {
-                                                field.onChange(st.id)
-                                              }}
-                                            >
-                                              <Check
-                                                className={cn(
-                                                  "mr-2 h-4 w-4",
-                                                  st.id === field.value ? "opacity-100" : "opacity-0"
-                                                )}
-                                              />
-                                              {st.name}
-                                            </CommandItem>
-                                          ))}
-                                        </CommandGroup>
-                                      </CommandList>
-                                    </Command>
-                                  </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          {/* Phase Dropdown */}
-                          <FormField
-                            control={form.control}
-                            name="phase"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-col">
-                                <FormLabel className="text-xs font-medium">Fase</FormLabel>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <FormControl>
-                                      <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        className={cn(
-                                          "w-full justify-between h-10 font-normal",
-                                          !field.value && "text-muted-foreground"
-                                        )}
-                                      >
-                                        {field.value
-                                          ? phases.find((p) => p.id === field.value)?.name
-                                          : "Seleccionar..."}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                      </Button>
-                                    </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-[300px] p-0">
-                                    <Command>
-                                      <CommandInput placeholder="Buscar fase..." />
-                                      <CommandList>
-                                        <CommandEmpty>No se encontraron resultados</CommandEmpty>
-                                        <CommandGroup>
-                                          {phases.map((phase) => (
-                                            <CommandItem
-                                              key={phase.id}
-                                              value={phase.name}
-                                              onSelect={() => {
-                                                field.onChange(phase.id)
-                                              }}
-                                            >
-                                              <Check
-                                                className={cn(
-                                                  "mr-2 h-4 w-4",
-                                                  phase.id === field.value ? "opacity-100" : "opacity-0"
-                                                )}
-                                              />
-                                              {phase.name}
-                                            </CommandItem>
-                                          ))}
-                                        </CommandGroup>
-                                      </CommandList>
-                                    </Command>
-                                  </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Taller Dropdown */}
-                          <FormField
-                            control={form.control}
-                            name="taller_id"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-col">
-                                <FormLabel className="text-xs font-medium">Taller</FormLabel>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <FormControl>
-                                      <Button
-                                        variant="outline"
-                                        role="combobox"
-                                        className={cn("w-full justify-between h-10 font-normal")}
-                                      >
-                                        {field.value
-                                          ? talleres.find((t) => t.id.toString() === field.value)?.nombre
-                                          : "🌐 Global (Todos)"}
-                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                      </Button>
-                                    </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-[300px] p-0">
-                                    <Command>
-                                      <CommandInput placeholder="Buscar taller..." />
-                                      <CommandList>
-                                        <CommandEmpty>No se encontraron resultados</CommandEmpty>
-                                        <CommandGroup>
-                                          <CommandItem
-                                            value="global"
-                                            onSelect={() => {
-                                              field.onChange(null)
-                                            }}
-                                          >
-                                            <Check
-                                              className={cn(
-                                                "mr-2 h-4 w-4",
-                                                !field.value ? "opacity-100" : "opacity-0"
-                                              )}
-                                            />
-                                            🌐 Global (Todos los talleres)
-                                          </CommandItem>
-                                          {talleres.map((taller) => (
-                                            <CommandItem
-                                              key={taller.id}
-                                              value={taller.nombre}
-                                              onSelect={() => {
-                                                field.onChange(taller.id.toString())
-                                              }}
-                                            >
-                                              <Check
-                                                className={cn(
-                                                  "mr-2 h-4 w-4",
-                                                  taller.id.toString() === field.value
-                                                    ? "opacity-100"
-                                                    : "opacity-0"
-                                                )}
-                                              />
-                                              {taller.nombre}
-                                            </CommandItem>
-                                          ))}
-                                        </CommandGroup>
-                                      </CommandList>
-                                    </Command>
-                                  </PopoverContent>
-                                </Popover>
-                                <FormDescription>
-                                  Selecciona "Global" para aplicar a todos los talleres
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          {/* Subtype Dropdown - Cascading */}
-                          <AnimatePresence mode="wait">
-                            {availableSubtypes.length > 0 && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.2 }}
-                              >
+                            {/* Two Column Layout with Vertical Divider */}
+                            <div className="flex gap-6">
+                              {/* Left Column */}
+                              <div className="flex-1 space-y-4">
+                                {/* Channel */}
                                 <FormField
                                   control={form.control}
-                                  name="subtype"
+                                  name="channel"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-xs font-medium">Canal</FormLabel>
+                                      <Select onValueChange={(value) => {
+                                        field.onChange(value)
+                                        setPreviewTab(value as typeof previewTab)
+                                      }} value={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger className="h-10">
+                                            <SelectValue placeholder="Seleccionar canal" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          <SelectItem value="email">
+                                            <div className="flex items-center gap-2">
+                                              <Mail className="h-4 w-4" />
+                                              <span>Email</span>
+                                            </div>
+                                          </SelectItem>
+                                          <SelectItem value="whatsapp">
+                                            <div className="flex items-center gap-2">
+                                              <MessageCircle className="h-4 w-4" />
+                                              <span>WhatsApp</span>
+                                            </div>
+                                          </SelectItem>
+                                          <SelectItem value="push">
+                                            <div className="flex items-center gap-2">
+                                              <Bell className="h-4 w-4" />
+                                              <span>Push</span>
+                                            </div>
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                {/* Service Type */}
+                                <FormField
+                                  control={form.control}
+                                  name="service_type"
                                   render={({ field }) => (
                                     <FormItem className="flex flex-col">
-                                      <FormLabel className="text-xs font-medium">Subtipo (opcional)</FormLabel>
+                                      <FormLabel className="text-xs font-medium">Tipo de Servicio</FormLabel>
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <FormControl>
+                                            <Button
+                                              variant="outline"
+                                              role="combobox"
+                                              className={cn(
+                                                "w-full justify-between h-10 font-normal",
+                                                !field.value && "text-muted-foreground"
+                                              )}
+                                            >
+                                              {field.value
+                                                ? serviceTypes.find((st) => st.id === field.value)?.name
+                                                : "Seleccionar..."}
+                                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                          </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[300px] p-0">
+                                          <Command>
+                                            <CommandInput placeholder="Buscar tipo de servicio..." />
+                                            <CommandList>
+                                              <CommandEmpty>No se encontraron resultados</CommandEmpty>
+                                              <CommandGroup>
+                                                {serviceTypes.map((st) => (
+                                                  <CommandItem
+                                                    key={st.id}
+                                                    value={st.name}
+                                                    onSelect={() => {
+                                                      field.onChange(st.id)
+                                                    }}
+                                                  >
+                                                    <Check
+                                                      className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        st.id === field.value ? "opacity-100" : "opacity-0"
+                                                      )}
+                                                    />
+                                                    {st.name}
+                                                  </CommandItem>
+                                                ))}
+                                              </CommandGroup>
+                                            </CommandList>
+                                          </Command>
+                                        </PopoverContent>
+                                      </Popover>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                {/* Taller */}
+                                <FormField
+                                  control={form.control}
+                                  name="taller_id"
+                                  render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                      <FormLabel className="text-xs font-medium">Taller</FormLabel>
                                       <Popover>
                                         <PopoverTrigger asChild>
                                           <FormControl>
@@ -1023,20 +878,20 @@ export function TemplateDetailDialog({
                                               className={cn("w-full justify-between h-10 font-normal")}
                                             >
                                               {field.value
-                                                ? availableSubtypes.find((st) => st.id === field.value)?.name
-                                                : "Ninguno"}
+                                                ? talleres.find((t) => t.id.toString() === field.value)?.nombre
+                                                : "Global (Todos)"}
                                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                           </FormControl>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-[300px] p-0">
                                           <Command>
-                                            <CommandInput placeholder="Buscar subtipo..." />
+                                            <CommandInput placeholder="Buscar taller..." />
                                             <CommandList>
                                               <CommandEmpty>No se encontraron resultados</CommandEmpty>
                                               <CommandGroup>
                                                 <CommandItem
-                                                  value="ninguno"
+                                                  value="global"
                                                   onSelect={() => {
                                                     field.onChange(null)
                                                   }}
@@ -1047,23 +902,25 @@ export function TemplateDetailDialog({
                                                       !field.value ? "opacity-100" : "opacity-0"
                                                     )}
                                                   />
-                                                  Ninguno
+                                                  Global (Todos los talleres)
                                                 </CommandItem>
-                                                {availableSubtypes.map((subtype) => (
+                                                {talleres.map((taller) => (
                                                   <CommandItem
-                                                    key={subtype.id}
-                                                    value={subtype.name}
+                                                    key={taller.id}
+                                                    value={taller.nombre}
                                                     onSelect={() => {
-                                                      field.onChange(subtype.id)
+                                                      field.onChange(taller.id.toString())
                                                     }}
                                                   >
                                                     <Check
                                                       className={cn(
                                                         "mr-2 h-4 w-4",
-                                                        subtype.id === field.value ? "opacity-100" : "opacity-0"
+                                                        taller.id.toString() === field.value
+                                                          ? "opacity-100"
+                                                          : "opacity-0"
                                                       )}
                                                     />
-                                                    {subtype.name}
+                                                    {taller.nombre}
                                                   </CommandItem>
                                                 ))}
                                               </CommandGroup>
@@ -1071,88 +928,257 @@ export function TemplateDetailDialog({
                                           </Command>
                                         </PopoverContent>
                                       </Popover>
-                                      <FormDescription>
-                                        Solo si el tipo de servicio tiene subtypes disponibles
+                                      <FormDescription className="text-xs">
+                                        Selecciona "Global" para aplicar a todos los talleres
                                       </FormDescription>
                                       <FormMessage />
                                     </FormItem>
                                   )}
                                 />
-                              </motion.div>
+                              </div>
+
+                              {/* Vertical Divider */}
+                              <div className="w-px bg-gray-200 dark:bg-gray-700" />
+
+                              {/* Right Column */}
+                              <div className="flex-1 space-y-4">
+                                {/* Audience */}
+                                <FormField
+                                  control={form.control}
+                                  name="target"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-xs font-medium">Audiencia</FormLabel>
+                                      <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                          <SelectTrigger className="h-10">
+                                            <SelectValue placeholder="Seleccionar audiencia" />
+                                          </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                          <SelectItem value="clients">
+                                            <div className="flex items-center gap-2">
+                                              <Users className="h-4 w-4" />
+                                              <span>Clientes</span>
+                                            </div>
+                                          </SelectItem>
+                                          <SelectItem value="staff">
+                                            <div className="flex items-center gap-2">
+                                              <UserCog className="h-4 w-4" />
+                                              <span>Personal</span>
+                                            </div>
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                {/* Phase */}
+                                <FormField
+                                  control={form.control}
+                                  name="phase"
+                                  render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                      <FormLabel className="text-xs font-medium">Fase</FormLabel>
+                                      <Popover>
+                                        <PopoverTrigger asChild>
+                                          <FormControl>
+                                            <Button
+                                              variant="outline"
+                                              role="combobox"
+                                              className={cn(
+                                                "w-full justify-between h-10 font-normal",
+                                                !field.value && "text-muted-foreground"
+                                              )}
+                                            >
+                                              {field.value
+                                                ? phases.find((p) => p.id === field.value)?.name
+                                                : "Seleccionar..."}
+                                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                          </FormControl>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[300px] p-0">
+                                          <Command>
+                                            <CommandInput placeholder="Buscar fase..." />
+                                            <CommandList>
+                                              <CommandEmpty>No se encontraron resultados</CommandEmpty>
+                                              <CommandGroup>
+                                                {phases.map((phase) => (
+                                                  <CommandItem
+                                                    key={phase.id}
+                                                    value={phase.name}
+                                                    onSelect={() => {
+                                                      field.onChange(phase.id)
+                                                    }}
+                                                  >
+                                                    <Check
+                                                      className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        phase.id === field.value ? "opacity-100" : "opacity-0"
+                                                      )}
+                                                    />
+                                                    {phase.name}
+                                                  </CommandItem>
+                                                ))}
+                                              </CommandGroup>
+                                            </CommandList>
+                                          </Command>
+                                        </PopoverContent>
+                                      </Popover>
+                                      <FormMessage />
+                                    </FormItem>
+                                  )}
+                                />
+
+                                {/* Status Toggles - Horizontal Layout */}
+                                <div className="space-y-3 pt-2">
+                                  <Label className="text-xs font-medium">Estado de la Plantilla</Label>
+                                  <div className="flex items-center gap-4 p-3 border border-dashed border-gray-300 dark:border-gray-700 rounded-lg bg-gray-50/50 dark:bg-gray-900/30">
+                                    <FormField
+                                      control={form.control}
+                                      name="is_active"
+                                      render={({ field }) => (
+                                        <FormItem className="flex items-center gap-2 space-y-0 flex-1">
+                                          <FormControl>
+                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                          </FormControl>
+                                          <FormLabel className="text-sm font-medium cursor-pointer">
+                                            {field.value ? "Activo" : "Inactivo"}
+                                          </FormLabel>
+                                        </FormItem>
+                                      )}
+                                    />
+                                    <div className="h-6 w-px bg-gray-300 dark:bg-gray-600" />
+                                    <FormField
+                                      control={form.control}
+                                      name="is_default"
+                                      render={({ field }) => (
+                                        <FormItem className="flex items-center gap-2 space-y-0 flex-1">
+                                          <FormControl>
+                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                          </FormControl>
+                                          <FormLabel className="text-sm font-medium cursor-pointer">
+                                            Por Defecto
+                                          </FormLabel>
+                                        </FormItem>
+                                      )}
+                                    />
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    Las plantillas inactivas no se enviarán automáticamente
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </form>
+                      </Form>
+                    </div>
+                  </ScrollArea>
+
+                  {/* Right Column - Live Preview */}
+                  <div className="p-4 sm:p-6 bg-gray-100 dark:bg-gray-950 hidden lg:block">
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: 0.1 }}
+                      className="space-y-6 sticky top-0"
+                    >
+                      {/* Preview Header with Statistics */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Eye className="h-5 w-5 text-muted-foreground" />
+                          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            Vista Previa en Vivo
+                          </h3>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 text-xs">
+                            <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            <span className="font-semibold text-blue-600 dark:text-blue-400">{form.watch("body")?.length || 0}</span>
+                            <span className="text-muted-foreground">caracteres</span>
+                          </div>
+                          <div className="h-4 w-px bg-gray-300 dark:bg-gray-700" />
+                          <div className="flex items-center gap-2 text-xs">
+                            <Hash className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <span className="font-semibold text-green-600 dark:text-green-400">{form.watch("body")?.trim().split(/\s+/).filter(w => w.length > 0).length || 0}</span>
+                            <span className="text-muted-foreground">palabras</span>
+                          </div>
+                          <div className="h-4 w-px bg-gray-300 dark:bg-gray-700" />
+                          <div className="flex items-center gap-2 text-xs">
+                            <Variable className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                            <span className="font-semibold text-purple-600 dark:text-purple-400">{(form.watch("body")?.match(/\{\{[^}]+\}\}/g) || []).length}</span>
+                            <span className="text-muted-foreground">variables</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Preview Tabs */}
+                      <Tabs value={previewTab} onValueChange={(v) => setPreviewTab(v as typeof previewTab)}>
+                        <TabsList className="grid w-full grid-cols-3">
+                          <TabsTrigger value="whatsapp" className="gap-2">
+                            <MessageCircle className="h-4 w-4" />
+                            <span className="hidden sm:inline">WhatsApp</span>
+                          </TabsTrigger>
+                          <TabsTrigger value="push" className="gap-2">
+                            <Bell className="h-4 w-4" />
+                            <span className="hidden sm:inline">Push</span>
+                          </TabsTrigger>
+                          <TabsTrigger value="email" className="gap-2">
+                            <Mail className="h-4 w-4" />
+                            <span className="hidden sm:inline">Email</span>
+                          </TabsTrigger>
+                        </TabsList>
+
+                        <div className="py-4">
+                          <AnimatePresence mode="wait">
+                            {previewTab === "whatsapp" && (
+                              <TabsContent value="whatsapp" className="mt-0" asChild>
+                                <motion.div
+                                  key="whatsapp-edit-preview"
+                                  initial={{ opacity: 0, x: -20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: 20 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <WhatsAppPreview content={form.watch("body") || "Escribe algo para ver la vista previa..."} />
+                                </motion.div>
+                              </TabsContent>
+                            )}
+                            {previewTab === "push" && (
+                              <TabsContent value="push" className="mt-0" asChild>
+                                <motion.div
+                                  key="push-edit-preview"
+                                  initial={{ opacity: 0, x: -20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: 20 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <PushPreview content={form.watch("body") || "Escribe algo para ver la vista previa..."} title={form.watch("subject") || undefined} />
+                                </motion.div>
+                              </TabsContent>
+                            )}
+                            {previewTab === "email" && (
+                              <TabsContent value="email" className="mt-0" asChild>
+                                <motion.div
+                                  key="email-edit-preview"
+                                  initial={{ opacity: 0, x: -20 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  exit={{ opacity: 0, x: 20 }}
+                                  transition={{ duration: 0.2 }}
+                                >
+                                  <EmailPreview content={form.watch("body") || "Escribe algo para ver la vista previa..."} subject={form.watch("subject") || undefined} />
+                                </motion.div>
+                              </TabsContent>
                             )}
                           </AnimatePresence>
                         </div>
-                      </div>
-
-                      {/* Message Content Section */}
-                      <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                          Contenido del Mensaje
-                        </h3>
-
-                        {/* Dynamic Variables Toolkit - Horizontal Scroll on Mobile */}
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                            <Label className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                              Variables Dinámicas
-                            </Label>
-                          </div>
-                          <p className="text-xs text-muted-foreground mb-2">
-                            Haz clic para insertar en el mensaje
-                          </p>
-                          {/* Mobile: Horizontal scroll, Desktop: Wrap */}
-                          <div className="overflow-x-auto pb-2 -mx-1 px-1">
-                            <div className="flex md:flex-wrap gap-2 min-w-max md:min-w-0">
-                              {DYNAMIC_VARIABLES.map((variable) => {
-                                const Icon = variable.icon
-                                return (
-                                  <Button
-                                    key={variable.key}
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => insertVariable(variable.key)}
-                                    className={cn(
-                                      "gap-1.5 px-3 py-1.5 h-auto text-xs font-medium transition-all hover:scale-105 shrink-0",
-                                      variable.color,
-                                      "border-0 shadow-sm hover:shadow-md"
-                                    )}
-                                    title={variable.description}
-                                  >
-                                    <Icon className="h-3.5 w-3.5" />
-                                    {`{{${variable.key}}}`}
-                                  </Button>
-                                )
-                              })}
-                            </div>
-                          </div>
-                        </div>
-
-                        <FormField
-                          control={form.control}
-                          name="body"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-xs font-medium">Cuerpo del Mensaje</FormLabel>
-                              <FormControl>
-                                <Textarea
-                                  ref={textareaRef}
-                                  placeholder="Escribe el contenido del mensaje aquí. Usa las variables de arriba para personalizar..."
-                                  className="min-h-[180px] text-sm resize-y"
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormDescription className="text-xs">
-                                Formato: {`{{Variable}}`} - Las variables se reemplazarán automáticamente
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                    </form>
-                  </Form>
+                      </Tabs>
+                    </motion.div>
+                  </div>
                 </motion.div>
               ) : (
                 // VIEW MODE - High-Density Property Grid
@@ -1174,93 +1200,135 @@ export function TemplateDetailDialog({
                         </h2>
                       </div>
 
-                      {/* Property Grid - High Density */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 py-3 border-y border-gray-200 dark:border-gray-800">
-                        {/* Channel */}
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400">
-                            Canal
-                          </span>
-                          <Badge className={cn(channelColors[template.channel], "w-fit text-sm font-medium")}>
-                            {channelIcons[template.channel]}
-                            <span className="ml-1.5 capitalize">
-                              {template.channel === "whatsapp" ? "WhatsApp" : template.channel}
-                            </span>
-                          </Badge>
-                        </div>
+                      {/* Properties - Vertical Layout with Separators */}
+                      <TooltipProvider>
+                        <div className="flex flex-wrap items-stretch gap-4 py-4 border-y border-gray-200 dark:border-gray-800">
+                          {/* Channel */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex flex-col gap-2 flex-1 min-w-[120px]">
+                                <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400">
+                                  Canal
+                                </span>
+                                <Badge className={cn(channelColors[template.channel], "w-fit text-sm font-medium")}>
+                                  {channelIcons[template.channel]}
+                                  <span className="ml-1.5 capitalize">
+                                    {template.channel === "whatsapp" ? "WhatsApp" : template.channel}
+                                  </span>
+                                </Badge>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p>Canal de comunicación utilizado para enviar esta notificación</p>
+                            </TooltipContent>
+                          </Tooltip>
 
-                        {/* Audience */}
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400">
-                            Audiencia
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className={cn(
-                              "w-fit text-sm font-medium",
-                              template.target === "clients"
-                                ? "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400"
-                                : "border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-400"
-                            )}
-                          >
-                            {template.target === "clients" ? (
-                              <>
-                                <Users className="h-3.5 w-3.5 mr-1" />
-                                Clientes
-                              </>
-                            ) : (
-                              <>
-                                <UserCog className="h-3.5 w-3.5 mr-1" />
-                                Personal
-                              </>
-                            )}
-                          </Badge>
-                        </div>
+                          <div className="w-px bg-gray-200 dark:bg-gray-700" />
 
-                        {/* Status */}
-                        <div className="flex flex-col gap-1">
-                          <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400">
-                            Estado
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant={template.is_active ? "default" : "secondary"}
-                              className={cn(
-                                "w-fit text-sm font-medium",
-                                template.is_active
-                                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
-                                  : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700"
-                              )}
-                            >
-                              {template.is_active ? (
-                                <>
-                                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                                  Activo
-                                </>
-                              ) : (
-                                <>
-                                  <XCircle className="h-3.5 w-3.5 mr-1" />
-                                  Inactivo
-                                </>
-                              )}
-                            </Badge>
-                            {template.is_default && (
-                              <Badge variant="secondary" className="w-fit text-xs border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400">
-                                <Tag className="h-3 w-3 mr-1" />
-                                Por defecto
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                          {/* Audience */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex flex-col gap-2 flex-1 min-w-[120px]">
+                                <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400">
+                                  Audiencia
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  className={cn(
+                                    "w-fit text-sm font-medium",
+                                    template.target === "clients"
+                                      ? "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-400"
+                                      : "border-purple-300 text-purple-700 dark:border-purple-700 dark:text-purple-400"
+                                  )}
+                                >
+                                  {template.target === "clients" ? (
+                                    <>
+                                      <Users className="h-3.5 w-3.5 mr-1" />
+                                      Clientes
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserCog className="h-3.5 w-3.5 mr-1" />
+                                      Personal
+                                    </>
+                                  )}
+                                </Badge>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p>Tipo de destinatario objetivo de esta plantilla</p>
+                            </TooltipContent>
+                          </Tooltip>
 
-                      {/* Context Section - 2-Column Grid */}
+                          <div className="w-px bg-gray-200 dark:bg-gray-700" />
+
+                          {/* Status */}
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex flex-col gap-2 flex-1 min-w-[120px]">
+                                <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400">
+                                  Estado
+                                </span>
+                                <Badge
+                                  variant={template.is_active ? "default" : "secondary"}
+                                  className={cn(
+                                    "w-fit text-sm font-medium",
+                                    template.is_active
+                                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
+                                      : "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400 border-gray-200 dark:border-gray-700"
+                                  )}
+                                >
+                                  {template.is_active ? (
+                                    <>
+                                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                                      Activo
+                                    </>
+                                  ) : (
+                                    <>
+                                      <XCircle className="h-3.5 w-3.5 mr-1" />
+                                      Inactivo
+                                    </>
+                                  )}
+                                </Badge>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p>{template.is_active ? "Esta plantilla está activa y será enviada automáticamente" : "Esta plantilla está inactiva y no se enviará"}</p>
+                            </TooltipContent>
+                          </Tooltip>
+
+                          {/* Default Badge */}
+                          {template.is_default && (
+                            <>
+                              <div className="w-px bg-gray-200 dark:bg-gray-700" />
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="flex flex-col gap-2 flex-1 min-w-[120px]">
+                                    <span className="text-[10px] uppercase tracking-wide font-semibold text-gray-500 dark:text-gray-400">
+                                      Predeterminado
+                                    </span>
+                                    <Badge variant="secondary" className="w-fit text-sm border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400">
+                                      <Tag className="h-3 w-3 mr-1" />
+                                      Por defecto
+                                    </Badge>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  <p>Esta es la plantilla predeterminada para este contexto</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </>
+                          )}
+                        </div>
+                      </TooltipProvider>
+
+                      {/* Context Section - Flex Wrap with Better Distribution */}
                       {(template.service_type_name || template.phase_name || template.taller_id || template.subtype_name) && (
                         <div className="space-y-3">
                           <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                             Contexto de Aplicación
                           </h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+                          <div className="flex flex-wrap justify-between gap-4 w-full">
                             {/* Service Type */}
                             {template.service_type_name && (
                               <div className="flex items-start gap-2.5">
@@ -1308,7 +1376,7 @@ export function TemplateDetailDialog({
                                   {template.taller_id ? (
                                     talleres.find(t => t.id.toString() === template.taller_id)?.nombre || template.taller_id
                                   ) : (
-                                    "🌐 Global (Todos)"
+                                    "Global (Todos)"
                                   )}
                                 </p>
                               </div>
@@ -1400,12 +1468,33 @@ export function TemplateDetailDialog({
                   transition={{ duration: 0.3, delay: 0.1 }}
                   className="space-y-6"
                 >
-                  {/* Preview Header */}
-                  <div className="flex items-center gap-2">
-                    <Eye className="h-5 w-5 text-muted-foreground" />
-                    <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Vista Previa
-                    </h3>
+                  {/* Preview Header with Statistics */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-5 w-5 text-muted-foreground" />
+                      <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                        Vista Previa
+                      </h3>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-xs">
+                        <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">{template.body.length}</span>
+                        <span className="text-muted-foreground">caracteres</span>
+                      </div>
+                      <div className="h-4 w-px bg-gray-300 dark:bg-gray-700" />
+                      <div className="flex items-center gap-2 text-xs">
+                        <Hash className="h-4 w-4 text-green-600 dark:text-green-400" />
+                        <span className="font-semibold text-green-600 dark:text-green-400">{template.body.trim().split(/\s+/).filter(w => w.length > 0).length}</span>
+                        <span className="text-muted-foreground">palabras</span>
+                      </div>
+                      <div className="h-4 w-px bg-gray-300 dark:bg-gray-700" />
+                      <div className="flex items-center gap-2 text-xs">
+                        <Variable className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                        <span className="font-semibold text-purple-600 dark:text-purple-400">{template.variables.length}</span>
+                        <span className="text-muted-foreground">variables</span>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Preview Tabs */}
@@ -1426,19 +1515,51 @@ export function TemplateDetailDialog({
                     </TabsList>
 
                     <div className="py-4">
-                      <TabsContent value="whatsapp" className="mt-0">
-                        <WhatsAppPreview content={template.preview} />
-                      </TabsContent>
-                      <TabsContent value="push" className="mt-0">
-                        <PushPreview content={template.preview} title={template.subject || undefined} />
-                      </TabsContent>
-                      <TabsContent value="email" className="mt-0">
-                        <EmailPreview content={template.preview} subject={template.subject || undefined} />
-                      </TabsContent>
+                      <AnimatePresence mode="wait">
+                        {previewTab === "whatsapp" && (
+                          <TabsContent value="whatsapp" className="mt-0" asChild>
+                            <motion.div
+                              key="whatsapp-preview"
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 20 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <WhatsAppPreview content={template.preview} />
+                            </motion.div>
+                          </TabsContent>
+                        )}
+                        {previewTab === "push" && (
+                          <TabsContent value="push" className="mt-0" asChild>
+                            <motion.div
+                              key="push-preview"
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 20 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <PushPreview content={template.preview} title={template.subject || undefined} />
+                            </motion.div>
+                          </TabsContent>
+                        )}
+                        {previewTab === "email" && (
+                          <TabsContent value="email" className="mt-0" asChild>
+                            <motion.div
+                              key="email-preview"
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: 20 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <EmailPreview content={template.preview} subject={template.subject || undefined} />
+                            </motion.div>
+                          </TabsContent>
+                        )}
+                      </AnimatePresence>
                     </div>
                   </Tabs>
 
-                  {/* Timestamps - Relocated from left column */}
+                  {/* Timestamps */}
                   <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-800">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
