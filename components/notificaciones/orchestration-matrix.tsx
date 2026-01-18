@@ -355,13 +355,15 @@ function OrchestrationEmpty({ target }: { target: "clients" | "staff" }) {
 export function OrchestrationMatrix({ target }: OrchestrationMatrixProps) {
   const { serviceTypes, isLoading, error, refresh } = useOrchestrationMatrix(target)
   const [openServices, setOpenServices] = React.useState<Set<string>>(new Set())
+  const hasInitialized = React.useRef(false)
 
-  // Open first service by default when data loads
+  // Open first service by default when data loads (only once)
   React.useEffect(() => {
-    if (serviceTypes.length > 0 && openServices.size === 0) {
+    if (serviceTypes.length > 0 && !hasInitialized.current) {
       setOpenServices(new Set([serviceTypes[0].id]))
+      hasInitialized.current = true
     }
-  }, [serviceTypes, openServices.size])
+  }, [serviceTypes])
 
   const handleToggleService = (serviceId: string) => {
     setOpenServices((prev) => {
