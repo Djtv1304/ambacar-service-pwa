@@ -88,8 +88,12 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 
-import { fetchNotificationTemplateById, updateNotificationTemplate } from "@/lib/api/notifications"
-import type { NotificationTemplateAPI } from "@/lib/api/notifications"
+import {
+  fetchNotificationTemplateById,
+  fetchNotificationVariables,
+  updateNotificationTemplate
+} from "@/lib/api/notifications"
+import type { NotificationTemplateAPI, NotificationVariableAPI } from "@/lib/api/notifications"
 import { notificationTemplateSchema, type NotificationTemplateFormData } from "@/lib/validations/notification-template"
 import { useNotificationMetadata } from "@/hooks/use-notification-metadata"
 import { useAuthToken } from "@/hooks/use-auth-token"
@@ -103,17 +107,18 @@ interface TemplateDetailDialogProps {
   onSave?: (updatedTemplate: NotificationTemplateAPI) => void
 }
 
-// Variable definitions with icons
-const DYNAMIC_VARIABLES = [
-  { key: "Nombre", icon: User, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", description: "Nombre del cliente" },
-  { key: "Placa", icon: CreditCard, color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", description: "Placa del vehículo" },
-  { key: "Vehículo", icon: Car, color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", description: "Marca y modelo del vehículo" },
-  { key: "Fecha", icon: Calendar, color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", description: "Fecha del servicio" },
-  { key: "Hora", icon: Clock, color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400", description: "Hora del servicio" },
-  { key: "Taller", icon: Building2, color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400", description: "Nombre del taller" },
-  { key: "Técnico", icon: Wrench, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400", description: "Nombre del técnico" },
-  { key: "Orden", icon: Hash, color: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400", description: "Número de orden" },
-]
+// Mapeo de iconos y colores por ID de variable (aspectos de UI)
+const VARIABLE_STYLES: Record<string, { icon: any; color: string }> = {
+  nombre: { icon: User, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  placa: { icon: CreditCard, color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+  vehiculo: { icon: Car, color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  fase: { icon: Layers, color: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" },
+  fecha: { icon: Calendar, color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },
+  hora: { icon: Clock, color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400" },
+  orden: { icon: Hash, color: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400" },
+  tecnico: { icon: Wrench, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" },
+  taller: { icon: Building2, color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400" },
+}
 
 // Channel Icons
 const channelIcons = {
@@ -292,10 +297,29 @@ export function TemplateDetailDialog({
   const [previewTab, setPreviewTab] = React.useState<"email" | "push" | "whatsapp">("email")
   const [isEditMode, setIsEditMode] = React.useState(false)
   const [isSaving, setIsSaving] = React.useState(false)
+  const [variables, setVariables] = React.useState<NotificationVariableAPI[]>([])
+  const [variablesLoading, setVariablesLoading] = React.useState(false)
 
   const { getToken } = useAuthToken()
   const { serviceTypes, phases, talleres, isLoading: metadataLoading } = useNotificationMetadata()
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+
+  // Cargar variables cuando se abre el modal
+  React.useEffect(() => {
+    if (open && variables.length === 0) {
+      setVariablesLoading(true)
+      fetchNotificationVariables()
+        .then((data) => {
+          setVariables(data)
+        })
+        .catch((error) => {
+          console.error("Error loading variables:", error)
+        })
+        .finally(() => {
+          setVariablesLoading(false)
+        })
+    }
+  }, [open, variables.length])
 
   // React Hook Form
   const form = useForm<NotificationTemplateFormData>({
@@ -389,18 +413,21 @@ export function TemplateDetailDialog({
           // Check if this part is a variable (matches {{...}})
           if (part.match(/^\{\{[^}]+\}\}$/)) {
             // Extract variable name without braces
-            const variableName = part.replace(/^\{\{|\}\}$/g, "")
+            const variableName = part.replace(/^\{\{|\}\}$/g, "").toLowerCase()
 
-            // Find matching variable config for color
-            const variableConfig = DYNAMIC_VARIABLES.find(v => v.key === variableName)
-            const Icon = variableConfig?.icon
+            // Find matching variable style for color and icon
+            const style = VARIABLE_STYLES[variableName] || {
+              icon: Sparkles,
+              color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+            }
+            const Icon = style.icon
 
             return (
               <span
                 key={index}
                 className={cn(
                   "inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium mx-0.5",
-                  variableConfig?.color || "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  style.color
                 )}
               >
                 {Icon && <Icon className="h-3 w-3" />}
@@ -417,18 +444,17 @@ export function TemplateDetailDialog({
   }
 
   // Function to insert variable at cursor position
-  const insertVariable = (variableKey: string) => {
+  const insertVariable = (variableLabel: string) => {
     const textarea = textareaRef.current
     if (!textarea) return
 
     const cursorPosition = textarea.selectionStart
     const currentValue = form.getValues("body")
-    const variableText = `{{${variableKey}}}`
 
     // Insert variable at cursor position
     const newValue =
       currentValue.slice(0, cursorPosition) +
-      variableText +
+      variableLabel +
       currentValue.slice(cursorPosition)
 
     form.setValue("body", newValue)
@@ -436,11 +462,11 @@ export function TemplateDetailDialog({
     // Move cursor after inserted variable
     setTimeout(() => {
       textarea.focus()
-      const newCursorPosition = cursorPosition + variableText.length
+      const newCursorPosition = cursorPosition + variableLabel.length
       textarea.setSelectionRange(newCursorPosition, newCursorPosition)
     }, 0)
 
-    toast.success(`Variable insertada: ${variableText}`)
+    toast.success(`Variable insertada: ${variableLabel}`)
   }
 
   // Submit handler
@@ -716,31 +742,46 @@ export function TemplateDetailDialog({
                                 Haz clic para insertar en el mensaje
                               </p>
                               {/* Mobile: Horizontal scroll, Desktop: Wrap */}
-                              <div className="overflow-x-auto pb-2 -mx-1 px-1">
-                                <div className="flex md:flex-wrap gap-2 min-w-max md:min-w-0">
-                                  {DYNAMIC_VARIABLES.map((variable) => {
-                                    const Icon = variable.icon
-                                    return (
-                                      <Button
-                                        key={variable.key}
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => insertVariable(variable.key)}
-                                        className={cn(
-                                          "gap-1.5 px-3 py-1.5 h-auto text-xs font-medium transition-all hover:scale-105 shrink-0",
-                                          variable.color,
-                                          "border-0 shadow-sm hover:shadow-md"
-                                        )}
-                                        title={variable.description}
-                                      >
-                                        <Icon className="h-3.5 w-3.5" />
-                                        {`{{${variable.key}}}`}
-                                      </Button>
-                                    )
-                                  })}
+                              {variablesLoading ? (
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  Cargando variables...
                                 </div>
-                              </div>
+                              ) : variables.length === 0 ? (
+                                <p className="text-xs text-muted-foreground">
+                                  No se encontraron variables dinámicas
+                                </p>
+                              ) : (
+                                <div className="overflow-x-auto pb-2 -mx-1 px-1">
+                                  <div className="flex md:flex-wrap gap-2 min-w-max md:min-w-0">
+                                    {variables.map((variable) => {
+                                      const style = VARIABLE_STYLES[variable.id] || {
+                                        icon: Sparkles,
+                                        color: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
+                                      }
+                                      const Icon = style.icon
+                                      return (
+                                        <Button
+                                          key={variable.id}
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => insertVariable(variable.label)}
+                                          className={cn(
+                                            "gap-1.5 px-3 py-1.5 h-auto text-xs font-medium transition-all hover:scale-105 shrink-0",
+                                            style.color,
+                                            "border-0 shadow-sm hover:shadow-md"
+                                          )}
+                                          title={`${variable.description} - Ejemplo: ${variable.example}`}
+                                        >
+                                          <Icon className="h-3.5 w-3.5" />
+                                          {variable.label}
+                                        </Button>
+                                      )
+                                    })}
+                                  </div>
+                                </div>
+                              )}
                             </div>
 
                             <FormField
@@ -1456,17 +1497,21 @@ export function TemplateDetailDialog({
                           </div>
                           <div className="flex flex-wrap gap-2">
                             {template.variables.map((variableName) => {
-                              const variableConfig = DYNAMIC_VARIABLES.find(v => v.key === variableName)
-                              const Icon = variableConfig?.icon
+                              const style = VARIABLE_STYLES[variableName.toLowerCase()] || {
+                                icon: Sparkles,
+                                color: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                              }
+                              const Icon = style.icon
+                              const variable = variables.find(v => v.id === variableName.toLowerCase())
 
                               return (
                                 <div
                                   key={variableName}
                                   className={cn(
                                     "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium",
-                                    variableConfig?.color || "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                                    style.color
                                   )}
-                                  title={variableConfig?.description || variableName}
+                                  title={variable?.description || variableName}
                                 >
                                   {Icon && <Icon className="h-3.5 w-3.5" />}
                                   <span>{`{{${variableName}}}`}</span>

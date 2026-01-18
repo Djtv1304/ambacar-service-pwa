@@ -242,7 +242,7 @@ export function TallerConfigView() {
   // Hooks para cada tab de plantillas (cache independiente)
   const clientsHook = useNotificationTemplates("clients")
   const staffHook = useNotificationTemplates("staff")
-  const { token } = useAuthToken()
+  const { getToken } = useAuthToken()
 
   const [selectedTemplateId, setSelectedTemplateId] = React.useState<string | null>(null)
 
@@ -272,7 +272,10 @@ export function TallerConfigView() {
   }
 
   const confirmDeleteTemplate = async () => {
-    if (!templateToDelete || !token) return
+    if (!templateToDelete) return
+
+    const token = await getToken()
+    if (!token) return
 
     setIsDeleting(true)
     try {
@@ -297,6 +300,23 @@ export function TallerConfigView() {
       })
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleCreateTemplate = async (createdTemplate: NotificationTemplateAPI) => {
+    // Refrescar la lista correspondiente según el target de la plantilla creada
+    if (createdTemplate.target === "clients") {
+      await clientsHook.refresh()
+      // Cambiar al tab de clientes si no está ahí
+      if (templatesTab !== "clients") {
+        setTemplatesTab("clients")
+      }
+    } else {
+      await staffHook.refresh()
+      // Cambiar al tab de staff si no está ahí
+      if (templatesTab !== "staff") {
+        setTemplatesTab("staff")
+      }
     }
   }
 
@@ -501,6 +521,7 @@ export function TallerConfigView() {
         open={isCreatingTemplate}
         onOpenChange={setIsCreatingTemplate}
         preselectedTarget={templatesTab}
+        onSuccess={handleCreateTemplate}
       />
 
       {/* Delete Confirmation Dialog */}

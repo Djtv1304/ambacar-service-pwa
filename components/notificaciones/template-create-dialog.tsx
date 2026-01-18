@@ -25,6 +25,7 @@ import {
   Building2,
   Wrench,
   Hash,
+  RefreshCw,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -76,39 +77,54 @@ import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 import { notificationTemplateSchema, type NotificationTemplateFormData } from "@/lib/validations/notification-template"
 import { useNotificationMetadata } from "@/hooks/use-notification-metadata"
-import type { ServiceTypeAPI } from "@/lib/api/notifications"
+import {
+  type ServiceTypeAPI,
+  type NotificationTemplateAPI,
+  type NotificationVariableAPI,
+  createNotificationTemplate,
+  fetchNotificationVariables,
+  type UpdateNotificationTemplatePayload
+} from "@/lib/api/notifications"
+import { useAuthToken } from "@/hooks/use-auth-token"
 import { toast } from "sonner"
 
 interface TemplateCreateDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   preselectedTarget?: "clients" | "staff"
+  onSuccess?: (template: NotificationTemplateAPI) => void
 }
 
-// Variable definitions with icons
-const DYNAMIC_VARIABLES = [
-  { key: "Nombre", icon: User, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400", description: "Nombre del cliente" },
-  { key: "Placa", icon: CreditCard, color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400", description: "Placa del vehículo" },
-  { key: "Vehículo", icon: Car, color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400", description: "Marca y modelo del vehículo" },
-  { key: "Fecha", icon: Calendar, color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400", description: "Fecha del servicio" },
-  { key: "Hora", icon: Clock, color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400", description: "Hora del servicio" },
-  { key: "Taller", icon: Building2, color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400", description: "Nombre del taller" },
-  { key: "Técnico", icon: Wrench, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400", description: "Nombre del técnico" },
-  { key: "Orden", icon: Hash, color: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400", description: "Número de orden" },
-]
+// Mapeo de iconos y colores por ID de variable (aspectos de UI)
+const VARIABLE_STYLES: Record<string, { icon: any; color: string }> = {
+  nombre: { icon: User, color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
+  placa: { icon: CreditCard, color: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400" },
+  vehiculo: { icon: Car, color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  fase: { icon: Settings, color: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400" },
+  fecha: { icon: Calendar, color: "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" },
+  hora: { icon: Clock, color: "bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400" },
+  orden: { icon: Hash, color: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400" },
+  tecnico: { icon: Wrench, color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400" },
+  taller: { icon: Building2, color: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400" },
+}
 
 export function TemplateCreateDialog({
   open,
   onOpenChange,
   preselectedTarget,
+  onSuccess,
 }: TemplateCreateDialogProps) {
   const { serviceTypes, phases, talleres, isLoading: metadataLoading } = useNotificationMetadata()
+  const { getToken } = useAuthToken()
 
   const [serviceTypeOpen, setServiceTypeOpen] = React.useState(false)
   const [phaseOpen, setPhaseOpen] = React.useState(false)
   const [tallerOpen, setTallerOpen] = React.useState(false)
   const [subtypeOpen, setSubtypeOpen] = React.useState(false)
   const [selectedServiceType, setSelectedServiceType] = React.useState<ServiceTypeAPI | null>(null)
+  const [isCreating, setIsCreating] = React.useState(false)
+  const [variables, setVariables] = React.useState<NotificationVariableAPI[]>([])
+  const [variablesLoading, setVariablesLoading] = React.useState(false)
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
 
   const form = useForm<NotificationTemplateFormData>({
@@ -132,6 +148,27 @@ export function TemplateCreateDialog({
   const channelValue = form.watch("channel")
   const serviceTypeValue = form.watch("service_type")
 
+  // Cargar variables cuando se abre el modal
+  React.useEffect(() => {
+    if (open && variables.length === 0) {
+      setVariablesLoading(true)
+      getToken()
+        .then((token) => fetchNotificationVariables(token || undefined))
+        .then((data) => {
+          setVariables(data)
+        })
+        .catch((error) => {
+          console.error("Error loading variables:", error)
+          toast.error("Error al cargar variables", {
+            description: "No se pudieron cargar las variables dinámicas",
+          })
+        })
+        .finally(() => {
+          setVariablesLoading(false)
+        })
+    }
+  }, [open, variables.length, getToken])
+
   // Actualizar service type seleccionado y resetear subtype si cambia
   React.useEffect(() => {
     if (serviceTypeValue) {
@@ -149,18 +186,17 @@ export function TemplateCreateDialog({
   const availableSubtypes = selectedServiceType?.subtypes || []
 
   // Function to insert variable at cursor position
-  const insertVariable = (variableKey: string) => {
+  const insertVariable = (variableLabel: string) => {
     const textarea = textareaRef.current
     if (!textarea) return
 
     const cursorPosition = textarea.selectionStart
     const currentValue = form.getValues("body")
-    const variableText = `{{${variableKey}}}`
 
     // Insert variable at cursor position
     const newValue =
       currentValue.slice(0, cursorPosition) +
-      variableText +
+      variableLabel +
       currentValue.slice(cursorPosition)
 
     form.setValue("body", newValue)
@@ -168,19 +204,65 @@ export function TemplateCreateDialog({
     // Move cursor after inserted variable
     setTimeout(() => {
       textarea.focus()
-      const newCursorPosition = cursorPosition + variableText.length
+      const newCursorPosition = cursorPosition + variableLabel.length
       textarea.setSelectionRange(newCursorPosition, newCursorPosition)
     }, 0)
 
-    toast.success(`Variable insertada: ${variableText}`)
+    toast.success(`Variable insertada: ${variableLabel}`)
   }
 
-  const handleSubmit = (data: NotificationTemplateFormData) => {
-    // TODO: Implementar guardado con POST
-    console.log("Crear plantilla con data:", data)
-    toast.info("Guardado pendiente", {
-      description: "La funcionalidad de guardado se implementará próximamente",
-    })
+  const handleSubmit = async (data: NotificationTemplateFormData) => {
+    const token = await getToken()
+
+    if (!token) {
+      toast.error("Error de autenticación", {
+        description: "No se encontró el token de autenticación",
+      })
+      return
+    }
+
+    setIsCreating(true)
+
+    try {
+      // Construir el payload según la especificación de la API
+      const payload: UpdateNotificationTemplatePayload = {
+        name: data.name,
+        subject: data.subject,
+        body: data.body,
+        channel: data.channel,
+        target: data.target,
+        is_default: data.is_default,
+        is_active: data.is_active,
+        taller_id: data.taller_id,
+        service_type: data.service_type,
+        phase: data.phase,
+        subtype: data.subtype,
+      }
+
+      // Llamar a la API
+      const createdTemplate = await createNotificationTemplate(payload, token)
+
+      // Notificar éxito
+      toast.success("Plantilla creada", {
+        description: `${createdTemplate.name} se ha creado exitosamente`,
+      })
+
+      // Notificar al padre para refrescar la lista
+      if (onSuccess) {
+        onSuccess(createdTemplate)
+      }
+
+      // Cerrar el modal y resetear el formulario
+      onOpenChange(false)
+      form.reset()
+    } catch (error) {
+      console.error("Error creating template:", error)
+      toast.error("Error al crear plantilla", {
+        description: error instanceof Error ? error.message : "No se pudo crear la plantilla",
+      })
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   const channelIcons = {
@@ -641,29 +723,44 @@ export function TemplateCreateDialog({
                     <p className="text-xs text-muted-foreground">
                       Haz clic en una variable para insertarla en el mensaje
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {DYNAMIC_VARIABLES.map((variable) => {
-                        const Icon = variable.icon
-                        return (
-                          <Button
-                            key={variable.key}
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => insertVariable(variable.key)}
-                            className={cn(
-                              "gap-1.5 px-3 py-1.5 h-auto text-xs font-medium transition-all hover:scale-105",
-                              variable.color,
-                              "border-0 shadow-sm hover:shadow-md"
-                            )}
-                            title={variable.description}
-                          >
-                            <Icon className="h-3.5 w-3.5" />
-                            {`{{${variable.key}}}`}
-                          </Button>
-                        )
-                      })}
-                    </div>
+                    {variablesLoading ? (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                        Cargando variables...
+                      </div>
+                    ) : variables.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No se encontraron variables dinámicas
+                      </p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {variables.map((variable) => {
+                          const style = VARIABLE_STYLES[variable.id] || {
+                            icon: Sparkles,
+                            color: "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
+                          }
+                          const Icon = style.icon
+                          return (
+                            <Button
+                              key={variable.id}
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => insertVariable(variable.label)}
+                              className={cn(
+                                "gap-1.5 px-3 py-1.5 h-auto text-xs font-medium transition-all hover:scale-105",
+                                style.color,
+                                "border-0 shadow-sm hover:shadow-md"
+                              )}
+                              title={`${variable.description} - Ejemplo: ${variable.example}`}
+                            >
+                              <Icon className="h-3.5 w-3.5" />
+                              {variable.label}
+                            </Button>
+                          )
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   <FormField
@@ -674,10 +771,13 @@ export function TemplateCreateDialog({
                         <FormLabel>Cuerpo del Mensaje *</FormLabel>
                         <FormControl>
                           <Textarea
-                            ref={textareaRef}
                             placeholder="Ej: Hola {{Nombre}}, tu {{Vehículo}} con placa {{Placa}} está listo para recoger..."
                             className="min-h-[200px] font-mono text-sm"
                             {...field}
+                            ref={(e) => {
+                              field.ref(e)
+                              textareaRef.current = e
+                            }}
                           />
                         </FormControl>
                         <FormDescription className="text-xs text-muted-foreground">
@@ -752,14 +852,15 @@ export function TemplateCreateDialog({
                   type="button"
                   variant="outline"
                   onClick={() => onOpenChange(false)}
+                  disabled={isCreating}
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="submit"
-                  disabled={metadataLoading}
+                  disabled={metadataLoading || isCreating}
                 >
-                  Crear Plantilla
+                  {isCreating ? "Creando..." : "Crear Plantilla"}
                 </Button>
               </div>
             </form>

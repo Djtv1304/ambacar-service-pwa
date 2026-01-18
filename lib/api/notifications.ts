@@ -565,6 +565,20 @@ export interface PhaseAPI {
   order: number
 }
 
+// ============================================================================
+// VARIABLES API - Variables dinámicas para plantillas
+// ============================================================================
+
+/**
+ * Variable dinámica desde la API
+ */
+export interface NotificationVariableAPI {
+  id: string
+  label: string // Formato: {{Variable}}
+  description: string
+  example: string
+}
+
 /**
  * Obtiene los tipos de servicio con sus subtypes anidados
  *
@@ -590,10 +604,8 @@ export async function getServiceTypes(token: string): Promise<ServiceTypeAPI[]> 
     const data: ServiceTypesAPIResponse = await response.json()
 
     if (!response.ok) {
-      const errorMessage =
-        data.next ?? data.previous ?? `HTTP ${response.status}`
-
-      throw new ApiError(errorMessage as string, response.status, data)
+      const errorMessage = `HTTP ${response.status}`
+      throw new ApiError(errorMessage, response.status)
     }
 
     return data.results
@@ -647,6 +659,59 @@ export async function getPhases(token: string): Promise<PhaseAPI[]> {
 
     // Fallback: retornar array vacío si la estructura no es la esperada
     console.warn("getPhases returned unexpected format:", data)
+    return []
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
+
+/**
+ * Obtiene las variables dinámicas disponibles para plantillas
+ *
+ * @param token - JWT token de autenticación (opcional)
+ * @returns Lista de variables disponibles
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function fetchNotificationVariables(
+  token?: string
+): Promise<NotificationVariableAPI[]> {
+  const url = `${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/templates/variables/`
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  }
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorMessage =
+        data.detail ?? data.message ?? data.error ?? `HTTP ${response.status}`
+
+      throw new ApiError(errorMessage, response.status)
+    }
+
+    // El endpoint retorna un array directo de variables
+    if (Array.isArray(data)) {
+      return data
+    }
+
+    // Fallback: retornar array vacío si la estructura no es la esperada
+    console.warn("fetchNotificationVariables returned unexpected format:", data)
     return []
   } catch (error) {
     if (error instanceof ApiError) {
