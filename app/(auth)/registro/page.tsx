@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition, useEffect } from "react"
+import { useState, useTransition, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
@@ -19,8 +19,8 @@ import { registerSchema, type RegisterFormData } from "@/lib/validations/auth"
 import { dispatchNotificationEvent, buildRegistrationContext } from "@/lib/api/notifications"
 import { syncCustomer } from "@/lib/api/sync"
 
-const YOUTUBE_VIDEO_ID = "yTbtohP2YsQ"
-const FALLBACK_IMAGE = "https://ambacar.ec/wp-content/uploads/2025/01/portada-video-H6-2025.jpg"
+const VIDEO_PATH = "/media/video/ambacar-video-2k.webm"
+const FALLBACK_IMAGE = "/media/image/portada-ambacar-video-h6.webp"
 
 export default function RegistroPage() {
   const router = useRouter()
@@ -33,6 +33,19 @@ export default function RegistroPage() {
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
   const [videoLoaded, setVideoLoaded] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  // Forzar reproducción del video en hard reload
+  useEffect(() => {
+    const video = videoRef.current
+    if (video) {
+      video.play().then(() => {
+        setVideoLoaded(true)
+      }).catch((error) => {
+        console.warn("Autoplay prevented:", error)
+      })
+    }
+  }, [])
 
   const {
     register,
@@ -52,14 +65,6 @@ export default function RegistroPage() {
       phone: "",
     },
   })
-
-  // Check if video iframe loads
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setVideoLoaded(true)
-    }, 1000)
-    return () => clearTimeout(timer)
-  }, [])
 
   const goToNextStep = async () => {
     const fieldsToValidate: (keyof RegisterFormData)[] = currentStep === 1
@@ -157,26 +162,29 @@ export default function RegistroPage() {
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
       {/* Video Background */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 overflow-hidden">
         {/* Fallback Image */}
         <Image
           src={FALLBACK_IMAGE}
           alt="Ambacar Background"
           fill
           className={`object-cover transition-opacity duration-1000 ${videoLoaded ? "opacity-0" : "opacity-100"}`}
-          priority
         />
 
-        {/* YouTube Video Embed */}
-        <div className={`absolute inset-0 transition-opacity duration-1000 ${videoLoaded ? "opacity-100" : "opacity-0"}`}>
-          <iframe
-            src={`https://www.youtube.com/embed/${YOUTUBE_VIDEO_ID}?autoplay=1&mute=1&loop=1&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&playsinline=1&enablejsapi=1&playlist=${YOUTUBE_VIDEO_ID}`}
-            className="absolute top-1/2 left-1/2 w-[300%] h-[300%] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ border: "none" }}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            title="Ambacar Background Video"
-          />
-        </div>
+        {/* Video - usando el mismo patrón de Astro + scale para ocultar letterbox */}
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          onCanPlay={() => setVideoLoaded(true)}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 scale-[1.2] ${videoLoaded ? "opacity-100" : "opacity-0"}`}
+        >
+          <source src={VIDEO_PATH} type="video/webm" />
+          <source src="/media/video/ambacar-video-1080p.mp4" type="video/mp4" />
+        </video>
 
         {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/70" />
@@ -212,7 +220,7 @@ export default function RegistroPage() {
               <h2 className="text-5xl font-bold leading-tight">
                 Únete a la<br />
                 <span className="text-[#ED1C24]">experiencia</span><br />
-                Ambacar.
+                Ambacar
               </h2>
             </motion.div>
             <motion.p
@@ -222,7 +230,7 @@ export default function RegistroPage() {
               className="text-lg text-white/80 max-w-md"
             >
               Crea tu cuenta y accede a todas las herramientas para gestionar
-              tu vehículo de manera inteligente.
+              tu vehículo de manera inteligente
             </motion.p>
 
             {/* Features */}
