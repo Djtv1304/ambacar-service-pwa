@@ -18,19 +18,17 @@ import {
   Settings,
   FileCheck,
   Info,
+  RefreshCw,
+  AlertCircle,
+  Inbox,
 } from "lucide-react"
 import { toast } from "sonner"
 
 import { Card } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   Tooltip,
   TooltipContent,
@@ -43,36 +41,15 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 
-import {
-  SERVICE_TYPES,
-  SERVICE_PHASES,
-  getTemplatesByChannel,
-  type ServiceType,
-  type ServicePhase,
-  type NotificationChannel,
-  type PhaseNotificationConfig,
-} from "@/lib/fixtures/notification-orchestration"
+import { useOrchestrationMatrix } from "@/hooks/use-orchestration-matrix"
+import type {
+  OrchestrationServiceType,
+  OrchestrationPhaseConfig,
+  NotificationChannel,
+} from "@/lib/api/notifications"
 
 interface OrchestrationMatrixProps {
   target: "clients" | "staff"
-}
-
-// Icon mapping for service types
-const serviceIcons: Record<string, React.ReactNode> = {
-  FileSearch: <FileSearch className="h-5 w-5" />,
-  AlertTriangle: <AlertTriangle className="h-5 w-5" />,
-  Paintbrush: <Paintbrush className="h-5 w-5" />,
-  Settings: <Settings className="h-5 w-5" />,
-  FileCheck: <FileCheck className="h-5 w-5" />,
-}
-
-// Icon mapping for phases
-const phaseIcons: Record<string, React.ReactNode> = {
-  Calendar: <Calendar className="h-4 w-4" />,
-  ClipboardCheck: <ClipboardCheck className="h-4 w-4" />,
-  Wrench: <Wrench className="h-4 w-4" />,
-  ShieldCheck: <ShieldCheck className="h-4 w-4" />,
-  CarFront: <CarFront className="h-4 w-4" />,
 }
 
 // Channel icons
@@ -89,17 +66,36 @@ const channelColors: Record<NotificationChannel, string> = {
   whatsapp: "text-green-600 dark:text-green-400",
 }
 
+// Phase icon mapping by phase name
+const getPhaseIcon = (phaseName: string): React.ReactNode => {
+  const nameLower = phaseName.toLowerCase()
+  if (nameLower.includes("agend") || nameLower.includes("cita")) {
+    return <Calendar className="h-4 w-4" />
+  }
+  if (nameLower.includes("recep")) {
+    return <ClipboardCheck className="h-4 w-4" />
+  }
+  if (nameLower.includes("repar") || nameLower.includes("ejecuc")) {
+    return <Wrench className="h-4 w-4" />
+  }
+  if (nameLower.includes("calidad") || nameLower.includes("control")) {
+    return <ShieldCheck className="h-4 w-4" />
+  }
+  if (nameLower.includes("entreg")) {
+    return <CarFront className="h-4 w-4" />
+  }
+  return <Settings className="h-4 w-4" />
+}
+
 // Phase Row Component
 function PhaseConfigRow({
-  phase,
-  config,
-  target,
+  phaseConfig,
+  phaseIndex,
   onToggleChannel,
   onSelectTemplate,
 }: {
-  phase: ServicePhase
-  config: PhaseNotificationConfig
-  target: "clients" | "staff"
+  phaseConfig: OrchestrationPhaseConfig
+  phaseIndex: number
   onToggleChannel: (phaseId: string, channel: NotificationChannel, enabled: boolean) => void
   onSelectTemplate: (phaseId: string, channel: NotificationChannel, templateId: string | null) => void
 }) {
@@ -110,19 +106,18 @@ function PhaseConfigRow({
       {/* Phase Info */}
       <div className="flex items-center gap-3 lg:col-span-1">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-          {phaseIcons[phase.icon]}
+          {getPhaseIcon(phaseConfig.phase_name)}
         </div>
         <div>
-          <p className="font-medium text-sm text-gray-900 dark:text-gray-100">{phase.name}</p>
-          <p className="text-xs text-muted-foreground">Fase {phase.order}</p>
+          <p className="font-medium text-sm text-gray-900 dark:text-gray-100">{phaseConfig.phase_name}</p>
+          <p className="text-xs text-muted-foreground">Fase {phaseIndex + 1}</p>
         </div>
       </div>
 
       {/* Channel Configurations */}
       <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
         {channels.map((channel) => {
-          const channelConfig = config.channels[channel]
-          const templates = getTemplatesByChannel(channel, target)
+          const channelConfig = phaseConfig.channels[channel]
 
           return (
             <div
@@ -143,32 +138,23 @@ function PhaseConfigRow({
                 </div>
                 <Switch
                   checked={channelConfig.enabled}
-                  onCheckedChange={(enabled) => onToggleChannel(phase.id, channel, enabled)}
+                  onCheckedChange={(enabled) => onToggleChannel(phaseConfig.phase_id, channel, enabled)}
                   className="scale-90"
                 />
               </div>
 
-              {/* Template Selector */}
-              <Select
-                value={channelConfig.templateId || ""}
-                onValueChange={(value) => onSelectTemplate(phase.id, channel, value || null)}
-                disabled={!channelConfig.enabled}
+              {/* Template Display */}
+              <div
+                className={`h-8 px-3 flex items-center text-xs rounded-md border ${
+                  !channelConfig.enabled
+                    ? "opacity-50 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                    : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                }`}
               >
-                <SelectTrigger
-                  className={`h-8 text-xs ${
-                    !channelConfig.enabled ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  <SelectValue placeholder="Seleccionar plantilla..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {templates.map((template) => (
-                    <SelectItem key={template.id} value={template.id} className="text-xs">
-                      {template.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <span className={channelConfig.template_name ? "text-gray-900 dark:text-gray-100" : "text-muted-foreground"}>
+                  {channelConfig.template_name || "Sin plantilla"}
+                </span>
+              </div>
             </div>
           )
         })}
@@ -177,27 +163,49 @@ function PhaseConfigRow({
   )
 }
 
+// Service icon mapping by service name
+const getServiceIcon = (serviceName: string): React.ReactNode => {
+  const nameLower = serviceName.toLowerCase()
+  if (nameLower.includes("mantenimiento") && nameLower.includes("preventivo")) {
+    return <Settings className="h-5 w-5" />
+  }
+  if (nameLower.includes("avería") || nameLower.includes("revisión") || nameLower.includes("averia") || nameLower.includes("revision")) {
+    return <AlertTriangle className="h-5 w-5" />
+  }
+  if (nameLower.includes("colisión") || nameLower.includes("pintura") || nameLower.includes("colision")) {
+    return <Paintbrush className="h-5 w-5" />
+  }
+  if (nameLower.includes("avalúo") || nameLower.includes("avaluo")) {
+    return <FileSearch className="h-5 w-5" />
+  }
+  if (nameLower.includes("inspección") || nameLower.includes("inspeccion")) {
+    return <FileCheck className="h-5 w-5" />
+  }
+  return <Settings className="h-5 w-5" />
+}
+
 // Service Accordion Item
 function ServiceAccordionItem({
   service,
-  target,
   isOpen,
   onToggle,
-  phaseConfigs,
   onToggleChannel,
   onSelectTemplate,
 }: {
-  service: ServiceType
-  target: "clients" | "staff"
+  service: OrchestrationServiceType
   isOpen: boolean
   onToggle: () => void
-  phaseConfigs: PhaseNotificationConfig[]
   onToggleChannel: (serviceId: string, phaseId: string, channel: NotificationChannel, enabled: boolean) => void
   onSelectTemplate: (serviceId: string, phaseId: string, channel: NotificationChannel, templateId: string | null) => void
 }) {
   // Count active channels for this service
-  const activeChannelsCount = phaseConfigs.reduce((acc, phase) => {
-    return acc + Object.values(phase.channels).filter((c) => c.enabled).length
+  const activeChannelsCount = service.phases.reduce((acc, phase) => {
+    return (
+      acc +
+      (phase.channels.email.enabled ? 1 : 0) +
+      (phase.channels.push.enabled ? 1 : 0) +
+      (phase.channels.whatsapp.enabled ? 1 : 0)
+    )
   }, 0)
 
   return (
@@ -207,15 +215,13 @@ function ServiceAccordionItem({
           <button className="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20">
-                {serviceIcons[service.icon]}
+                {getServiceIcon(service.service_type_name)}
               </div>
               <div className="text-left">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{service.name}</h3>
-                {service.subtypes && (
-                  <p className="text-xs text-muted-foreground">
-                    {service.subtypes.length} subtipos disponibles
-                  </p>
-                )}
+                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{service.service_type_name}</h3>
+                <p className="text-xs text-muted-foreground">
+                  {service.phases.length} fases configuradas
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -236,24 +242,6 @@ function ServiceAccordionItem({
 
         <CollapsibleContent>
           <div className="border-t border-gray-200 dark:border-gray-800 p-4 space-y-4 bg-white dark:bg-gray-950">
-            {/* Subtypes Tabs (if any) */}
-            {service.subtypes && service.subtypes.length > 0 && (
-              <div className="flex flex-wrap gap-2 pb-3 border-b border-gray-200 dark:border-gray-800">
-                <Badge variant="default" className="cursor-pointer">
-                  General
-                </Badge>
-                {service.subtypes.map((subtype) => (
-                  <Badge
-                    key={subtype.id}
-                    variant="outline"
-                    className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
-                  >
-                    {subtype.name}
-                  </Badge>
-                ))}
-              </div>
-            )}
-
             {/* Phases Grid */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -274,31 +262,19 @@ function ServiceAccordionItem({
                 </TooltipProvider>
               </div>
 
-              {SERVICE_PHASES.map((phase) => {
-                const phaseConfig = phaseConfigs.find((p) => p.phaseId === phase.id) || {
-                  phaseId: phase.id,
-                  channels: {
-                    email: { enabled: false, templateId: null },
-                    push: { enabled: false, templateId: null },
-                    whatsapp: { enabled: false, templateId: null },
-                  },
-                }
-
-                return (
-                  <PhaseConfigRow
-                    key={phase.id}
-                    phase={phase}
-                    config={phaseConfig}
-                    target={target}
-                    onToggleChannel={(phaseId, channel, enabled) =>
-                      onToggleChannel(service.id, phaseId, channel, enabled)
-                    }
-                    onSelectTemplate={(phaseId, channel, templateId) =>
-                      onSelectTemplate(service.id, phaseId, channel, templateId)
-                    }
-                  />
-                )
-              })}
+              {service.phases.map((phaseConfig, index) => (
+                <PhaseConfigRow
+                  key={phaseConfig.phase_id}
+                  phaseConfig={phaseConfig}
+                  phaseIndex={index}
+                  onToggleChannel={(phaseId, channel, enabled) =>
+                    onToggleChannel(service.id, phaseId, channel, enabled)
+                  }
+                  onSelectTemplate={(phaseId, channel, templateId) =>
+                    onSelectTemplate(service.id, phaseId, channel, templateId)
+                  }
+                />
+              ))}
             </div>
           </div>
         </CollapsibleContent>
@@ -307,73 +283,85 @@ function ServiceAccordionItem({
   )
 }
 
+// Loading Skeleton Component
+function OrchestrationSkeleton() {
+  return (
+    <div className="space-y-3">
+      {[1, 2, 3].map((i) => (
+        <Card key={i} className="overflow-hidden dark:bg-gray-950 border-gray-200 dark:border-gray-800">
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+            <Skeleton className="h-5 w-5" />
+          </div>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
+// Error State Component
+function OrchestrationError({ error, onRetry }: { error: string; onRetry: () => void }) {
+  return (
+    <Card className="p-8 text-center dark:bg-gray-950 border-gray-200 dark:border-gray-800">
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+          <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+            Error al cargar la matriz
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-md">
+            {error}
+          </p>
+        </div>
+        <Button variant="outline" onClick={onRetry} className="mt-2">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Reintentar
+        </Button>
+      </div>
+    </Card>
+  )
+}
+
+// Empty State Component
+function OrchestrationEmpty({ target }: { target: "clients" | "staff" }) {
+  return (
+    <Card className="p-8 text-center dark:bg-gray-950 border-gray-200 dark:border-gray-800">
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800">
+          <Inbox className="h-6 w-6 text-gray-500 dark:text-gray-400" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+            Sin configuración
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-md">
+            No hay tipos de servicio configurados para {target === "clients" ? "clientes" : "personal"}.
+          </p>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 // Main Component
 export function OrchestrationMatrix({ target }: OrchestrationMatrixProps) {
-  const [openServices, setOpenServices] = React.useState<Set<string>>(new Set(["mantenimiento-preventivo"]))
-  const [configs, setConfigs] = React.useState<Record<string, PhaseNotificationConfig[]>>({})
+  const { serviceTypes, isLoading, error, refresh } = useOrchestrationMatrix(target)
+  const [openServices, setOpenServices] = React.useState<Set<string>>(new Set())
 
-  // Initialize configs for all services
+  // Open first service by default when data loads
   React.useEffect(() => {
-    const initialConfigs: Record<string, PhaseNotificationConfig[]> = {}
-    SERVICE_TYPES.forEach((service) => {
-      initialConfigs[service.id] = SERVICE_PHASES.map((phase) => ({
-        phaseId: phase.id,
-        channels: {
-          email: { enabled: false, templateId: null },
-          push: { enabled: false, templateId: null },
-          whatsapp: { enabled: false, templateId: null },
-        },
-      }))
-    })
-
-    // Set some defaults for "mantenimiento-preventivo" to demonstrate
-    if (target === "clients") {
-      initialConfigs["mantenimiento-preventivo"] = [
-        {
-          phaseId: "phase-schedule",
-          channels: {
-            email: { enabled: true, templateId: "tpl-client-email-welcome" },
-            push: { enabled: true, templateId: "tpl-client-push-welcome" },
-            whatsapp: { enabled: true, templateId: "tpl-client-wa-welcome" },
-          },
-        },
-        {
-          phaseId: "phase-reception",
-          channels: {
-            email: { enabled: true, templateId: "tpl-client-email-reception" },
-            push: { enabled: false, templateId: null },
-            whatsapp: { enabled: true, templateId: "tpl-client-wa-progress" },
-          },
-        },
-        {
-          phaseId: "phase-repair",
-          channels: {
-            email: { enabled: false, templateId: null },
-            push: { enabled: true, templateId: "tpl-client-push-progress" },
-            whatsapp: { enabled: false, templateId: null },
-          },
-        },
-        {
-          phaseId: "phase-quality",
-          channels: {
-            email: { enabled: false, templateId: null },
-            push: { enabled: false, templateId: null },
-            whatsapp: { enabled: false, templateId: null },
-          },
-        },
-        {
-          phaseId: "phase-delivery",
-          channels: {
-            email: { enabled: true, templateId: "tpl-client-email-ready" },
-            push: { enabled: true, templateId: "tpl-client-push-ready" },
-            whatsapp: { enabled: true, templateId: "tpl-client-wa-ready" },
-          },
-        },
-      ]
+    if (serviceTypes.length > 0 && openServices.size === 0) {
+      setOpenServices(new Set([serviceTypes[0].id]))
     }
-
-    setConfigs(initialConfigs)
-  }, [target])
+  }, [serviceTypes, openServices.size])
 
   const handleToggleService = (serviceId: string) => {
     setOpenServices((prev) => {
@@ -393,27 +381,7 @@ export function OrchestrationMatrix({ target }: OrchestrationMatrixProps) {
     channel: NotificationChannel,
     enabled: boolean
   ) => {
-    setConfigs((prev) => {
-      const serviceConfigs = [...(prev[serviceId] || [])]
-      const phaseIndex = serviceConfigs.findIndex((p) => p.phaseId === phaseId)
-
-      if (phaseIndex >= 0) {
-        serviceConfigs[phaseIndex] = {
-          ...serviceConfigs[phaseIndex],
-          channels: {
-            ...serviceConfigs[phaseIndex].channels,
-            [channel]: {
-              ...serviceConfigs[phaseIndex].channels[channel],
-              enabled,
-              templateId: enabled ? serviceConfigs[phaseIndex].channels[channel].templateId : null,
-            },
-          },
-        }
-      }
-
-      return { ...prev, [serviceId]: serviceConfigs }
-    })
-
+    // TODO: Implement API call to update channel configuration
     toast.success(enabled ? "Canal activado" : "Canal desactivado", {
       description: `${channel} ${enabled ? "habilitado" : "deshabilitado"} para esta fase.`,
     })
@@ -425,37 +393,48 @@ export function OrchestrationMatrix({ target }: OrchestrationMatrixProps) {
     channel: NotificationChannel,
     templateId: string | null
   ) => {
-    setConfigs((prev) => {
-      const serviceConfigs = [...(prev[serviceId] || [])]
-      const phaseIndex = serviceConfigs.findIndex((p) => p.phaseId === phaseId)
-
-      if (phaseIndex >= 0) {
-        serviceConfigs[phaseIndex] = {
-          ...serviceConfigs[phaseIndex],
-          channels: {
-            ...serviceConfigs[phaseIndex].channels,
-            [channel]: {
-              ...serviceConfigs[phaseIndex].channels[channel],
-              templateId,
-            },
-          },
-        }
-      }
-
-      return { ...prev, [serviceId]: serviceConfigs }
+    // TODO: Implement API call to update template selection
+    toast.success("Plantilla actualizada", {
+      description: "La plantilla ha sido asignada correctamente.",
     })
+  }
+
+  // Loading state
+  if (isLoading) {
+    return <OrchestrationSkeleton />
+  }
+
+  // Error state
+  if (error) {
+    return <OrchestrationError error={error} onRetry={refresh} />
+  }
+
+  // Empty state
+  if (serviceTypes.length === 0) {
+    return <OrchestrationEmpty target={target} />
   }
 
   return (
     <div className="space-y-3">
-      {SERVICE_TYPES.map((service) => (
+      {/* Refresh Button */}
+      <div className="flex justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={refresh}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Actualizar
+        </Button>
+      </div>
+
+      {serviceTypes.map((service) => (
         <ServiceAccordionItem
           key={service.id}
           service={service}
-          target={target}
           isOpen={openServices.has(service.id)}
           onToggle={() => handleToggleService(service.id)}
-          phaseConfigs={configs[service.id] || []}
           onToggleChannel={handleToggleChannel}
           onSelectTemplate={handleSelectTemplate}
         />

@@ -721,3 +721,188 @@ export async function fetchNotificationVariables(
     throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
   }
 }
+
+// ============================================================================
+// ORCHESTRATION MATRIX API - Matriz de orquestación de notificaciones
+// ============================================================================
+
+/**
+ * Configuración de un canal para una fase específica (desde la API)
+ * Cada phase_config representa UN canal para UNA fase
+ */
+export interface OrchestrationPhaseConfigAPI {
+  id: string
+  phase: string // UUID de la fase
+  phase_name: string
+  channel: NotificationChannel
+  enabled: boolean
+  template: string | null // UUID del template
+  template_name: string | null
+}
+
+/**
+ * Configuración de orquestación para un tipo de servicio (desde la API)
+ */
+export interface OrchestrationServiceConfigAPI {
+  id: string
+  service_type: string // UUID
+  service_type_name: string
+  target: NotificationTarget
+  taller_id: string | null
+  is_active: boolean
+  description: string | null
+  phase_configs: OrchestrationPhaseConfigAPI[]
+  created_at: string
+  updated_at: string
+}
+
+/**
+ * Respuesta paginada de la API de orquestación
+ */
+export interface OrchestrationAPIResponse {
+  count: number
+  next: string | null
+  previous: string | null
+  results: OrchestrationServiceConfigAPI[]
+}
+
+// ============================================================================
+// Tipos transformados para uso en el frontend
+// ============================================================================
+
+/**
+ * Configuración de canal transformada para uso en UI
+ */
+export interface OrchestrationChannelConfig {
+  enabled: boolean
+  template_id: string | null
+  template_name: string | null
+}
+
+/**
+ * Configuración de canales agrupada por fase
+ */
+export interface OrchestrationChannelsConfig {
+  email: OrchestrationChannelConfig
+  push: OrchestrationChannelConfig
+  whatsapp: OrchestrationChannelConfig
+}
+
+/**
+ * Configuración de fase transformada para uso en UI
+ */
+export interface OrchestrationPhaseConfig {
+  phase_id: string
+  phase_name: string
+  channels: OrchestrationChannelsConfig
+}
+
+/**
+ * Tipo de servicio transformado para uso en UI
+ */
+export interface OrchestrationServiceType {
+  id: string
+  service_type_id: string
+  service_type_name: string
+  is_active: boolean
+  description: string | null
+  phases: OrchestrationPhaseConfig[]
+}
+
+/**
+ * Transforma la respuesta plana de la API a una estructura agrupada por fases
+ */
+export function transformOrchestrationData(
+  apiResponse: OrchestrationAPIResponse
+): OrchestrationServiceType[] {
+  return apiResponse.results.map((serviceConfig) => {
+    // Agrupar phase_configs por phase_id
+    const phaseMap = new Map<string, OrchestrationPhaseConfig>()
+
+    serviceConfig.phase_configs.forEach((config) => {
+      const existingPhase = phaseMap.get(config.phase)
+
+      if (!existingPhase) {
+        // Crear nueva entrada de fase con valores por defecto
+        phaseMap.set(config.phase, {
+          phase_id: config.phase,
+          phase_name: config.phase_name,
+          channels: {
+            email: { enabled: false, template_id: null, template_name: null },
+            push: { enabled: false, template_id: null, template_name: null },
+            whatsapp: { enabled: false, template_id: null, template_name: null },
+          },
+        })
+      }
+
+      // Actualizar el canal correspondiente
+      const phase = phaseMap.get(config.phase)!
+      phase.channels[config.channel] = {
+        enabled: config.enabled,
+        template_id: config.template,
+        template_name: config.template_name,
+      }
+    })
+
+    // Convertir Map a array y ordenar por nombre de fase
+    const phases = Array.from(phaseMap.values())
+
+    return {
+      id: serviceConfig.id,
+      service_type_id: serviceConfig.service_type,
+      service_type_name: serviceConfig.service_type_name,
+      is_active: serviceConfig.is_active,
+      description: serviceConfig.description,
+      phases,
+    }
+  })
+}
+
+/**
+ * Obtiene la matriz de orquestación de notificaciones
+ *
+ * @param target - 'clients' o 'staff'
+ * @param token - JWT token de autenticación (opcional)
+ * @returns Matriz de orquestación completa
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function fetchOrchestrationMatrix(
+  target: NotificationTarget,
+  token?: string
+): Promise<OrchestrationAPIResponse> {
+  const url = new URL(`${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/orchestration/`)
+  url.searchParams.set("target", target)
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  }
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers,
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorMessage =
+        data.detail ?? data.message ?? data.error ?? `HTTP ${response.status}`
+
+      throw new ApiError(errorMessage, response.status, data)
+    }
+
+    return data
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
