@@ -282,6 +282,81 @@ export async function fetchNotificationTemplateById(
   }
 }
 
+/**
+ * Parámetros para obtener plantillas filtradas por contexto (fase × canal)
+ */
+export interface TemplateForContextParams {
+  service_type_id: string
+  phase_id: string
+  channel: NotificationChannel
+  target: NotificationTarget
+  subtype_id?: string | null
+}
+
+/**
+ * Obtiene plantillas filtradas por contexto específico (service_type + phase + channel + target)
+ * Usado para poblar dropdowns en la matriz de orquestación
+ *
+ * @param params - Parámetros de contexto (service_type_id, phase_id, channel, target, subtype_id opcional)
+ * @param token - JWT token de autenticación
+ * @returns Array de plantillas filtradas y ordenadas (específicas primero, luego genéricas)
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function fetchTemplatesForContext(
+  params: TemplateForContextParams,
+  token: string
+): Promise<NotificationTemplateAPI[]> {
+  const url = new URL(`${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/templates/for_context/`)
+
+  // Agregar parámetros obligatorios
+  url.searchParams.set("service_type_id", params.service_type_id)
+  url.searchParams.set("phase_id", params.phase_id)
+  url.searchParams.set("channel", params.channel)
+  url.searchParams.set("target", params.target)
+
+  // Agregar subtype_id si existe
+  if (params.subtype_id) {
+    url.searchParams.set("subtype_id", params.subtype_id)
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  }
+
+  try {
+    const response = await fetch(url.toString(), {
+      method: "GET",
+      headers,
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorMessage =
+        data.detail ?? data.message ?? data.error ?? `HTTP ${response.status}`
+
+      throw new ApiError(errorMessage, response.status, data)
+    }
+
+    // El endpoint retorna un array directo de templates
+    if (Array.isArray(data)) {
+      return data
+    }
+
+    // Fallback: retornar array vacío si la estructura no es la esperada
+    console.warn("fetchTemplatesForContext returned unexpected format:", data)
+    return []
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
+
 // ============================================================================
 // TEMPLATES MUTATION API - Crear y actualizar plantillas
 // ============================================================================
