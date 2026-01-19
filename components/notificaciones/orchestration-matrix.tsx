@@ -21,6 +21,10 @@ import {
   RefreshCw,
   AlertCircle,
   Inbox,
+  Loader2,
+  Save,
+  X,
+  CheckCircle2,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -42,11 +46,15 @@ import {
 } from "@/components/ui/collapsible"
 
 import { useOrchestrationMatrix } from "@/hooks/use-orchestration-matrix"
-import type {
-  OrchestrationServiceType,
-  OrchestrationPhaseConfig,
-  NotificationChannel,
+import {
+  updateOrchestrationMatrix,
+  transformOrchestrationData,
+  type OrchestrationServiceType,
+  type OrchestrationPhaseConfig,
+  type OrchestrationUpdateConfig,
+  type NotificationChannel,
 } from "@/lib/api/notifications"
+import { getClientAccessToken } from "@/lib/auth/actions"
 
 interface OrchestrationMatrixProps {
   target: "clients" | "staff"
@@ -93,11 +101,13 @@ function PhaseConfigRow({
   phaseIndex,
   onToggleChannel,
   onSelectTemplate,
+  disabled,
 }: {
   phaseConfig: OrchestrationPhaseConfig
   phaseIndex: number
   onToggleChannel: (phaseId: string, channel: NotificationChannel, enabled: boolean) => void
   onSelectTemplate: (phaseId: string, channel: NotificationChannel, templateId: string | null) => void
+  disabled?: boolean
 }) {
   const channels: NotificationChannel[] = ["email", "push", "whatsapp"]
 
@@ -140,6 +150,7 @@ function PhaseConfigRow({
                   checked={channelConfig.enabled}
                   onCheckedChange={(enabled) => onToggleChannel(phaseConfig.phase_id, channel, enabled)}
                   className="scale-90"
+                  disabled={disabled}
                 />
               </div>
 
@@ -191,12 +202,22 @@ function ServiceAccordionItem({
   onToggle,
   onToggleChannel,
   onSelectTemplate,
+  hasChanges,
+  isSaving,
+  onSave,
+  onCancel,
+  showSuccess,
 }: {
   service: OrchestrationServiceType
   isOpen: boolean
   onToggle: () => void
   onToggleChannel: (serviceId: string, phaseId: string, channel: NotificationChannel, enabled: boolean) => void
   onSelectTemplate: (serviceId: string, phaseId: string, channel: NotificationChannel, templateId: string | null) => void
+  hasChanges: boolean
+  isSaving: boolean
+  onSave: () => void
+  onCancel: () => void
+  showSuccess: boolean
 }) {
   // Count active channels for this service
   const activeChannelsCount = service.phases.reduce((acc, phase) => {
@@ -210,8 +231,20 @@ function ServiceAccordionItem({
 
   return (
     <Collapsible open={isOpen} onOpenChange={onToggle}>
-      <Card className="overflow-hidden dark:bg-gray-950 border-gray-200 dark:border-gray-800">
-        <CollapsibleTrigger asChild>
+      <motion.div
+        animate={
+          showSuccess
+            ? {
+                scale: [1, 1.02, 1],
+                borderColor: ["hsl(var(--border))", "hsl(142.1 76.2% 36.3%)", "hsl(var(--border))"],
+              }
+            : {}
+        }
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+        className="rounded-lg"
+      >
+        <Card className="overflow-hidden dark:bg-gray-950 border-gray-200 dark:border-gray-800">
+          <CollapsibleTrigger asChild>
           <button className="w-full p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20">
@@ -225,6 +258,16 @@ function ServiceAccordionItem({
               </div>
             </div>
             <div className="flex items-center gap-3">
+              {showSuccess && (
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </motion.div>
+              )}
               {activeChannelsCount > 0 && (
                 <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                   {activeChannelsCount} activos
@@ -273,12 +316,54 @@ function ServiceAccordionItem({
                   onSelectTemplate={(phaseId, channel, templateId) =>
                     onSelectTemplate(service.id, phaseId, channel, templateId)
                   }
+                  disabled={isSaving}
                 />
               ))}
             </div>
+
+            {/* Save/Cancel Buttons */}
+            {hasChanges && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800"
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onCancel}
+                  disabled={isSaving}
+                  className="gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Cancelar
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={onSave}
+                  disabled={isSaving}
+                  className="gap-2 bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800"
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Guardar Cambios
+                    </>
+                  )}
+                </Button>
+              </motion.div>
+            )}
           </div>
         </CollapsibleContent>
-      </Card>
+        </Card>
+      </motion.div>
     </Collapsible>
   )
 }
@@ -353,17 +438,40 @@ function OrchestrationEmpty({ target }: { target: "clients" | "staff" }) {
 
 // Main Component
 export function OrchestrationMatrix({ target }: OrchestrationMatrixProps) {
-  const { serviceTypes, isLoading, error, refresh } = useOrchestrationMatrix(target)
+  const { serviceTypes: originalServiceTypes, isLoading, error, refresh } = useOrchestrationMatrix(target)
   const [openServices, setOpenServices] = React.useState<Set<string>>(new Set())
   const hasInitialized = React.useRef(false)
 
+  // Local state for modified service types (deep copy for mutations)
+  const [modifiedServiceTypes, setModifiedServiceTypes] = React.useState<OrchestrationServiceType[]>([])
+
+  // Track which services have pending changes
+  const [serviceChanges, setServiceChanges] = React.useState<Record<string, boolean>>({})
+
+  // Track which services are currently saving
+  const [savingServices, setSavingServices] = React.useState<Record<string, boolean>>({})
+
+  // Track which services just saved successfully (for animation)
+  const [successServices, setSuccessServices] = React.useState<Record<string, boolean>>({})
+
+  // Initialize modified state when original data loads
+  React.useEffect(() => {
+    if (originalServiceTypes.length > 0) {
+      // Deep clone to avoid mutating original
+      setModifiedServiceTypes(JSON.parse(JSON.stringify(originalServiceTypes)))
+    }
+  }, [originalServiceTypes])
+
   // Open first service by default when data loads (only once)
   React.useEffect(() => {
-    if (serviceTypes.length > 0 && !hasInitialized.current) {
-      setOpenServices(new Set([serviceTypes[0].id]))
+    if (originalServiceTypes.length > 0 && !hasInitialized.current) {
+      setOpenServices(new Set([originalServiceTypes[0].id]))
       hasInitialized.current = true
     }
-  }, [serviceTypes])
+  }, [originalServiceTypes])
+
+  // Use modified service types for display
+  const serviceTypes = modifiedServiceTypes.length > 0 ? modifiedServiceTypes : originalServiceTypes
 
   const handleToggleService = (serviceId: string) => {
     setOpenServices((prev) => {
@@ -383,10 +491,41 @@ export function OrchestrationMatrix({ target }: OrchestrationMatrixProps) {
     channel: NotificationChannel,
     enabled: boolean
   ) => {
-    // TODO: Implement API call to update channel configuration
-    toast.success(enabled ? "Canal activado" : "Canal desactivado", {
-      description: `${channel} ${enabled ? "habilitado" : "deshabilitado"} para esta fase.`,
+    setModifiedServiceTypes((prev) => {
+      const newServices = [...prev]
+      const serviceIndex = newServices.findIndex((s) => s.id === serviceId)
+
+      if (serviceIndex === -1) return prev
+
+      const service = newServices[serviceIndex]
+      const phaseIndex = service.phases.findIndex((p) => p.phase_id === phaseId)
+
+      if (phaseIndex === -1) return prev
+
+      // Update channel enabled status
+      newServices[serviceIndex] = {
+        ...service,
+        phases: service.phases.map((phase, idx) =>
+          idx === phaseIndex
+            ? {
+                ...phase,
+                channels: {
+                  ...phase.channels,
+                  [channel]: {
+                    ...phase.channels[channel],
+                    enabled,
+                  },
+                },
+              }
+            : phase
+        ),
+      }
+
+      return newServices
     })
+
+    // Mark service as having changes
+    setServiceChanges((prev) => ({ ...prev, [serviceId]: true }))
   }
 
   const handleSelectTemplate = (
@@ -398,6 +537,109 @@ export function OrchestrationMatrix({ target }: OrchestrationMatrixProps) {
     // TODO: Implement API call to update template selection
     toast.success("Plantilla actualizada", {
       description: "La plantilla ha sido asignada correctamente.",
+    })
+  }
+
+  const handleSave = async (serviceId: string) => {
+    const modifiedService = modifiedServiceTypes.find((s) => s.id === serviceId)
+    if (!modifiedService) return
+
+    // Set saving state
+    setSavingServices((prev) => ({ ...prev, [serviceId]: true }))
+
+    try {
+      // Get auth token
+      const token = await getClientAccessToken()
+      if (!token) {
+        throw new Error("No se pudo obtener el token de autenticación")
+      }
+
+      // Flatten hierarchical data to API format
+      const configs: OrchestrationUpdateConfig[] = []
+      modifiedService.phases.forEach((phase) => {
+        ;(Object.keys(phase.channels) as NotificationChannel[]).forEach((channel) => {
+          const channelConfig = phase.channels[channel]
+          configs.push({
+            phase_id: phase.phase_id,
+            channel,
+            enabled: channelConfig.enabled,
+            template_id: channelConfig.template_id,
+          })
+        })
+      })
+
+      // Call API to update orchestration matrix
+      const response = await updateOrchestrationMatrix(
+        serviceId,
+        { configs },
+        token
+      )
+
+      // Transform response and update original data
+      const transformedResponse = transformOrchestrationData({
+        count: 1,
+        next: null,
+        previous: null,
+        results: [response],
+      })
+
+      // Update both original and modified state
+      const updatedService = transformedResponse[0]
+      setModifiedServiceTypes((prev) =>
+        prev.map((s) => (s.id === serviceId ? updatedService : s))
+      )
+
+      // Clear dirty state
+      setServiceChanges((prev) => {
+        const newChanges = { ...prev }
+        delete newChanges[serviceId]
+        return newChanges
+      })
+
+      // Trigger success animation
+      setSuccessServices((prev) => ({ ...prev, [serviceId]: true }))
+
+      // Clear success animation after 2 seconds
+      setTimeout(() => {
+        setSuccessServices((prev) => {
+          const newSuccess = { ...prev }
+          delete newSuccess[serviceId]
+          return newSuccess
+        })
+      }, 2000)
+
+      toast.success("Configuración guardada", {
+        description: "Los cambios han sido guardados correctamente.",
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Error desconocido"
+      toast.error("Error al guardar", {
+        description: errorMessage,
+      })
+      console.error("Error saving orchestration:", error)
+    } finally {
+      setSavingServices((prev) => {
+        const newSaving = { ...prev }
+        delete newSaving[serviceId]
+        return newSaving
+      })
+    }
+  }
+
+  const handleCancel = (serviceId: string) => {
+    // Revert to original values
+    const originalService = originalServiceTypes.find((s) => s.id === serviceId)
+    if (!originalService) return
+
+    setModifiedServiceTypes((prev) =>
+      prev.map((s) => (s.id === serviceId ? JSON.parse(JSON.stringify(originalService)) : s))
+    )
+
+    // Clear dirty state
+    setServiceChanges((prev) => {
+      const newChanges = { ...prev }
+      delete newChanges[serviceId]
+      return newChanges
     })
   }
 
@@ -439,6 +681,11 @@ export function OrchestrationMatrix({ target }: OrchestrationMatrixProps) {
           onToggle={() => handleToggleService(service.id)}
           onToggleChannel={handleToggleChannel}
           onSelectTemplate={handleSelectTemplate}
+          hasChanges={serviceChanges[service.id] || false}
+          isSaving={savingServices[service.id] || false}
+          onSave={() => handleSave(service.id)}
+          onCancel={() => handleCancel(service.id)}
+          showSuccess={successServices[service.id] || false}
         />
       ))}
     </div>

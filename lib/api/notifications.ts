@@ -906,3 +906,68 @@ export async function fetchOrchestrationMatrix(
     throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
   }
 }
+
+/**
+ * Configuración de actualización para un canal en una fase
+ */
+export interface OrchestrationUpdateConfig {
+  phase_id: string
+  channel: NotificationChannel
+  enabled: boolean
+  template_id: string | null
+}
+
+/**
+ * Payload para actualizar la matriz de orquestación
+ */
+export interface OrchestrationUpdatePayload {
+  configs: OrchestrationUpdateConfig[]
+}
+
+/**
+ * Actualiza la configuración de orquestación para un tipo de servicio
+ *
+ * @param orchestrationConfigId - ID de la configuración de orquestación (OrchestrationServiceType.id)
+ * @param payload - Configuraciones a actualizar (parcial)
+ * @param token - JWT token de autenticación
+ * @returns Configuración actualizada desde el servidor
+ *
+ * @throws {ApiError} Si la request falla
+ */
+export async function updateOrchestrationMatrix(
+  orchestrationConfigId: string,
+  payload: OrchestrationUpdatePayload,
+  token: string
+): Promise<OrchestrationServiceConfigAPI> {
+  const url = `${NOTIFICATIONS_API_BASE_URL}/api/v1/notifications/orchestration/${orchestrationConfigId}/update_matrix/`
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  }
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      const errorMessage =
+        data.detail ?? data.message ?? data.error ?? `HTTP ${response.status}`
+
+      throw new ApiError(errorMessage, response.status, data)
+    }
+
+    return data
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error
+    }
+
+    throw new ApiError(error instanceof Error ? error.message : "Network error", 0)
+  }
+}
