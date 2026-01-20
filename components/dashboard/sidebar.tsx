@@ -23,6 +23,7 @@ import {
   CarFront,
   Menu,
   Bell,
+  TrendingUp,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -113,6 +114,12 @@ const navItems: NavItem[] = [
     href: "/dashboard/reportes",
     icon: BarChart3,
     roles: [],
+  },
+  {
+    title: "Predictivo",
+    href: "/dashboard/predictivo",
+    icon: TrendingUp,
+    roles: ["admin", "manager"],
   },
   {
     title: "Notificaciones",
