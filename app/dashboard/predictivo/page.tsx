@@ -1,13 +1,11 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { PredictiveFilters } from "@/components/predictivo/predictive-filters"
-import { OverloadAlert } from "@/components/predictivo/overload-alert"
-import { DemandChart } from "@/components/predictivo/demand-chart"
-import { QuickStats } from "@/components/predictivo/quick-stats"
-import { Recommendations } from "@/components/predictivo/recommendations"
-import { ModelConfig } from "@/components/predictivo/model-config"
-import { HistoricalComparisonSection } from "@/components/predictivo/historical-comparison"
+import { CommandHeader } from "@/components/predictivo/command-header"
+import { KpiRibbon } from "@/components/predictivo/kpi-ribbon"
+import { HeroChart } from "@/components/predictivo/hero-chart"
+import { OperationalPanel } from "@/components/predictivo/operational-panel"
+import { ComparativeFooter } from "@/components/predictivo/comparative-footer"
 import {
   generateWeeklyDemand,
   generateMonthlyDemand,
@@ -15,11 +13,9 @@ import {
   generateHistoricalComparison,
   normalRecommendations,
   overloadRecommendations,
-  modelMetrics,
   isOverloadCondition,
 } from "@/lib/fixtures/predictive-data"
 import { motion } from "framer-motion"
-import { TrendingUp } from "lucide-react"
 
 export default function PredictivoPage() {
   // Filter state
@@ -57,82 +53,63 @@ export default function PredictivoPage() {
   )
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-1">
-          <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-            <TrendingUp className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            Predictivo de Demanda
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Análisis y proyección de la demanda de servicios en talleres
-          </p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <PredictiveFilters
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900/50 -m-6 overflow-x-hidden">
+      {/* Command Header - Unified Top Bar */}
+      <CommandHeader
         taller={taller}
         marca={marca}
         modelo={modelo}
+        range={range}
+        isOverload={isOverload}
         onTallerChange={setTaller}
         onMarcaChange={setMarca}
         onModeloChange={setModelo}
+        onRangeChange={setRange}
       />
 
-      {/* Overload Alert Banner (Conditional) */}
-      {isOverload && <OverloadAlert taller={taller} marca={marca} modelo={modelo} />}
+      {/* Main Content Area */}
+      <div className="space-y-6 p-6">
+        {/* KPI Ribbon - Quick Metrics */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <KpiRibbon stats={quickStats} />
+        </motion.div>
 
-      {/* Main Grid: Chart + Sidebar */}
-      <div className="grid gap-6 lg:grid-cols-12">
-        {/* Chart Column (Left - 8 cols) */}
-        <div className="lg:col-span-8">
+        {/* Main Canvas - Asymmetric Layout */}
+        <div className="grid gap-6 lg:grid-cols-12">
+          {/* Left Column: Hero Chart (9 cols) */}
           <motion.div
+            className="lg:col-span-9 overflow-hidden"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            <DemandChart data={chartData} range={range} onRangeChange={setRange} />
-          </motion.div>
-        </div>
-
-        {/* Sidebar Column (Right - 4 cols) */}
-        <div className="space-y-6 lg:col-span-4">
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
-            <QuickStats stats={quickStats} />
+            <HeroChart data={chartData} range={range} />
           </motion.div>
 
+          {/* Right Column: Operational Panel (3 cols) */}
           <motion.div
+            className="lg:col-span-3"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
           >
-            <Recommendations recommendations={recommendations} />
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            <ModelConfig metrics={modelMetrics} />
+            <OperationalPanel recommendations={recommendations} />
           </motion.div>
         </div>
-      </div>
 
-      {/* Historical Comparison Section (Bottom) */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.4 }}
-      >
-        <HistoricalComparisonSection comparisons={historicalComparisons} />
-      </motion.div>
+        {/* Footer: Comparative Analysis */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+        >
+          <ComparativeFooter comparisons={historicalComparisons} />
+        </motion.div>
+      </div>
     </div>
   )
 }

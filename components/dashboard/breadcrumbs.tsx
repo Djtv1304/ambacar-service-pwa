@@ -27,6 +27,7 @@ const pathLabels: Record<string, string> = {
   notificaciones: "Notificaciones",
   preferencias: "Preferencias",
   recordatorios: "Recordatorios",
+  predictivo: "Predicción de Demanda",
 }
 
 export function Breadcrumbs() {
