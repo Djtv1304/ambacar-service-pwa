@@ -112,9 +112,9 @@ export function CommandHeader({
           isSticky ? "pt-6" : "pt-0"
         )}
       >
-        <div className="flex flex-col gap-2 p-2 sm:gap-3 sm:p-3 lg:gap-4 lg:p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-2 p-2 sm:gap-3 sm:p-3 xl:gap-4 xl:p-4 xl:flex-row xl:items-center xl:justify-between">
           {/* Top row: Title only (mobile) */}
-          <div className="flex items-center gap-1.5 min-w-0 lg:hidden">
+          <div className="flex items-center gap-1.5 min-w-0 xl:hidden">
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 shrink-0">
               <TrendingUp className="h-3 w-3 text-white" />
             </div>
@@ -124,7 +124,7 @@ export function CommandHeader({
           </div>
 
           {/* Desktop: Left side with Title + Filters */}
-          <div className="hidden lg:flex lg:flex-row lg:items-center lg:gap-6">
+          <div className="hidden xl:flex xl:flex-row xl:items-center xl:gap-6">
             {/* Title with Icon */}
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700">
@@ -195,7 +195,7 @@ export function CommandHeader({
           </div>
 
           {/* Mobile: Filters row with horizontal scroll */}
-          <div className="lg:hidden -mx-2 px-2 overflow-x-auto">
+          <div className="xl:hidden -mx-2 px-2 overflow-x-auto">
             <div className="flex items-center gap-1.5 min-w-max">
               <Select value={taller} onValueChange={onTallerChange}>
                 <SelectTrigger className="h-7 w-auto border-0 bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-xs">
@@ -255,7 +255,7 @@ export function CommandHeader({
           </div>
 
           {/* Mobile/Tablet: Range Control + Status (50% each) */}
-          <div className="flex items-center gap-2 lg:hidden">
+          <div className="flex items-center gap-2 xl:hidden">
             {/* Time Range Control - Mobile (50%) */}
             <div className="flex-1 flex items-center justify-center gap-0.5 rounded-lg bg-gray-100 dark:bg-gray-900 p-0.5">
               <Button
@@ -372,7 +372,7 @@ export function CommandHeader({
           </div>
 
           {/* Desktop: Status Indicator Center */}
-          <div className="hidden lg:flex lg:items-center lg:justify-center lg:flex-1">
+          <div className="hidden xl:flex xl:items-center xl:justify-center xl:flex-1">
             {isOverload ? (
               <Popover>
                 <PopoverTrigger asChild>
@@ -458,7 +458,7 @@ export function CommandHeader({
           </div>
 
           {/* Desktop: Time Range Control */}
-          <div className="hidden lg:flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-gray-900 p-1">
+          <div className="hidden xl:flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-gray-900 p-1">
             <Button
               variant={range === "weekly" ? "default" : "ghost"}
               size="sm"

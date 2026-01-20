@@ -53,7 +53,7 @@ export default function PredictivoPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900/50 -m-6 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900/50 -m-6">
       {/* Command Header - Unified Top Bar */}
       <CommandHeader
         taller={taller}
@@ -78,11 +78,11 @@ export default function PredictivoPage() {
           <KpiRibbon stats={quickStats} />
         </motion.div>
 
-        {/* Main Canvas - Asymmetric Layout */}
-        <div className="grid gap-6 lg:grid-cols-12">
-          {/* Left Column: Hero Chart (9 cols) */}
+        {/* Main Canvas - Flex layout with auto-wrap */}
+        <div className="flex flex-wrap gap-6">
+          {/* Hero Chart - Takes available space, min 300px to force wrap */}
           <motion.div
-            className="lg:col-span-9 overflow-hidden"
+            className="min-w-[300px] flex-[1_1_600px]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
@@ -90,9 +90,9 @@ export default function PredictivoPage() {
             <HeroChart data={chartData} range={range} />
           </motion.div>
 
-          {/* Right Column: Operational Panel (3 cols) */}
+          {/* Operational Panel - Grows to 100% when wrapped, fixed width when inline */}
           <motion.div
-            className="lg:col-span-3"
+            className="flex-[1_1_280px] xl:flex-[0_0_320px]"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}

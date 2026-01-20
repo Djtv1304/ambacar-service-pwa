@@ -73,12 +73,9 @@ export function HeroChart({ data, range }: HeroChartProps) {
   useEffect(() => {
     if (!chartContainerRef.current || !mounted) return
 
-    // Responsive height
-    const isMobile = window.innerWidth < 768
-    const chartHeight = isMobile ? 350 : 450
-
-    // Create chart instance
+    // Create chart instance with autoSize for native responsive behavior
     const chart = createChart(chartContainerRef.current, {
+      autoSize: true, // Native responsive - chart adjusts to container
       layout: {
         background: { type: ColorType.Solid, color: chartColors.backgroundColor },
         textColor: chartColors.textColor,
@@ -87,15 +84,31 @@ export function HeroChart({ data, range }: HeroChartProps) {
         vertLines: { color: chartColors.gridColor },
         horzLines: { color: chartColors.gridColor },
       },
-      width: chartContainerRef.current.clientWidth,
-      height: chartHeight,
       timeScale: {
         borderColor: chartColors.gridColor,
         timeVisible: true,
         secondsVisible: false,
+        fixLeftEdge: true, // Prevent scrolling past left edge
+        fixRightEdge: true, // Prevent scrolling past right edge
+        lockVisibleTimeRangeOnResize: true, // Maintain visible range on resize
       },
       rightPriceScale: {
         borderColor: chartColors.gridColor,
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
+      },
+      handleScroll: {
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
+        vertTouchDrag: false, // Allow page scroll on vertical touch
+      },
+      handleScale: {
+        axisPressedMouseMove: true,
+        mouseWheel: true,
+        pinch: true,
       },
       crosshair: {
         mode: 1,
@@ -145,7 +158,7 @@ export function HeroChart({ data, range }: HeroChartProps) {
       title: "Histórico",
       priceFormat: {
         type: "custom",
-        formatter: (price: number) => `${Math.round(price)} servicios`,
+        formatter: (price: number) => `${Math.round(price)}`,
       },
     })
     historicalSeriesRef.current = historicalSeries
@@ -159,7 +172,7 @@ export function HeroChart({ data, range }: HeroChartProps) {
       title: "Proyectado",
       priceFormat: {
         type: "custom",
-        formatter: (price: number) => `${Math.round(price)} servicios`,
+        formatter: (price: number) => `${Math.round(price)}`,
       },
     })
     projectedSeriesRef.current = projectedSeries
@@ -187,32 +200,11 @@ export function HeroChart({ data, range }: HeroChartProps) {
       }
     })
 
-    // Fit content
+    // Fit all content into visible area
     chart.timeScale().fitContent()
-
-    // Handle resize
-    const handleResize = () => {
-      if (chartContainerRef.current) {
-        const newIsMobile = window.innerWidth < 768
-        const newHeight = newIsMobile ? 350 : 450
-        chart.applyOptions({
-          width: chartContainerRef.current.clientWidth,
-          height: newHeight,
-        })
-      }
-    }
-
-    const resizeObserver = new ResizeObserver(handleResize)
-    if (chartContainerRef.current) {
-      resizeObserver.observe(chartContainerRef.current)
-    }
-
-    window.addEventListener("resize", handleResize)
 
     // Cleanup
     return () => {
-      window.removeEventListener("resize", handleResize)
-      resizeObserver.disconnect()
       chart.remove()
     }
   }, [data, mounted, chartTheme])
@@ -262,171 +254,167 @@ export function HeroChart({ data, range }: HeroChartProps) {
   }, [chartTheme, mounted])
 
   return (
-    <div className="w-full overflow-x-auto">
+    <div
+      className={`relative overflow-hidden rounded-xl border shadow-sm transition-colors duration-300 ${
+        isDark
+          ? "border-gray-800 bg-gray-950"
+          : "border-gray-200 bg-white"
+      }`}
+    >
+      {/* Chart Title - Integrated */}
       <div
-        className={`relative overflow-hidden rounded-xl border shadow-sm transition-colors duration-300 min-w-[500px] ${
+        className={`flex items-center justify-between border-b px-3 py-2 sm:px-4 sm:py-3 ${
           isDark
-            ? "border-gray-800 bg-gray-950"
-            : "border-gray-200 bg-white"
+            ? "border-gray-800 bg-gradient-to-r from-gray-900/50 to-transparent"
+            : "border-gray-200 bg-gradient-to-r from-gray-50 to-transparent"
         }`}
       >
-        {/* Chart Title - Integrated */}
-        <div
-          className={`flex items-center justify-between border-b px-4 py-3 sm:px-6 sm:py-4 ${
+        <div className="min-w-0 flex-1">
+          <h3
+            className={`text-sm font-semibold sm:text-base ${
+              isDark ? "text-gray-100" : "text-gray-900"
+            }`}
+          >
+            Proyección de Demanda
+          </h3>
+          <p
+            className={`text-[10px] sm:text-xs mt-0.5 ${
+              isDark ? "text-gray-400" : "text-gray-600"
+            }`}
+          >
+            {range === "weekly" ? "7 días + 7 días" : "30 días + 30 días"}
+          </p>
+        </div>
+
+        {/* Theme Toggle Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={toggleChartTheme}
+          className={`h-7 px-2 gap-1.5 shrink-0 ${
             isDark
-              ? "border-gray-800 bg-gradient-to-r from-gray-900/50 to-transparent"
-              : "border-gray-200 bg-gradient-to-r from-gray-50 to-transparent"
+              ? "border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-gray-100"
+              : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
           }`}
         >
-          <div>
-            <h3
-              className={`text-base font-semibold sm:text-lg ${
+          {isDark ? (
+            <>
+              <Sun className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline text-xs">Claro</span>
+            </>
+          ) : (
+            <>
+              <Moon className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline text-xs">Oscuro</span>
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Chart Canvas with Tooltip - Fixed height for autoSize */}
+      <div className="relative">
+        <div ref={chartContainerRef} className="w-full h-[280px] sm:h-[350px] lg:h-[400px]" />
+
+        {/* Custom Tracking Tooltip */}
+        {tooltipData && (
+          <div
+            className={`pointer-events-none absolute z-10 min-w-[140px] rounded-lg border p-2 shadow-lg transition-all duration-150 ${
+              isDark
+                ? "border-gray-700 bg-gray-900/95 backdrop-blur-sm"
+                : "border-gray-200 bg-white/95 backdrop-blur-sm"
+            }`}
+            style={{
+              left: Math.min(tooltipData.x + 12, (chartContainerRef.current?.clientWidth || 300) - 160),
+              top: Math.max(tooltipData.y - 50, 10),
+            }}
+          >
+            {/* Tooltip Header */}
+            <div className="flex items-center gap-1.5 mb-1">
+              <div
+                className={`flex h-5 w-5 items-center justify-center rounded-full ${
+                  tooltipData.type === "projected"
+                    ? "bg-orange-500/20"
+                    : "bg-blue-500/20"
+                }`}
+              >
+                {tooltipData.type === "projected" ? (
+                  <TrendingUp
+                    className={`h-2.5 w-2.5 ${
+                      isDark ? "text-orange-400" : "text-orange-600"
+                    }`}
+                  />
+                ) : (
+                  <Calendar
+                    className={`h-2.5 w-2.5 ${isDark ? "text-blue-400" : "text-blue-600"}`}
+                  />
+                )}
+              </div>
+              <span
+                className={`text-[10px] font-medium uppercase tracking-wide ${
+                  tooltipData.type === "projected"
+                    ? isDark
+                      ? "text-orange-400"
+                      : "text-orange-600"
+                    : isDark
+                      ? "text-blue-400"
+                      : "text-blue-600"
+                }`}
+              >
+                {tooltipData.type === "projected" ? "Proyectado" : "Histórico"}
+              </span>
+            </div>
+
+            {/* Date */}
+            <p
+              className={`text-[10px] mb-0.5 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+            >
+              {formatTooltipDate(tooltipData.date)}
+            </p>
+
+            {/* Value */}
+            <p
+              className={`text-base font-bold ${
                 isDark ? "text-gray-100" : "text-gray-900"
               }`}
             >
-              Proyección de Demanda
-            </h3>
-            <p
-              className={`text-xs sm:text-sm mt-0.5 ${
-                isDark ? "text-gray-400" : "text-gray-600"
-              }`}
-            >
-              {range === "weekly"
-                ? "Últimos 7 días + próximos 7 días"
-                : "Últimos 30 días + próximos 30 días"}
-            </p>
-          </div>
-
-          {/* Theme Toggle Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleChartTheme}
-            className={`gap-2 ${
-              isDark
-                ? "border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-gray-100"
-                : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
-            }`}
-          >
-            {isDark ? (
-              <>
-                <Sun className="h-4 w-4" />
-                <span className="hidden sm:inline">Modo Claro</span>
-              </>
-            ) : (
-              <>
-                <Moon className="h-4 w-4" />
-                <span className="hidden sm:inline">Modo Oscuro</span>
-              </>
-            )}
-          </Button>
-        </div>
-
-        {/* Chart Canvas with Tooltip */}
-        <div className="relative p-2 sm:p-4">
-          <div ref={chartContainerRef} className="w-full" />
-
-          {/* Custom Tracking Tooltip */}
-          {tooltipData && (
-            <div
-              className={`pointer-events-none absolute z-10 min-w-[160px] rounded-lg border p-3 shadow-lg transition-all duration-150 ${
-                isDark
-                  ? "border-gray-700 bg-gray-900/95 backdrop-blur-sm"
-                  : "border-gray-200 bg-white/95 backdrop-blur-sm"
-              }`}
-              style={{
-                left: tooltipData.x + 16,
-                top: Math.max(tooltipData.y - 60, 10),
-              }}
-            >
-              {/* Tooltip Header */}
-              <div className="flex items-center gap-2 mb-2">
-                <div
-                  className={`flex h-6 w-6 items-center justify-center rounded-full ${
-                    tooltipData.type === "projected"
-                      ? "bg-orange-500/20"
-                      : "bg-blue-500/20"
-                  }`}
-                >
-                  {tooltipData.type === "projected" ? (
-                    <TrendingUp
-                      className={`h-3 w-3 ${
-                        isDark ? "text-orange-400" : "text-orange-600"
-                      }`}
-                    />
-                  ) : (
-                    <Calendar
-                      className={`h-3 w-3 ${isDark ? "text-blue-400" : "text-blue-600"}`}
-                    />
-                  )}
-                </div>
-                <span
-                  className={`text-xs font-medium uppercase tracking-wide ${
-                    tooltipData.type === "projected"
-                      ? isDark
-                        ? "text-orange-400"
-                        : "text-orange-600"
-                      : isDark
-                        ? "text-blue-400"
-                        : "text-blue-600"
-                  }`}
-                >
-                  {tooltipData.type === "projected" ? "Proyectado" : "Histórico"}
-                </span>
-              </div>
-
-              {/* Date */}
-              <p
-                className={`text-xs mb-1 ${isDark ? "text-gray-400" : "text-gray-500"}`}
-              >
-                {formatTooltipDate(tooltipData.date)}
-              </p>
-
-              {/* Value */}
-              <p
-                className={`text-xl font-bold ${
-                  isDark ? "text-gray-100" : "text-gray-900"
+              {tooltipData.value}{" "}
+              <span
+                className={`text-xs font-normal ${
+                  isDark ? "text-gray-400" : "text-gray-500"
                 }`}
               >
-                {tooltipData.value}{" "}
-                <span
-                  className={`text-sm font-normal ${
-                    isDark ? "text-gray-400" : "text-gray-500"
-                  }`}
-                >
-                  servicios
-                </span>
-              </p>
-            </div>
-          )}
-        </div>
+                serv.
+              </span>
+            </p>
+          </div>
+        )}
+      </div>
 
-        {/* Legend - Bottom Integrated */}
-        <div
-          className={`flex flex-wrap items-center justify-center gap-4 sm:gap-6 border-t px-4 py-2 sm:px-6 sm:py-3 ${
-            isDark ? "border-gray-800 bg-gray-900/50" : "border-gray-200 bg-gray-50"
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <div className="h-0.5 w-6 sm:w-8 bg-blue-500 rounded-full" />
-            <span
-              className={`text-xs sm:text-sm font-medium ${
-                isDark ? "text-gray-300" : "text-gray-700"
-              }`}
-            >
-              Histórico
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="h-0.5 w-6 sm:w-8 border-t-2 border-dashed border-orange-500 rounded-full" />
-            <span
-              className={`text-xs sm:text-sm font-medium ${
-                isDark ? "text-gray-300" : "text-gray-700"
-              }`}
-            >
-              Proyectado
-            </span>
-          </div>
+      {/* Legend - Bottom Integrated */}
+      <div
+        className={`flex items-center justify-center gap-4 border-t px-3 py-1.5 sm:px-4 sm:py-2 ${
+          isDark ? "border-gray-800 bg-gray-900/50" : "border-gray-200 bg-gray-50"
+        }`}
+      >
+        <div className="flex items-center gap-1.5">
+          <div className="h-0.5 w-5 bg-blue-500 rounded-full" />
+          <span
+            className={`text-[10px] sm:text-xs font-medium ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
+          >
+            Histórico
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-0.5 w-5 border-t-2 border-dashed border-orange-500 rounded-full" />
+          <span
+            className={`text-[10px] sm:text-xs font-medium ${
+              isDark ? "text-gray-300" : "text-gray-700"
+            }`}
+          >
+            Proyectado
+          </span>
         </div>
       </div>
     </div>
