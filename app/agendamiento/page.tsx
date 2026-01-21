@@ -160,11 +160,30 @@ export default function AgendamientoPage() {
         const user = await getCurrentUser()
         if (user) {
           setLoggedInUser(user)
-          // Also check if we have client data in sessionStorage
+
+          // Si hay usuario autenticado, mostrar "logged-in"
+          // Los datos del cliente se pueden reconstruir desde el usuario
+          setStep("logged-in")
+
+          // Verificar si hay datos en sessionStorage, si no, reconstruirlos
           const clienteData = sessionStorage.getItem("agendamiento_cliente")
-          if (clienteData) {
-            // User is fully authenticated
-            setStep("logged-in")
+          if (!clienteData) {
+            // Reconstruir datos del cliente desde el usuario autenticado
+            const now = new Date()
+            const cliente = {
+              id: user.id?.toString() || "",
+              cedula: user.cedula || "",
+              nombre: user.first_name || "",
+              apellido: user.last_name || "",
+              email: user.email || "",
+              telefono: user.phone || "",
+              direccion: "",
+              ciudad: "",
+              vehiculos: [],
+              createdAt: now,
+              updatedAt: now,
+            }
+            sessionStorage.setItem("agendamiento_cliente", JSON.stringify(cliente))
           }
 
           // Check token expiry time periodically

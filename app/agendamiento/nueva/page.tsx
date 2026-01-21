@@ -94,6 +94,7 @@ export default function NuevaCitaPage() {
   // OCR state
   const [showEscanearMatricula, setShowEscanearMatricula] = useState(false)
   const [showOCRTip, setShowOCRTip] = useState(false)
+  const [showOCRVerificationAlert, setShowOCRVerificationAlert] = useState(false)
 
   // Forms
   const vehiculoForm = useForm<VehiculoFormData>({
@@ -328,7 +329,10 @@ export default function NuevaCitaPage() {
   }, [nuevoVehiculo, currentStep])
 
   // Handle OCR data extracted from matricula
-  const handleDatosMatriculaExtraidos = (datos: any) => {
+  const handleDatosMatriculaExtraidos = (response: any) => {
+    const datos = response.datos_extraidos || response
+    const sugerenciaIA = response.sugerencia_ia
+
     // Autocompletar los campos con los datos extraídos
     if (datos.PLACA_ACTUAL) {
       // Formato AAA2222
@@ -338,41 +342,128 @@ export default function NuevaCitaPage() {
     if (datos.ANIO_MODELO) {
       vehiculoForm.setValue("anio", parseInt(datos.ANIO_MODELO))
     }
-    if (datos.COLOR) {
+    // Usar COLOR_1 de la respuesta de la API
+    if (datos.COLOR_1) {
       // Capitalizar primera letra, resto minúsculas
-      const colorFormatted = datos.COLOR.charAt(0).toUpperCase() + datos.COLOR.slice(1).toLowerCase()
+      const colorFormatted = datos.COLOR_1.charAt(0).toUpperCase() + datos.COLOR_1.slice(1).toLowerCase()
       vehiculoForm.setValue("color", colorFormatted)
     }
-    if (datos.NUMERO_MOTOR || datos.VIN) {
+    // Usar NUMERO_VIN_CHASIS de la respuesta de la API
+    if (datos.NUMERO_VIN_CHASIS) {
       // VIN en mayúsculas, sin caracteres I, O, Q
-      const vinValue = (datos.VIN || datos.NUMERO_MOTOR || "").toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, "").slice(0, 17)
+      const vinValue = datos.NUMERO_VIN_CHASIS.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, "").slice(0, 17)
       vehiculoForm.setValue("vin", vinValue)
     }
 
-    // Buscar marca en el catálogo
-    if (datos.MARCA && catalogoMarcas.length > 0) {
-      const marcaEncontrada = catalogoMarcas.find(
-        (m) => m.nombre.toLowerCase() === datos.MARCA.toLowerCase()
-      )
+    // Función helper para normalizar strings (sin espacios, minúsculas)
+    const normalizar = (str: string) => str.toLowerCase().replace(/\s+/g, "")
 
-      if (marcaEncontrada) {
-        setSelectedMarca(marcaEncontrada.id.toString())
-        vehiculoForm.setValue("marca", marcaEncontrada.id.toString())
+    let modeloEncontrado = false
 
-        // Buscar modelo en el catálogo
-        if (datos.MODELO) {
-          const modeloEncontrado = marcaEncontrada.modelos.find(
-            (mod) =>
-              mod.nombre.toLowerCase().includes(datos.MODELO.toLowerCase()) ||
-              datos.MODELO.toLowerCase().includes(mod.nombre.toLowerCase())
+    // Buscar marca y modelo en el catálogo
+    if (catalogoMarcas.length > 0) {
+      // Primero intentar match exacto del MODELO del OCR (sin considerar espacios)
+      if (datos.MODELO) {
+        const modeloNormalizado = normalizar(datos.MODELO)
+
+        // Buscar en todas las marcas
+        for (const marca of catalogoMarcas) {
+          const modeloMatch = marca.modelos.find(
+            (mod) => normalizar(mod.nombre) === modeloNormalizado
           )
 
-          if (modeloEncontrado) {
-            setSelectedModelo(modeloEncontrado.id.toString())
-            vehiculoForm.setValue("modelo", modeloEncontrado.id.toString())
-          } else {
-            // Modelo no encontrado, buscar opción "Otro"
-            const otroModelo = marcaEncontrada.modelos.find(
+          if (modeloMatch) {
+            setSelectedMarca(marca.id.toString())
+            vehiculoForm.setValue("marca", marca.id.toString())
+            setSelectedModelo(modeloMatch.id.toString())
+            vehiculoForm.setValue("modelo", modeloMatch.id.toString())
+            modeloEncontrado = true
+            break
+          }
+        }
+      }
+
+      // Si no se encontró match exacto, usar sugerencia de IA
+      if (!modeloEncontrado && sugerenciaIA) {
+        if (sugerenciaIA.MARCA_OTRO) {
+          const marcaNormalizadaIA = normalizar(sugerenciaIA.MARCA_OTRO)
+
+          // Buscar marca de IA
+          const marcaIA = catalogoMarcas.find(
+            (m) => normalizar(m.nombre) === marcaNormalizadaIA
+          )
+
+          if (marcaIA) {
+            setSelectedMarca(marcaIA.id.toString())
+            vehiculoForm.setValue("marca", marcaIA.id.toString())
+
+            if (sugerenciaIA.MODELO_OTRO) {
+              const modeloNormalizadoIA = normalizar(sugerenciaIA.MODELO_OTRO)
+
+              // Buscar modelo de IA en esa marca (match exacto)
+              let modeloIA = marcaIA.modelos.find(
+                (mod) => normalizar(mod.nombre) === modeloNormalizadoIA
+              )
+
+              // Si no hay match exacto, buscar match parcial (el modelo del catálogo está contenido en la sugerencia)
+              if (!modeloIA) {
+                modeloIA = marcaIA.modelos.find(
+                  (mod) => {
+                    const modNormalizado = normalizar(mod.nombre)
+                    return modeloNormalizadoIA.includes(modNormalizado) || modNormalizado.includes(modeloNormalizadoIA)
+                  }
+                )
+              }
+
+              if (modeloIA) {
+                setSelectedModelo(modeloIA.id.toString())
+                vehiculoForm.setValue("modelo", modeloIA.id.toString())
+                modeloEncontrado = true
+              } else {
+                // Marca encontrada pero modelo no, buscar "Otro" en modelos de esa marca
+                const otroModelo = marcaIA.modelos.find(
+                  (mod) => mod.nombre.toLowerCase() === "otro"
+                )
+                if (otroModelo) {
+                  setSelectedModelo(otroModelo.id.toString())
+                  vehiculoForm.setValue("modelo", otroModelo.id.toString())
+                  modeloEncontrado = true
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Si aún no se encontró, buscar marca original del OCR
+      if (!modeloEncontrado && datos.MARCA) {
+        const marcaNormalizada = normalizar(datos.MARCA)
+        const marcaEncontrada = catalogoMarcas.find(
+          (m) => normalizar(m.nombre) === marcaNormalizada
+        )
+
+        if (marcaEncontrada) {
+          setSelectedMarca(marcaEncontrada.id.toString())
+          vehiculoForm.setValue("marca", marcaEncontrada.id.toString())
+
+          // Buscar opción "Otro" en modelos
+          const otroModelo = marcaEncontrada.modelos.find(
+            (mod) => mod.nombre.toLowerCase() === "otro"
+          )
+          if (otroModelo) {
+            setSelectedModelo(otroModelo.id.toString())
+            vehiculoForm.setValue("modelo", otroModelo.id.toString())
+          }
+        } else {
+          // Marca no encontrada, buscar opción "Otro"
+          const otraMarca = catalogoMarcas.find(
+            (m) => m.nombre.toLowerCase() === "otro"
+          )
+          if (otraMarca) {
+            setSelectedMarca(otraMarca.id.toString())
+            vehiculoForm.setValue("marca", otraMarca.id.toString())
+
+            const otroModelo = otraMarca.modelos.find(
               (mod) => mod.nombre.toLowerCase() === "otro"
             )
             if (otroModelo) {
@@ -381,29 +472,15 @@ export default function NuevaCitaPage() {
             }
           }
         }
-      } else {
-        // Marca no encontrada, buscar opción "Otro"
-        const otraMarca = catalogoMarcas.find(
-          (m) => m.nombre.toLowerCase() === "otro"
-        )
-        if (otraMarca) {
-          setSelectedMarca(otraMarca.id.toString())
-          vehiculoForm.setValue("marca", otraMarca.id.toString())
-
-          const otroModelo = otraMarca.modelos.find(
-            (mod) => mod.nombre.toLowerCase() === "otro"
-          )
-          if (otroModelo) {
-            setSelectedModelo(otroModelo.id.toString())
-            vehiculoForm.setValue("modelo", otroModelo.id.toString())
-          }
-        }
       }
     }
 
     sonnerToast.success("Datos extraídos exitosamente", {
       description: "Los campos han sido autocompletados con la información de la matrícula.",
     })
+
+    // Mostrar alerta de verificación OCR/IA
+    setShowOCRVerificationAlert(true)
 
     // Hide the tip since user already used OCR
     setShowOCRTip(false)
@@ -1132,6 +1209,25 @@ export default function NuevaCitaPage() {
                               )}
                             </div>
                           </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Alerta de verificación OCR/IA */}
+                    <AnimatePresence>
+                      {showOCRVerificationAlert && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10, height: 0 }}
+                          animate={{ opacity: 1, y: 0, height: "auto" }}
+                          exit={{ opacity: 0, y: -10, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <Alert className="mt-4 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
+                            <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                            <AlertDescription className="text-amber-900 dark:text-amber-200 text-sm">
+                              <strong>Información extraída con OCR e IA.</strong> Los datos han sido autocompletados automáticamente. Por favor, verifica que toda la información sea correcta antes de continuar.
+                            </AlertDescription>
+                          </Alert>
                         </motion.div>
                       )}
                     </AnimatePresence>

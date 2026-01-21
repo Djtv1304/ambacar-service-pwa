@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Loader2, Car, ScanLine } from "lucide-react"
+import { Loader2, Car, ScanLine, AlertCircle } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -58,6 +58,8 @@ export function RegistrarVehiculoModal({
     marca?: string
     modelo?: string
   } | null>(null)
+  const [showOCRVerificationAlert, setShowOCRVerificationAlert] = useState(false)
+  const [apiError, setApiError] = useState<string | null>(null)
 
   const {
     register,
@@ -73,6 +75,8 @@ export function RegistrarVehiculoModal({
       modelo: "",
       anio: new Date().getFullYear(),
       kilometraje: kilometrajeInicial,
+      color: "",
+      vin: "",
     },
   })
 
@@ -105,84 +109,171 @@ export function RegistrarVehiculoModal({
         modelo: "",
         anio: new Date().getFullYear(),
         kilometraje: kilometrajeInicial,
+        color: "",
+        vin: "",
       })
       setSelectedMarca("")
       setSelectedModelo("")
       setDatosOCRNoEncontrados(null)
+      setApiError(null)
     }
   }, [open, reset, kilometrajeInicial])
 
-  const handleDatosMatriculaExtraidos = (datos: any) => {
+  const handleDatosMatriculaExtraidos = (response: any) => {
     // Resetear datos no encontrados
     setDatosOCRNoEncontrados(null)
 
+    const datos = response.datos_extraidos || response
+    const sugerenciaIA = response.sugerencia_ia
+
     // Autocompletar los campos con los datos extraídos
     if (datos.PLACA_ACTUAL) {
-      setValue("placa", datos.PLACA_ACTUAL)
+      const placaFormatted = datos.PLACA_ACTUAL.toUpperCase().replace(/[^A-Z0-9]/g, "")
+      setValue("placa", placaFormatted)
     }
     if (datos.ANIO_MODELO) {
       setValue("anio", parseInt(datos.ANIO_MODELO))
     }
+    // Usar COLOR_1 de la respuesta de la API
+    if (datos.COLOR_1) {
+      // Capitalizar primera letra, resto minúsculas
+      const colorFormatted = datos.COLOR_1.charAt(0).toUpperCase() + datos.COLOR_1.slice(1).toLowerCase()
+      setValue("color", colorFormatted)
+    }
+    // Usar NUMERO_VIN_CHASIS de la respuesta de la API
+    if (datos.NUMERO_VIN_CHASIS) {
+      // VIN en mayúsculas, sin caracteres I, O, Q
+      const vinValue = datos.NUMERO_VIN_CHASIS.toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, "").slice(0, 17)
+      setValue("vin", vinValue)
+    }
 
+    // Función helper para normalizar strings (sin espacios, minúsculas)
+    const normalizar = (str: string) => str.toLowerCase().replace(/\s+/g, "")
+
+    let modeloEncontrado = false
     let marcaNoEncontrada = false
     let modeloNoEncontrado = false
     const datosNoEncontrados: { marca?: string; modelo?: string } = {}
 
-    // Buscar marca en el catálogo
-    if (datos.MARCA && catalogoMarcas.length > 0) {
-      const marcaEncontrada = catalogoMarcas.find(
-        (m) => m.nombre.toLowerCase() === datos.MARCA.toLowerCase()
-      )
+    // Buscar marca y modelo en el catálogo
+    if (catalogoMarcas.length > 0) {
+      // Primero intentar match exacto del MODELO del OCR (sin considerar espacios)
+      if (datos.MODELO) {
+        const modeloNormalizado = normalizar(datos.MODELO)
 
-      if (marcaEncontrada) {
-        setSelectedMarca(marcaEncontrada.id.toString())
-        setValue("marca", marcaEncontrada.id.toString())
-
-        // Buscar modelo en el catálogo
-        if (datos.MODELO) {
-          const modeloEncontrado = marcaEncontrada.modelos.find(
-            (mod) => mod.nombre.toLowerCase().includes(datos.MODELO.toLowerCase()) ||
-                     datos.MODELO.toLowerCase().includes(mod.nombre.toLowerCase())
+        // Buscar en todas las marcas
+        for (const marca of catalogoMarcas) {
+          const modeloMatch = marca.modelos.find(
+            (mod) => normalizar(mod.nombre) === modeloNormalizado
           )
 
-          if (modeloEncontrado) {
-            setSelectedModelo(modeloEncontrado.id.toString())
-            setValue("modelo", modeloEncontrado.id.toString())
-          } else {
-            // Modelo no encontrado, buscar opción "Otro"
-            modeloNoEncontrado = true
+          if (modeloMatch) {
+            setSelectedMarca(marca.id.toString())
+            setValue("marca", marca.id.toString())
+            setSelectedModelo(modeloMatch.id.toString())
+            setValue("modelo", modeloMatch.id.toString())
+            modeloEncontrado = true
+            break
+          }
+        }
+      }
+
+      // Si no se encontró match exacto, usar sugerencia de IA
+      if (!modeloEncontrado && sugerenciaIA) {
+        if (sugerenciaIA.MARCA_OTRO) {
+          const marcaNormalizadaIA = normalizar(sugerenciaIA.MARCA_OTRO)
+
+          // Buscar marca de IA
+          const marcaIA = catalogoMarcas.find(
+            (m) => normalizar(m.nombre) === marcaNormalizadaIA
+          )
+
+          if (marcaIA) {
+            setSelectedMarca(marcaIA.id.toString())
+            setValue("marca", marcaIA.id.toString())
+
+            if (sugerenciaIA.MODELO_OTRO) {
+              const modeloNormalizadoIA = normalizar(sugerenciaIA.MODELO_OTRO)
+
+              // Buscar modelo de IA en esa marca (match exacto)
+              let modeloIA = marcaIA.modelos.find(
+                (mod) => normalizar(mod.nombre) === modeloNormalizadoIA
+              )
+
+              // Si no hay match exacto, buscar match parcial (el modelo del catálogo está contenido en la sugerencia)
+              if (!modeloIA) {
+                modeloIA = marcaIA.modelos.find(
+                  (mod) => {
+                    const modNormalizado = normalizar(mod.nombre)
+                    return modeloNormalizadoIA.includes(modNormalizado) || modNormalizado.includes(modeloNormalizadoIA)
+                  }
+                )
+              }
+
+              if (modeloIA) {
+                setSelectedModelo(modeloIA.id.toString())
+                setValue("modelo", modeloIA.id.toString())
+                modeloEncontrado = true
+              } else {
+                // Marca encontrada pero modelo no, buscar "Otro" en modelos de esa marca
+                const otroModelo = marcaIA.modelos.find(
+                  (mod) => mod.nombre.toLowerCase() === "otro"
+                )
+                if (otroModelo) {
+                  setSelectedModelo(otroModelo.id.toString())
+                  setValue("modelo", otroModelo.id.toString())
+                  modeloEncontrado = true
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Si aún no se encontró, buscar marca original del OCR
+      if (!modeloEncontrado && datos.MARCA) {
+        const marcaNormalizada = normalizar(datos.MARCA)
+        const marcaEncontrada = catalogoMarcas.find(
+          (m) => normalizar(m.nombre) === marcaNormalizada
+        )
+
+        if (marcaEncontrada) {
+          setSelectedMarca(marcaEncontrada.id.toString())
+          setValue("marca", marcaEncontrada.id.toString())
+
+          // Buscar opción "Otro" en modelos
+          modeloNoEncontrado = true
+          datosNoEncontrados.modelo = datos.MODELO
+          const otroModelo = marcaEncontrada.modelos.find(
+            (mod) => mod.nombre.toLowerCase() === "otro"
+          )
+          if (otroModelo) {
+            setSelectedModelo(otroModelo.id.toString())
+            setValue("modelo", otroModelo.id.toString())
+          }
+        } else {
+          // Marca no encontrada, buscar opción "Otro"
+          marcaNoEncontrada = true
+          datosNoEncontrados.marca = datos.MARCA
+          if (datos.MODELO) {
             datosNoEncontrados.modelo = datos.MODELO
-            const otroModelo = marcaEncontrada.modelos.find(
+          }
+
+          const otraMarca = catalogoMarcas.find(
+            (m) => m.nombre.toLowerCase() === "otro"
+          )
+          if (otraMarca) {
+            setSelectedMarca(otraMarca.id.toString())
+            setValue("marca", otraMarca.id.toString())
+
+            // Buscar opción "Otro" en modelos
+            const otroModelo = otraMarca.modelos.find(
               (mod) => mod.nombre.toLowerCase() === "otro"
             )
             if (otroModelo) {
               setSelectedModelo(otroModelo.id.toString())
               setValue("modelo", otroModelo.id.toString())
             }
-          }
-        }
-      } else {
-        // Marca no encontrada, buscar opción "Otro"
-        marcaNoEncontrada = true
-        datosNoEncontrados.marca = datos.MARCA
-        if (datos.MODELO) {
-          datosNoEncontrados.modelo = datos.MODELO
-        }
-
-        const otraMarca = catalogoMarcas.find(
-          (m) => m.nombre.toLowerCase() === "otro"
-        )
-        if (otraMarca) {
-          setSelectedMarca(otraMarca.id.toString())
-          setValue("marca", otraMarca.id.toString())
-
-          // Buscar opción "Otro" en modelos
-          const otroModelo = otraMarca.modelos.find(
-            (mod) => mod.nombre.toLowerCase() === "otro"
-          )
-          if (otroModelo) {
-            setSelectedModelo(otroModelo.id.toString())
-            setValue("modelo", otroModelo.id.toString())
           }
         }
       }
@@ -194,6 +285,9 @@ export function RegistrarVehiculoModal({
     }
 
     toast.success("Datos extraídos exitosamente")
+
+    // Mostrar alerta de verificación OCR/IA
+    setShowOCRVerificationAlert(true)
   }
 
   const onSubmit = async (data: VehiculoFormData) => {
@@ -203,6 +297,8 @@ export function RegistrarVehiculoModal({
     }
 
     setLoading(true)
+    setApiError(null)
+
     try {
       const token = await getToken()
       if (!token) {
@@ -212,11 +308,13 @@ export function RegistrarVehiculoModal({
 
       const vehiculoData = {
         cliente: clienteId,
-        placa: data.placa,
+        placa: data.placa.toUpperCase(),
         marca: parseInt(selectedMarca),
         modelo: parseInt(selectedModelo),
         anio_fabricacion: data.anio,
         kilometraje_actual: data.kilometraje,
+        color: data.color.trim(),
+        vin: data.vin.trim().toUpperCase(),
       }
 
       const vehiculoResponse = await registrarVehiculoAPI(vehiculoData, token)
@@ -227,7 +325,25 @@ export function RegistrarVehiculoModal({
       onClose()
     } catch (error: any) {
       console.error("Error registrando vehículo:", error)
-      toast.error(error?.message || "No se pudo registrar el vehículo")
+
+      // Extraer mensaje de error de la API
+      let errorMessage = "No se pudo registrar el vehículo"
+
+      if (error?.errors?.placa) {
+        // Error de placa duplicada u otro error relacionado con placa
+        errorMessage = Array.isArray(error.errors.placa)
+          ? error.errors.placa[0]
+          : error.errors.placa
+      } else if (error?.errors?.vin) {
+        // Error de VIN duplicado
+        errorMessage = Array.isArray(error.errors.vin)
+          ? error.errors.vin[0]
+          : error.errors.vin
+      } else if (error?.message) {
+        errorMessage = error.message
+      }
+
+      setApiError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -314,7 +430,7 @@ export function RegistrarVehiculoModal({
                   </div>
                 ) : (
                   <Select value={selectedMarca} onValueChange={setSelectedMarca}>
-                    <SelectTrigger className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                    <SelectTrigger className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24] w-full">
                       <SelectValue placeholder="Selecciona una marca" />
                     </SelectTrigger>
                     <SelectContent>
@@ -343,13 +459,13 @@ export function RegistrarVehiculoModal({
                   </div>
                 ) : !selectedMarca ? (
                   <Select disabled>
-                    <SelectTrigger className="mt-1 border-gray-300">
+                    <SelectTrigger className="mt-1 border-gray-300 w-full">
                       <SelectValue placeholder="Primero selecciona una marca" />
                     </SelectTrigger>
                   </Select>
                 ) : (
                   <Select value={selectedModelo} onValueChange={setSelectedModelo}>
-                    <SelectTrigger className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                    <SelectTrigger className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24] w-full">
                       <SelectValue placeholder="Selecciona un modelo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -398,6 +514,59 @@ export function RegistrarVehiculoModal({
               </Alert>
             )}
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Color */}
+              <div>
+                <Label htmlFor="color">
+                  Color <span className="text-[#ED1C24]">*</span>
+                </Label>
+                <Input
+                  id="color"
+                  {...register("color")}
+                  placeholder="Ej: Blanco, Negro, Rojo"
+                  maxLength={30}
+                  className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24] w-full"
+                  onChange={(e) => {
+                    let value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')
+                    if (value.length > 0) {
+                      value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+                    }
+                    setValue("color", value)
+                    e.target.value = value
+                  }}
+                />
+                {errors.color && (
+                  <p className="text-sm text-[#ED1C24] mt-1">{errors.color.message}</p>
+                )}
+              </div>
+
+              {/* VIN */}
+              <div>
+                <Label htmlFor="vin">
+                  VIN (Número de Chasis) <span className="text-[#ED1C24]">*</span>
+                </Label>
+                <Input
+                  id="vin"
+                  {...register("vin")}
+                  placeholder="Ej: 1HGCM82633A004352"
+                  className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24] w-full uppercase"
+                  maxLength={17}
+                  onChange={(e) => {
+                    const value = e.target.value
+                      .toUpperCase()
+                      .replace(/[^A-HJ-NPR-Z0-9]/g, '')
+                      .slice(0, 17)
+
+                    setValue("vin", value)
+                    e.target.value = value
+                  }}
+                />
+                {errors.vin && (
+                  <p className="text-sm text-[#ED1C24] mt-1">{errors.vin.message}</p>
+                )}
+              </div>
+            </div>
+
             {/* Kilometraje */}
             <div>
               <Label htmlFor="kilometraje">
@@ -414,6 +583,26 @@ export function RegistrarVehiculoModal({
                 <p className="text-sm text-[#ED1C24] mt-1">{errors.kilometraje.message}</p>
               )}
             </div>
+
+            {/* Alerta de verificación OCR/IA */}
+            {showOCRVerificationAlert && (
+              <Alert className="border-amber-200 bg-amber-50">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-900 text-sm">
+                  <strong>Información extraída con OCR e IA.</strong> Los datos han sido autocompletados automáticamente. Por favor, verifica que toda la información sea correcta antes de continuar.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Alerta de error de API */}
+            {apiError && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-900 text-sm">
+                  {apiError}
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Buttons */}
             <div className="flex gap-3 pt-4">

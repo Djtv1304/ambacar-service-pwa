@@ -3,7 +3,7 @@
 import { useState, useRef } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Loader2, Camera, Upload, X } from "lucide-react"
+import { Loader2, Camera, Upload, X, AlertCircle } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuthToken } from "@/hooks/use-auth-token"
 import { toast } from "sonner"
@@ -24,6 +24,8 @@ export function EscanearMatriculaDialog({ open, onClose, onDatosExtraidos }: Esc
   const [cameraActive, setCameraActive] = useState(false)
   const [imagenCapturada, setImagenCapturada] = useState<string | null>(null)
   const [archivoImagen, setArchivoImagen] = useState<File | null>(null)
+  const [errorCount, setErrorCount] = useState(0)
+  const [showError, setShowError] = useState(false)
 
   const iniciarCamara = async () => {
     // Activar estado primero para que el elemento video se renderice
@@ -102,6 +104,8 @@ export function EscanearMatriculaDialog({ open, onClose, onDatosExtraidos }: Esc
     }
 
     setLoading(true)
+    setShowError(false)
+
     try {
       const token = await getToken()
       if (!token) {
@@ -124,21 +128,58 @@ export function EscanearMatriculaDialog({ open, onClose, onDatosExtraidos }: Esc
       )
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.detail || "Error al procesar la matrícula")
+        const newErrorCount = errorCount + 1
+        setErrorCount(newErrorCount)
+
+        if (newErrorCount >= 2) {
+          // Segundo error: cerrar modal y pedir ingreso manual
+          toast.error("No se pudo procesar la matrícula", {
+            description: "Por favor ingresa los datos del vehículo manualmente.",
+          })
+          limpiarYCerrar()
+          return
+        }
+
+        // Primer error: mostrar alerta en el modal
+        setShowError(true)
+        return
       }
 
       const data = await response.json()
 
       if (data.success && data.datos_extraidos) {
-        onDatosExtraidos(data.datos_extraidos)
+        // Pasar toda la respuesta incluyendo sugerencia_ia
+        onDatosExtraidos(data)
         limpiarYCerrar()
       } else {
-        toast.error("No se pudieron extraer los datos de la matrícula")
+        const newErrorCount = errorCount + 1
+        setErrorCount(newErrorCount)
+
+        if (newErrorCount >= 2) {
+          toast.error("No se pudo procesar la matrícula", {
+            description: "Por favor ingresa los datos del vehículo manualmente.",
+          })
+          limpiarYCerrar()
+          return
+        }
+
+        setShowError(true)
       }
     } catch (error: any) {
       console.error("Error procesando matrícula:", error)
-      toast.error(error.message || "Error al procesar la matrícula")
+
+      const newErrorCount = errorCount + 1
+      setErrorCount(newErrorCount)
+
+      if (newErrorCount >= 2) {
+        toast.error("No se pudo procesar la matrícula", {
+          description: "Por favor ingresa los datos del vehículo manualmente.",
+        })
+        limpiarYCerrar()
+        return
+      }
+
+      setShowError(true)
     } finally {
       setLoading(false)
     }
@@ -148,12 +189,15 @@ export function EscanearMatriculaDialog({ open, onClose, onDatosExtraidos }: Esc
     detenerCamara()
     setImagenCapturada(null)
     setArchivoImagen(null)
+    setErrorCount(0)
+    setShowError(false)
     onClose()
   }
 
   const reiniciar = () => {
     setImagenCapturada(null)
     setArchivoImagen(null)
+    setShowError(false)
   }
 
   return (
@@ -284,10 +328,20 @@ export function EscanearMatriculaDialog({ open, onClose, onDatosExtraidos }: Esc
                     Procesando...
                   </>
                 ) : (
-                  "Extraer Datos"
+                  showError ? "Reintentar" : "Extraer Datos"
                 )}
               </Button>
             </div>
+          )}
+
+          {/* Error Alert */}
+          {showError && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertCircle className="h-4 w-4 text-red-600" />
+              <AlertDescription className="text-red-900 text-sm">
+                <strong>Error al procesar la imagen.</strong> No se pudieron extraer los datos de la matrícula. Por favor, asegúrate de que la imagen sea clara y esté bien enfocada, luego intenta nuevamente.
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </DialogContent>
