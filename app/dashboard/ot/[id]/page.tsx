@@ -2,21 +2,32 @@
 
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
-import { ArrowLeft, ClipboardCheck, AlertTriangle, Building2, Phone, Mail, MapPin, Stethoscope, Receipt } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { ArrowLeft, ClipboardCheck, AlertTriangle, Building2, Phone, Mail, MapPin, Stethoscope, Receipt, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { OTInfoCard } from "@/components/ot/ot-info-card"
 import { OTPhasesStepper, type Phase } from "@/components/ot/ot-phases-stepper"
 import { RepuestosList, type Repuesto } from "@/components/ot/ot-repuestos-list"
 import { OTStatusSelector } from "@/components/ot/ot-status-selector"
 import { getOrdenTrabajoDetalle, cambiarEstadoOrdenTrabajo } from "@/lib/api/ordenes-trabajo"
+import { createInspeccion, getInspecciones } from "@/lib/api/inspecciones"
 import { useAuthToken } from "@/hooks/use-auth-token"
-import type { OrdenTrabajoDetalle, HallazgoOT, EstadoOrdenTrabajo } from "@/lib/types"
+import type { OrdenTrabajoDetalle, HallazgoOT, EstadoOrdenTrabajo, InspeccionListItem } from "@/lib/types"
 import { toast } from "sonner"
 import { RegistroHallazgoDialog } from "@/components/hallazgos/registro-hallazgo-dialog"
 import { OTProformaSheet } from "@/components/ot/ot-proforma-sheet"
@@ -63,6 +74,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
   // Unwrap params using React.use()
   const resolvedParams = use(params)
   const otId = resolvedParams.id
+  const router = useRouter()
 
   const [ot, setOt] = useState<OrdenTrabajoDetalle | null>(null)
   const [loading, setLoading] = useState(true)
@@ -73,7 +85,13 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
   const [repuestos, setRepuestos] = useState<Repuesto[]>([])
   const { getToken } = useAuthToken()
 
-  // Fetch OT details
+  // Estados para el dialog de inspección
+  const [inspeccionDialogOpen, setInspeccionDialogOpen] = useState(false)
+  const [observacionesInspeccion, setObservacionesInspeccion] = useState("")
+  const [creandoInspeccion, setCreandoInspeccion] = useState(false)
+  const [inspeccionExistente, setInspeccionExistente] = useState<InspeccionListItem | null>(null)
+
+  // Fetch OT details and check for existing inspection
   useEffect(() => {
     let isMounted = true
 
@@ -86,11 +104,22 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
           return
         }
 
-        const data = await getOrdenTrabajoDetalle(parseInt(otId), token)
+        // Fetch OT details and inspections in parallel
+        const [data, inspecciones] = await Promise.all([
+          getOrdenTrabajoDetalle(parseInt(otId), token),
+          getInspecciones(token),
+        ])
+
         if (isMounted) {
           setOt(data)
           setCurrentEstado(data.estado_detalle.codigo)
           setPhases(getMockPhases(data.estado_detalle.codigo))
+
+          // Check if there's an existing inspection for this OT
+          const inspeccionParaOT = inspecciones.find(
+            (insp) => insp.orden_trabajo === data.id
+          )
+          setInspeccionExistente(inspeccionParaOT || null)
 
           // Transform repuestos data if available
           if (data.repuestos && data.repuestos.length > 0) {
@@ -191,6 +220,45 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
     }
   }
 
+  // Crear inspección y redirigir al detalle
+  const handleCrearInspeccion = async () => {
+    if (!ot) return
+
+    setCreandoInspeccion(true)
+    try {
+      const token = await getToken()
+      if (!token) {
+        toast.error("No se encontró token de autenticación")
+        return
+      }
+
+      // POST a /api/inspecciones/ con el body correcto
+      const nuevaInspeccion = await createInspeccion(
+        ot.id,
+        observacionesInspeccion || undefined,
+        token
+      )
+
+      toast.success("Inspección creada", {
+        description: `Se creó la inspección ${nuevaInspeccion.numero_inspeccion}`,
+      })
+
+      // Cerrar dialog y limpiar estado
+      setInspeccionDialogOpen(false)
+      setObservacionesInspeccion("")
+
+      // Redirigir al detalle de la inspección usando su ID
+      router.push(`/dashboard/inspecciones/${nuevaInspeccion.id}`)
+    } catch (error: any) {
+      console.error("Error creando inspección:", error)
+      toast.error("Error al crear la inspección", {
+        description: error.message || "Intente nuevamente",
+      })
+    } finally {
+      setCreandoInspeccion(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -248,12 +316,35 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
             <span className="hidden xs:inline">Registrar</span> Hallazgos
           </Button>
           {currentEstado === "CTRL-CAL" && (
-            <Button asChild size="sm" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700">
-              <Link href={`/dashboard/inspecciones/${ot.id}`}>
+            inspeccionExistente ? (
+              // Ya existe inspección - navegar a ella
+              <Button
+                asChild
+                size="sm"
+                className={`w-full sm:w-auto ${
+                  inspeccionExistente.estado === "COMPLETADA"
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
+              >
+                <Link href={`/dashboard/inspecciones/${inspeccionExistente.id}`}>
+                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                  {inspeccionExistente.estado === "COMPLETADA"
+                    ? "Ver Inspección"
+                    : "Continuar Inspección"}
+                </Link>
+              </Button>
+            ) : (
+              // No existe inspección - mostrar dialog para crear
+              <Button
+                onClick={() => setInspeccionDialogOpen(true)}
+                size="sm"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+              >
                 <ClipboardCheck className="mr-2 h-4 w-4" />
-                Inspección
-              </Link>
-            </Button>
+                Crear Inspección
+              </Button>
+            )
           )}
         </div>
       </div>
@@ -479,6 +570,69 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
         open={showProformaSheet}
         onClose={() => setShowProformaSheet(false)}
       />
+
+      {/* Dialog para crear inspección */}
+      <Dialog open={inspeccionDialogOpen} onOpenChange={setInspeccionDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ClipboardCheck className="h-5 w-5 text-blue-600" />
+              Crear Inspección de Calidad
+            </DialogTitle>
+            <DialogDescription>
+              Se creará una nueva inspección para la orden de trabajo {ot?.numero_orden}.
+              Puedes agregar observaciones adicionales de manera opcional.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="observaciones-inspeccion">
+                Observaciones Generales (Opcional)
+              </Label>
+              <Textarea
+                id="observaciones-inspeccion"
+                placeholder="Agrega comentarios o instrucciones iniciales para la inspección..."
+                value={observacionesInspeccion}
+                onChange={(e) => setObservacionesInspeccion(e.target.value)}
+                rows={4}
+                className="resize-none"
+                disabled={creandoInspeccion}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setInspeccionDialogOpen(false)
+                setObservacionesInspeccion("")
+              }}
+              disabled={creandoInspeccion}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleCrearInspeccion}
+              disabled={creandoInspeccion}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {creandoInspeccion ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creando...
+                </>
+              ) : (
+                <>
+                  <ClipboardCheck className="mr-2 h-4 w-4" />
+                  Crear Inspección
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
