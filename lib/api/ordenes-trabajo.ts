@@ -9,7 +9,9 @@ import type {
   CreateOrdenTrabajoData,
   OrdenTrabajoDetalle,
   EstadoOrdenTrabajo,
-  CambioEstadoResponse
+  CambioEstadoResponse,
+  HallazgoOT,
+  HallazgoOTPayload
 } from "@/lib/types"
 
 export interface OrdenTrabajoAPI {
@@ -175,5 +177,20 @@ export async function cambiarEstadoOrdenTrabajo(
       body: JSON.stringify({ estado_id: estadoId }),
     }
   )
+}
+
+/**
+ * Registra un hallazgo (novedad) para una Orden de Trabajo
+ * POST /api/novedades-orden-trabajo/
+ */
+export async function registrarHallazgo(
+  payload: HallazgoOTPayload,
+  token: string
+): Promise<HallazgoOT> {
+  return apiRequest<HallazgoOT>("/api/novedades-orden-trabajo/", {
+    method: "POST",
+    token,
+    body: JSON.stringify(payload),
+  })
 }
 

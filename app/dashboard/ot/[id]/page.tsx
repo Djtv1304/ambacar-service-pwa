@@ -27,7 +27,7 @@ import { OTStatusSelector } from "@/components/ot/ot-status-selector"
 import { getOrdenTrabajoDetalle, cambiarEstadoOrdenTrabajo } from "@/lib/api/ordenes-trabajo"
 import { createInspeccion, getInspecciones } from "@/lib/api/inspecciones"
 import { useAuthToken } from "@/hooks/use-auth-token"
-import type { OrdenTrabajoDetalle, HallazgoOT, EstadoOrdenTrabajo, InspeccionListItem } from "@/lib/types"
+import type { OrdenTrabajoDetalle, EstadoOrdenTrabajo, InspeccionListItem } from "@/lib/types"
 import { toast } from "sonner"
 import { RegistroHallazgoDialog } from "@/components/hallazgos/registro-hallazgo-dialog"
 import { OTProformaSheet } from "@/components/ot/ot-proforma-sheet"
@@ -203,21 +203,6 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
 
     setRepuestos(prev => [...prev, { ...repuesto, id: `r-${Date.now()}` }])
     toast.success("Repuesto agregado")
-  }
-
-  const handleGuardarHallazgo = async (hallazgo: HallazgoOT) => {
-    try {
-      // TODO: Replace with actual API call
-      console.log("Guardando hallazgo:", hallazgo)
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      toast.success("Hallazgo registrado", {
-        description: "El hallazgo ha sido guardado y se notificará al cliente",
-      })
-    } catch (error) {
-      console.error("Error al guardar hallazgo:", error)
-      throw error
-    }
   }
 
   // Crear inspección y redirigir al detalle
@@ -560,7 +545,9 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
         open={hallazgoDialogOpen}
         onOpenChange={setHallazgoDialogOpen}
         ordenTrabajoId={ot.id}
-        onGuardar={handleGuardarHallazgo}
+        onHallazgoRegistrado={() => {
+          // Optional: refresh OT data if needed
+        }}
         clienteNombre={`${ot.cliente_detalle.first_name} ${ot.cliente_detalle.last_name}`}
       />
 

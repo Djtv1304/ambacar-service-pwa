@@ -673,15 +673,36 @@ export interface InspeccionDetalle {
   porcentaje_completado: number
 }
 
+// Payload para crear un hallazgo (NovedadOrdenTrabajo)
+export interface HallazgoOTPayload {
+  orden_trabajo: number
+  tipo_novedad: "HALLAZGO" | "PROBLEMA" | "RECOMENDACION" | "OBSERVACION" | "CAMBIO"
+  descripcion: string
+  justificacion_tecnica?: string
+  severidad: "CRITICO" | "IMPORTANTE" | "RECOMENDADO" | "OPCIONAL"
+  costo_mano_obra?: number
+  costo_repuestos?: number
+  requiere_autorizacion: boolean
+  usuario_reporte: number
+}
+
+// Respuesta del backend para un hallazgo
 export interface HallazgoOT {
   id?: number
   orden_trabajo: number
+  tipo_novedad: "HALLAZGO" | "PROBLEMA" | "RECOMENDACION" | "OBSERVACION" | "CAMBIO"
   descripcion: string
-  urgencia: "inmediato" | "puede-esperar" | "preventivo"
-  costo_estimado?: number
-  fotos: FotoInspeccion[]
-  notificar_whatsapp: boolean
-  notificar_email: boolean
+  justificacion_tecnica?: string
+  severidad: "CRITICO" | "IMPORTANTE" | "RECOMENDADO" | "OPCIONAL"
+  costo_mano_obra: number
+  costo_repuestos: number
+  costo_total?: number
+  requiere_autorizacion: boolean
+  estado_aprobacion: "PENDIENTE" | "APROBADO" | "RECHAZADO"
+  usuario_reporte: number
+  usuario_aprobacion?: number
+  fecha_reporte?: string
+  fecha_respuesta?: string
   created_at?: string
   updated_at?: string
 }

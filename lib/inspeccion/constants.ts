@@ -170,3 +170,69 @@ export const URGENCIAS_HALLAZGO: { value: UrgenciaHallazgo; label: string; descr
     description: "Recomendación de mantenimiento preventivo",
   },
 ]
+
+// Tipos de novedad según el backend
+export type TipoNovedad = "HALLAZGO" | "PROBLEMA" | "RECOMENDACION" | "OBSERVACION" | "CAMBIO"
+
+export const TIPOS_NOVEDAD: { value: TipoNovedad; label: string; description: string; icon: string }[] = [
+  {
+    value: "HALLAZGO",
+    label: "Hallazgo en Diagnóstico",
+    description: "Descubrimiento durante la revisión del vehículo",
+    icon: "search",
+  },
+  {
+    value: "PROBLEMA",
+    label: "Problema Encontrado",
+    description: "Falla o defecto identificado que requiere atención",
+    icon: "alert-triangle",
+  },
+  {
+    value: "RECOMENDACION",
+    label: "Recomendación",
+    description: "Sugerencia de mantenimiento o mejora",
+    icon: "lightbulb",
+  },
+  {
+    value: "OBSERVACION",
+    label: "Observación General",
+    description: "Nota informativa sobre el estado del vehículo",
+    icon: "eye",
+  },
+  {
+    value: "CAMBIO",
+    label: "Cambio en el Servicio",
+    description: "Modificación al alcance del servicio original",
+    icon: "refresh-cw",
+  },
+]
+
+// Severidades de hallazgo según el backend
+export type SeveridadHallazgo = "CRITICO" | "IMPORTANTE" | "RECOMENDADO" | "OPCIONAL"
+
+export const SEVERIDADES_HALLAZGO: { value: SeveridadHallazgo; label: string; description: string; color: string }[] = [
+  {
+    value: "CRITICO",
+    label: "Crítico",
+    description: "Problema de seguridad que requiere atención inmediata",
+    color: "text-red-600",
+  },
+  {
+    value: "IMPORTANTE",
+    label: "Importante",
+    description: "Debe atenderse pronto para evitar daños mayores",
+    color: "text-orange-600",
+  },
+  {
+    value: "RECOMENDADO",
+    label: "Recomendado",
+    description: "Sugerencia de mantenimiento preventivo",
+    color: "text-yellow-600",
+  },
+  {
+    value: "OPCIONAL",
+    label: "Opcional",
+    description: "Mejora opcional que no afecta el funcionamiento",
+    color: "text-blue-600",
+  },
+]
