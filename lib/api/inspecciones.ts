@@ -50,7 +50,7 @@ export async function createInspeccion(
   observacionesGenerales: string | undefined,
   token: string
 ): Promise<InspeccionDetalle> {
-  const body: any = {
+  const body: Record<string, any> = {
     orden_trabajo: ordenTrabajo,
   }
 
@@ -61,7 +61,7 @@ export async function createInspeccion(
   return apiRequest<InspeccionDetalle>("/api/inspecciones/", {
     method: "POST",
     token,
-    body,
+    body: JSON.stringify(body),
   })
 }
 
