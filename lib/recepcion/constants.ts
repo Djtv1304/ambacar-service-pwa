@@ -6,10 +6,11 @@ export const TIPOS_FOTO = [
 ] as const
 
 export const NIVELES_COMBUSTIBLE = [
+    { value: "VACIO", label: "Casi Vacío" },
     { value: "1/4", label: "1/4 Tanque" },
     { value: "1/2", label: "1/2 Tanque" },
     { value: "3/4", label: "3/4 Tanque" },
-    { value: "lleno", label: "Tanque Lleno" },
+    { value: "LLENO", label: "Tanque Lleno" },
 ] as const
 
 export const FOTOS_REQUERIDAS = 4

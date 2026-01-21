@@ -9,7 +9,7 @@ export const buscarCitaSchema = z.object({
 
 export const iniciarRecepcionSchema = z.object({
     kilometraje_ingreso: z.number().min(0, "El kilometraje no puede ser negativo").max(999999, "Kilometraje inválido"),
-    nivel_combustible: z.enum(["1/4", "1/2", "3/4", "lleno"], {
+    nivel_combustible: z.enum(["VACIO", "1/4", "1/2", "3/4", "LLENO"], {
         errorMap: () => ({ message: "Seleccione un nivel de combustible válido" }),
     }),
     observaciones_cliente: z.string().max(500, "Las observaciones no pueden exceder 500 caracteres").optional(),
