@@ -208,6 +208,7 @@ export interface RegisterData {
   password_confirm: string
   first_name: string
   last_name: string
+  cedula: string
   role: UserRole
   phone?: string
 }

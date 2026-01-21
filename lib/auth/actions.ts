@@ -46,6 +46,7 @@ export async function registerAction(formData: FormData) {
   const password_confirm = formData.get("password_confirm") as string
   const first_name = formData.get("first_name") as string
   const last_name = formData.get("last_name") as string
+  const cedula = formData.get("cedula") as string
   const phone = formData.get("phone") as string
 
   try {
@@ -56,6 +57,7 @@ export async function registerAction(formData: FormData) {
       password_confirm,
       first_name,
       last_name,
+      cedula,
       role: "customer", // Default role for new registrations
       phone: phone || undefined,
     })

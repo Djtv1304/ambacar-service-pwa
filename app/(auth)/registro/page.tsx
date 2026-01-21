@@ -62,13 +62,14 @@ export default function RegistroPage() {
       password_confirm: "",
       first_name: "",
       last_name: "",
+      cedula: "",
       phone: "",
     },
   })
 
   const goToNextStep = async () => {
     const fieldsToValidate: (keyof RegisterFormData)[] = currentStep === 1
-      ? ["first_name", "last_name", "email", "phone"]
+      ? ["first_name", "last_name", "cedula", "email", "phone"]
       : ["username", "password", "password_confirm"]
 
     const isValid = await trigger(fieldsToValidate)
@@ -93,6 +94,7 @@ export default function RegistroPage() {
       formData.append("password_confirm", data.password_confirm)
       formData.append("first_name", data.first_name)
       formData.append("last_name", data.last_name)
+      formData.append("cedula", data.cedula)
       formData.append("phone", data.phone.replace(/\s+/g, ""))
 
       const result = await registerAction(formData)
@@ -383,6 +385,39 @@ export default function RegistroPage() {
                             <p className="text-xs text-red-600">{fieldErrors.last_name[0]}</p>
                           )}
                         </div>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cedula" className="text-gray-700 font-medium text-sm">
+                          Cédula
+                        </Label>
+                        <Input
+                          id="cedula"
+                          type="text"
+                          placeholder="1704651841"
+                          maxLength={10}
+                          className="h-11 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-[#ED1C24] focus:ring-[#ED1C24] text-sm"
+                          {...register("cedula")}
+                          disabled={isPending}
+                          onChange={(e) => {
+                            // Solo permite números
+                            const value = e.target.value.replace(/\D/g, "")
+                            e.target.value = value
+                          }}
+                          onKeyDown={(e) => {
+                            // Permite: números, Backspace, Delete, Tab, flechas
+                            const allowedKeys = ["Backspace", "Delete", "Tab", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"]
+                            if (!allowedKeys.includes(e.key) && !/^\d$/.test(e.key)) {
+                              e.preventDefault()
+                            }
+                          }}
+                        />
+                        {errors.cedula && (
+                          <p className="text-xs text-red-600">{errors.cedula.message}</p>
+                        )}
+                        {fieldErrors.cedula && (
+                          <p className="text-xs text-red-600">{fieldErrors.cedula[0]}</p>
+                        )}
                       </div>
 
                       <div className="space-y-1.5">

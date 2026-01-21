@@ -25,6 +25,10 @@ export const registerSchema = z
     password_confirm: z.string().min(1, "Confirma tu contraseña"),
     first_name: z.string().min(1, "El nombre es requerido"),
     last_name: z.string().min(1, "El apellido es requerido"),
+    cedula: z
+      .string()
+      .min(1, "La cédula es requerida")
+      .regex(/^\d{10}$/, "La cédula debe tener exactamente 10 dígitos"),
     phone: z
       .string()
       .min(1, "El teléfono es requerido")
