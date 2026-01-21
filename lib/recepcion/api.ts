@@ -3,6 +3,53 @@
 import { apiRequest, ApiError } from "@/lib/api/client"
 import { getAccessToken } from "@/lib/auth/cookies"
 
+// Types for confirmed appointments list
+export interface CitaConfirmadaCliente {
+    id: string
+    nombre: string
+    email: string
+    cedula: string
+    telefono: string
+}
+
+export interface CitaConfirmadaVehiculo {
+    id: string
+    placa: string
+    marca: string
+    modelo: string
+    color: string
+    year: number
+    kilometraje: number
+}
+
+export interface CitaConfirmada {
+    id: string
+    numero_referencia: string
+    fecha: string
+    hora: string
+    cliente: CitaConfirmadaCliente
+    vehiculo: CitaConfirmadaVehiculo
+    tipoServicio: string
+    subtipoServicio: string | null
+    sucursal: string
+    observaciones: string | null
+}
+
+/**
+ * Obtener lista de citas confirmadas para recepción
+ */
+export async function obtenerCitasConfirmadas(): Promise<CitaConfirmada[]> {
+    const token = await getAccessToken()
+    if (!token) {
+        throw new ApiError("No autorizado", 401)
+    }
+
+    return apiRequest<CitaConfirmada[]>("/api/recepciones/citas-confirmadas/", {
+        method: "GET",
+        token,
+    })
+}
+
 export interface CitaResponse {
     cita: {
         id: number

@@ -1,7 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { motion } from "framer-motion"
-import { CheckCircle, Printer, Eye, Car, User, Calendar, Wrench, Image as ImageIcon } from "lucide-react"
+import { CheckCircle, Eye, Car, User, Calendar, Wrench, Image as ImageIcon } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -272,7 +273,7 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                             )}
                             {recepcion.observaciones_cliente && (
                                 <div>
-                                    <p className="text-xs text-muted-foreground mb-1">Observaciones del Cliente</p>
+                                    <p className="text-xs text-muted-foreground mb-1">Observaciones del Operador/Asesor de Servicio</p>
                                     <p className="text-sm">{recepcion.observaciones_cliente}</p>
                                 </div>
                             )}
@@ -292,15 +293,13 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
-                className="flex gap-3"
             >
-                <Button variant="outline" className="flex-1 bg-transparent" onClick={() => window.print()}>
-                    <Printer className="mr-2 h-4 w-4" />
-                    Imprimir
-                </Button>
-                <Button className="flex-1 bg-[#ED1C24] hover:bg-[#c41820]">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Ver OT Completa
+                <Button asChild className="w-full bg-[#ED1C24] hover:bg-[#c41820]">
+                    <Link href={`/dashboard/ot/${orden_trabajo.id}`}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        <span className="md:hidden">Ver OT Creada</span>
+                        <span className="hidden md:inline">Ver Orden de Trabajo Creada</span>
+                    </Link>
                 </Button>
             </motion.div>
         </motion.div>
