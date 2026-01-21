@@ -24,6 +24,7 @@ import {
   Menu,
   Bell,
   TrendingUp,
+  Brain,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -132,6 +133,12 @@ const navItems: NavItem[] = [
     href: "/dashboard/configuracion",
     icon: Settings,
     roles: ["admin"],
+  },
+  {
+    title: "Laboratorio IA",
+    href: "/dashboard/configuracion/ia-models",
+    icon: Brain,
+    roles: ["admin", "manager"],
   },
 ]
 

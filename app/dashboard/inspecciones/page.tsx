@@ -157,19 +157,22 @@ export default function InspeccionesPage() {
 
             const getButtonConfig = () => {
               if (inspeccion.estado === "PENDIENTE") {
+                // Para pendientes, ir a la OT para iniciar desde allí
                 return {
                   text: "Empezar Inspección",
                   href: `/dashboard/ot/${inspeccion.orden_trabajo}`,
                 }
               } else if (inspeccion.estado === "EN_PROCESO") {
+                // Para en proceso, usar el ID de la inspección
                 return {
                   text: "Continuar Inspección",
-                  href: `/dashboard/inspecciones/${inspeccion.orden_trabajo}`,
+                  href: `/dashboard/inspecciones/${inspeccion.id}`,
                 }
               } else {
+                // Para completadas, usar el ID de la inspección
                 return {
                   text: "Ver Inspección",
-                  href: `/dashboard/inspecciones/${inspeccion.orden_trabajo}`,
+                  href: `/dashboard/inspecciones/${inspeccion.id}`,
                 }
               }
             }

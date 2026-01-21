@@ -2,12 +2,16 @@
 
 // Service Status for client-facing views
 export type ServiceStatus =
+  | "agendado"
   | "recepcion"
   | "diagnostico"
   | "en_progreso"
   | "esperando_aprobacion"
   | "listo"
   | "entregado"
+
+// Service Type - determines if it's just an appointment or has a work order
+export type ServiceType = "cita" | "orden_trabajo"
 
 export interface ServiceStatusInfo {
   code: ServiceStatus
@@ -19,6 +23,14 @@ export interface ServiceStatusInfo {
 }
 
 export const SERVICE_STATUS_MAP: Record<ServiceStatus, ServiceStatusInfo> = {
+  agendado: {
+    code: "agendado",
+    label: "Cita Agendada",
+    color: "text-purple-500",
+    bgColor: "bg-purple-500/10",
+    borderColor: "border-purple-500/20",
+    progress: 0,
+  },
   recepcion: {
     code: "recepcion",
     label: "En Recepción",
@@ -69,7 +81,7 @@ export const SERVICE_STATUS_MAP: Record<ServiceStatus, ServiceStatusInfo> = {
   },
 }
 
-// Client Service represents a vehicle currently in service
+// Client Service represents a vehicle currently in service or an appointment
 export interface ClientService {
   id: number
   ordenTrabajoId: string
@@ -86,7 +98,7 @@ export interface ClientService {
   estado: ServiceStatus
   progreso: number // 0-100
   fechaIngreso: Date
-  fechaEstimadaEntrega?: Date
+  fechaEstimadaEntrega?: Date | null
   taller: {
     nombre: string
     direccion: string
@@ -94,6 +106,7 @@ export interface ClientService {
   pendingApprovals: number
   totalEstimado: number
   servicioSolicitado: string
+  tipo: ServiceType // "cita" = appointment only, "orden_trabajo" = has work order
 }
 
 // Timeline Event for service progress visualization
