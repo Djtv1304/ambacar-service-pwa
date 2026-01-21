@@ -24,7 +24,7 @@ import {
   getSucursales,
 } from "@/lib/api/agendamiento"
 import { useAuthToken } from "@/hooks/use-auth-token"
-import type { Cliente, Vehiculo, Cita, HorarioDisponible, TipoServicio } from "@/lib/types"
+import type { Cliente, Vehiculo, Cita, HorarioDisponible, TipoServicio, SubtipoServicio } from "@/lib/types"
 import type { Sucursal } from "@/lib/api/agendamiento"
 import { toast as sonnerToast } from "sonner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -66,6 +66,7 @@ export default function NuevaCitaPage() {
   // Service types state
   const [tiposServicio, setTiposServicio] = useState<TipoServicio[]>([])
   const [selectedServicio, setSelectedServicio] = useState<string>("")
+  const [selectedSubtipo, setSelectedSubtipo] = useState<string>("")
   const [loadingServicios, setLoadingServicios] = useState(false)
 
   // Sucursales state
@@ -224,13 +225,15 @@ export default function NuevaCitaPage() {
     }
   }, [currentStep, tiposServicio.length])
 
-  // Sync selectedServicio with form field
+  // Sync selectedServicio with form field and reset subtipo when service changes
   useEffect(() => {
     if (selectedServicio) {
       const servicioData = tiposServicio.find((s) => s.id.toString() === selectedServicio)
       if (servicioData) {
         citaForm.setValue("servicio", servicioData.nombre)
       }
+      // Reset subtipo when service changes
+      setSelectedSubtipo("")
     }
   }, [selectedServicio, tiposServicio, citaForm])
 
@@ -656,7 +659,16 @@ export default function NuevaCitaPage() {
       }
 
       // Crear cita en la API
-      const citaData = {
+      const citaData: {
+        cliente: number
+        vehiculo: number
+        tipo_servicio: number
+        fecha_cita: string
+        hora_cita: string
+        observaciones?: string
+        sucursal: number
+        subtipo_servicio?: number
+      } = {
         cliente: parseInt(cliente.id),
         vehiculo: parseInt(vehiculoSeleccionado.id),
         tipo_servicio: parseInt(selectedServicio),
@@ -664,6 +676,11 @@ export default function NuevaCitaPage() {
         hora_cita: selectedHora,
         observaciones: citaForm.getValues("observaciones") || undefined,
         sucursal: parseInt(selectedSucursal),
+      }
+
+      // Agregar subtipo solo si está seleccionado
+      if (selectedSubtipo) {
+        citaData.subtipo_servicio = parseInt(selectedSubtipo)
       }
 
       const citaResponse = await crearCitaAPI(citaData, token)
@@ -767,6 +784,7 @@ export default function NuevaCitaPage() {
   }
 
   const selectedServicioData = tiposServicio.find((s) => s.id.toString() === selectedServicio)
+  const selectedSubtipoData = selectedServicioData?.subtipos?.find((st) => st.id.toString() === selectedSubtipo)
 
   if (!cliente) {
     return (
@@ -1373,6 +1391,30 @@ export default function NuevaCitaPage() {
                     )}
                   </div>
 
+                  {/* Subtipo de Servicio - Solo se muestra si el servicio seleccionado tiene subtipos */}
+                  {selectedServicioData?.subtipos && selectedServicioData.subtipos.length > 0 && (
+                    <div>
+                      <Label htmlFor="subtipo" className="text-[#202020] font-medium">
+                        Tipo de Servicio Específico
+                      </Label>
+                      <Select value={selectedSubtipo} onValueChange={setSelectedSubtipo}>
+                        <SelectTrigger className="w-full mt-2 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                          <SelectValue placeholder="Selecciona un tipo específico (opcional)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {selectedServicioData.subtipos.map((subtipo) => (
+                            <SelectItem key={subtipo.id} value={subtipo.id.toString()}>
+                              {subtipo.nombre}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {selectedSubtipoData && selectedSubtipoData.descripcion && (
+                        <p className="text-sm text-gray-600 mt-2">{selectedSubtipoData.descripcion}</p>
+                      )}
+                    </div>
+                  )}
+
                   <div>
                     <Label htmlFor="observaciones" className="text-[#202020] font-medium">
                       Observaciones (Opcional)
@@ -1596,6 +1638,7 @@ export default function NuevaCitaPage() {
                         setSelectedDate(undefined)
                         setSelectedHora("")
                         setSelectedServicio("")
+                        setSelectedSubtipo("")
                         setSelectedSucursal("")
                         citaForm.reset()
                       }}
@@ -1707,6 +1750,12 @@ export default function NuevaCitaPage() {
                           <span className="text-gray-600 text-xs sm:text-sm">Servicio:</span>
                           <span className="font-medium text-[#202020] text-sm sm:text-base text-right">{selectedServicioData?.nombre}</span>
                         </div>
+                        {selectedSubtipoData && (
+                          <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
+                            <span className="text-gray-600 text-xs sm:text-sm">Tipo Específico:</span>
+                            <span className="font-medium text-[#202020] text-sm sm:text-base text-right">{selectedSubtipoData.nombre}</span>
+                          </div>
+                        )}
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
                           <span className="text-gray-600 text-xs sm:text-sm">Sucursal:</span>
                           <span className="font-medium text-[#202020] text-sm sm:text-base text-right">

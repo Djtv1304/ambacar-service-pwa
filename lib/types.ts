@@ -375,6 +375,20 @@ export interface HorariosDisponiblesResponse {
   horarios_disponibles_count: number
 }
 
+// Citas - Subtipos de Servicio
+export interface SubtipoServicio {
+  id: number
+  tipo_servicio: number
+  tipo_servicio_nombre: string
+  nombre: string
+  descripcion: string
+  duracion_estimada: number
+  orden: number
+  estado: string
+  created_at: string
+  updated_at: string
+}
+
 // Citas - Tipos de Servicio
 export interface TipoServicio {
   id: number
@@ -385,6 +399,7 @@ export interface TipoServicio {
   estado: string
   created_at: string
   updated_at: string
+  subtipos?: SubtipoServicio[]
 }
 
 // Estado de Orden de Trabajo

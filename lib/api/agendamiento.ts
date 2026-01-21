@@ -321,6 +321,7 @@ export async function crearCitaAPI(
     hora_cita: string
     observaciones?: string
     sucursal?: number
+    subtipo_servicio?: number
   },
   token: string
 ): Promise<any> {
