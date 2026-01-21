@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { ArrowLeft, ArrowRight, Car, CheckCircle2, Loader2, Calendar as CalendarIcon, AlertCircle, X } from "lucide-react"
+import { ArrowLeft, ArrowRight, Car, CheckCircle2, Loader2, Calendar as CalendarIcon, AlertCircle, X, ScanLine, Lightbulb } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -27,6 +27,8 @@ import { useAuthToken } from "@/hooks/use-auth-token"
 import type { Cliente, Vehiculo, Cita, HorarioDisponible, TipoServicio } from "@/lib/types"
 import type { Sucursal } from "@/lib/api/agendamiento"
 import { toast as sonnerToast } from "sonner"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { EscanearMatriculaDialog } from "@/components/recepcion/escanear-matricula-dialog"
 import { logoutClient, getCurrentUser } from "@/lib/auth/actions"
 import { dispatchNotificationEvent, buildAppointmentContext } from "@/lib/api/notifications"
 import { syncVehicle } from "@/lib/api/sync"
@@ -89,6 +91,10 @@ export default function NuevaCitaPage() {
   const [selectedModelo, setSelectedModelo] = useState<string>("")
   const [loadingCatalogo, setLoadingCatalogo] = useState(false)
 
+  // OCR state
+  const [showEscanearMatricula, setShowEscanearMatricula] = useState(false)
+  const [showOCRTip, setShowOCRTip] = useState(false)
+
   // Forms
   const vehiculoForm = useForm<VehiculoFormData>({
     resolver: zodResolver(vehiculoSchema),
@@ -98,6 +104,8 @@ export default function NuevaCitaPage() {
       modelo: "",
       anio: new Date().getFullYear(),
       kilometraje: 0,
+      color: "",
+      vin: "",
     },
   })
 
@@ -300,6 +308,107 @@ export default function NuevaCitaPage() {
     }
   }, [nuevoVehiculo, vehiculoNotification?.type])
 
+  // Show OCR tip after 2 seconds when user is on new vehicle form
+  useEffect(() => {
+    let tipTimer: NodeJS.Timeout | null = null
+
+    if (nuevoVehiculo && currentStep === 1) {
+      tipTimer = setTimeout(() => {
+        setShowOCRTip(true)
+      }, 2000)
+    } else {
+      setShowOCRTip(false)
+    }
+
+    return () => {
+      if (tipTimer) {
+        clearTimeout(tipTimer)
+      }
+    }
+  }, [nuevoVehiculo, currentStep])
+
+  // Handle OCR data extracted from matricula
+  const handleDatosMatriculaExtraidos = (datos: any) => {
+    // Autocompletar los campos con los datos extraídos
+    if (datos.PLACA_ACTUAL) {
+      // Formato AAA2222
+      const placaFormatted = datos.PLACA_ACTUAL.toUpperCase().replace(/[^A-Z0-9]/g, "")
+      vehiculoForm.setValue("placa", placaFormatted)
+    }
+    if (datos.ANIO_MODELO) {
+      vehiculoForm.setValue("anio", parseInt(datos.ANIO_MODELO))
+    }
+    if (datos.COLOR) {
+      // Capitalizar primera letra, resto minúsculas
+      const colorFormatted = datos.COLOR.charAt(0).toUpperCase() + datos.COLOR.slice(1).toLowerCase()
+      vehiculoForm.setValue("color", colorFormatted)
+    }
+    if (datos.NUMERO_MOTOR || datos.VIN) {
+      // VIN en mayúsculas, sin caracteres I, O, Q
+      const vinValue = (datos.VIN || datos.NUMERO_MOTOR || "").toUpperCase().replace(/[^A-HJ-NPR-Z0-9]/g, "").slice(0, 17)
+      vehiculoForm.setValue("vin", vinValue)
+    }
+
+    // Buscar marca en el catálogo
+    if (datos.MARCA && catalogoMarcas.length > 0) {
+      const marcaEncontrada = catalogoMarcas.find(
+        (m) => m.nombre.toLowerCase() === datos.MARCA.toLowerCase()
+      )
+
+      if (marcaEncontrada) {
+        setSelectedMarca(marcaEncontrada.id.toString())
+        vehiculoForm.setValue("marca", marcaEncontrada.id.toString())
+
+        // Buscar modelo en el catálogo
+        if (datos.MODELO) {
+          const modeloEncontrado = marcaEncontrada.modelos.find(
+            (mod) =>
+              mod.nombre.toLowerCase().includes(datos.MODELO.toLowerCase()) ||
+              datos.MODELO.toLowerCase().includes(mod.nombre.toLowerCase())
+          )
+
+          if (modeloEncontrado) {
+            setSelectedModelo(modeloEncontrado.id.toString())
+            vehiculoForm.setValue("modelo", modeloEncontrado.id.toString())
+          } else {
+            // Modelo no encontrado, buscar opción "Otro"
+            const otroModelo = marcaEncontrada.modelos.find(
+              (mod) => mod.nombre.toLowerCase() === "otro"
+            )
+            if (otroModelo) {
+              setSelectedModelo(otroModelo.id.toString())
+              vehiculoForm.setValue("modelo", otroModelo.id.toString())
+            }
+          }
+        }
+      } else {
+        // Marca no encontrada, buscar opción "Otro"
+        const otraMarca = catalogoMarcas.find(
+          (m) => m.nombre.toLowerCase() === "otro"
+        )
+        if (otraMarca) {
+          setSelectedMarca(otraMarca.id.toString())
+          vehiculoForm.setValue("marca", otraMarca.id.toString())
+
+          const otroModelo = otraMarca.modelos.find(
+            (mod) => mod.nombre.toLowerCase() === "otro"
+          )
+          if (otroModelo) {
+            setSelectedModelo(otroModelo.id.toString())
+            vehiculoForm.setValue("modelo", otroModelo.id.toString())
+          }
+        }
+      }
+    }
+
+    sonnerToast.success("Datos extraídos exitosamente", {
+      description: "Los campos han sido autocompletados con la información de la matrícula.",
+    })
+
+    // Hide the tip since user already used OCR
+    setShowOCRTip(false)
+  }
+
   const handleVehiculoSubmit = async (data: VehiculoFormData) => {
     if (!cliente) return
 
@@ -328,11 +437,13 @@ export default function NuevaCitaPage() {
         // Registrar vehículo usando la API
         const vehiculoData = {
           cliente: parseInt(cliente.id),
-          placa: data.placa,
+          placa: data.placa.toUpperCase(),
           marca: parseInt(selectedMarca),
           modelo: parseInt(selectedModelo),
           anio_fabricacion: data.anio,
           kilometraje_actual: data.kilometraje,
+          color: data.color.trim(),
+          vin: data.vin.trim().toUpperCase(),
         }
 
         const vehiculoResponse = await registrarVehiculoAPI(vehiculoData, token)
@@ -345,8 +456,8 @@ export default function NuevaCitaPage() {
           marca: vehiculoResponse.marca_display || catalogoMarcas.find((m) => m.id.toString() === selectedMarca)?.nombre || "",
           modelo: vehiculoResponse.modelo_display || catalogoMarcas.find((m) => m.id.toString() === selectedMarca)?.modelos.find((mod) => mod.id.toString() === selectedModelo)?.nombre || "",
           anio: vehiculoResponse.anio_fabricacion,
-          color: "",
-          vin: "",
+          color: vehiculoResponse.color || data.color || "",
+          vin: vehiculoResponse.vin || data.vin || "",
           kilometraje: vehiculoResponse.kilometraje_actual,
           createdAt: new Date(vehiculoResponse.created_at || Date.now()),
           updatedAt: new Date(vehiculoResponse.updated_at || Date.now()),
@@ -387,6 +498,8 @@ export default function NuevaCitaPage() {
           modelo: "",
           anio: new Date().getFullYear(),
           kilometraje: 0,
+          color: "",
+          vin: "",
         })
         setSelectedMarca("")
         setSelectedModelo("")
@@ -786,6 +899,36 @@ export default function NuevaCitaPage() {
                             )}
                           </div>
 
+                          {/* OCR Button */}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowEscanearMatricula(true)}
+                            className="w-full border-[#ED1C24] text-[#ED1C24] hover:bg-[#ED1C24]/10 dark:border-[#ED1C24] dark:text-[#ED1C24] dark:hover:bg-[#ED1C24]/10"
+                          >
+                            <ScanLine className="mr-2 h-4 w-4" />
+                            Escanear Matrícula
+                          </Button>
+
+                          {/* OCR Tip - appears after 2 seconds */}
+                          <AnimatePresence>
+                            {showOCRTip && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -10, height: 0 }}
+                                animate={{ opacity: 1, y: 0, height: "auto" }}
+                                exit={{ opacity: 0, y: -10, height: 0 }}
+                                transition={{ duration: 0.3 }}
+                              >
+                                <div className="flex items-start gap-3 p-4 rounded-lg border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
+                                  <Lightbulb className="h-4 w-4 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
+                                  <p className="text-blue-900 dark:text-blue-200 text-sm">
+                                    <strong>Tip:</strong> ¿Tienes la matrícula a la mano? Usa el botón de <strong>Escanear Matrícula</strong> para autocompletar los datos del vehículo automáticamente.
+                                  </p>
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-1 sm:col-span-2">
                               <Label htmlFor="placa" className="mb-2 block">
@@ -794,8 +937,27 @@ export default function NuevaCitaPage() {
                               <Input
                                 id="placa"
                                 {...vehiculoForm.register("placa")}
-                                placeholder="ABC-1234"
-                                className="w-full"
+                                placeholder="ABC1234"
+                                maxLength={7}
+                                className="w-full uppercase"
+                                onChange={(e) => {
+                                  const value = e.target.value.toUpperCase()
+                                  // Solo permitir letras en las primeras 3 posiciones y números después
+                                  const formatted = value
+                                    .split('')
+                                    .filter((char, index) => {
+                                      if (index < 3) {
+                                        return /[A-Z]/.test(char)
+                                      } else {
+                                        return /[0-9]/.test(char)
+                                      }
+                                    })
+                                    .join('')
+                                    .slice(0, 7)
+
+                                  vehiculoForm.setValue("placa", formatted)
+                                  e.target.value = formatted
+                                }}
                               />
                               {vehiculoForm.formState.errors.placa && (
                                 <p className="text-sm text-[#ED1C24] mt-1">
@@ -908,6 +1070,64 @@ export default function NuevaCitaPage() {
                               {vehiculoForm.formState.errors.kilometraje && (
                                 <p className="text-sm text-[#ED1C24] mt-1">
                                   {vehiculoForm.formState.errors.kilometraje.message}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="col-span-1">
+                              <Label htmlFor="color" className="mb-2 block">
+                                Color <span className="text-[#ED1C24]">*</span>
+                              </Label>
+                              <Input
+                                id="color"
+                                {...vehiculoForm.register("color")}
+                                placeholder="Ej: Blanco, Negro, Rojo"
+                                maxLength={30}
+                                className="w-full"
+                                onChange={(e) => {
+                                  // Solo permitir letras y espacios, sin números
+                                  let value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')
+
+                                  // Capitalizar primera letra, resto minúsculas
+                                  if (value.length > 0) {
+                                    value = value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()
+                                  }
+
+                                  vehiculoForm.setValue("color", value)
+                                  e.target.value = value
+                                }}
+                              />
+                              {vehiculoForm.formState.errors.color && (
+                                <p className="text-sm text-[#ED1C24] mt-1">
+                                  {vehiculoForm.formState.errors.color.message}
+                                </p>
+                              )}
+                            </div>
+
+                            <div className="col-span-1">
+                              <Label htmlFor="vin" className="mb-2 block">
+                                VIN <span className="text-[#ED1C24]">*</span>
+                              </Label>
+                              <Input
+                                id="vin"
+                                {...vehiculoForm.register("vin")}
+                                placeholder="Ej: 1HGCM82633A004352"
+                                className="w-full uppercase"
+                                maxLength={17}
+                                onChange={(e) => {
+                                  // Convertir a mayúsculas y solo permitir alfanuméricos excepto I, O, Q
+                                  const value = e.target.value
+                                    .toUpperCase()
+                                    .replace(/[^A-HJ-NPR-Z0-9]/g, '')
+                                    .slice(0, 17)
+
+                                  vehiculoForm.setValue("vin", value)
+                                  e.target.value = value
+                                }}
+                              />
+                              {vehiculoForm.formState.errors.vin && (
+                                <p className="text-sm text-[#ED1C24] mt-1">
+                                  {vehiculoForm.formState.errors.vin.message}
                                 </p>
                               )}
                             </div>
@@ -1444,6 +1664,13 @@ export default function NuevaCitaPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Modal de Escanear Matrícula */}
+      <EscanearMatriculaDialog
+        open={showEscanearMatricula}
+        onClose={() => setShowEscanearMatricula(false)}
+        onDatosExtraidos={handleDatosMatriculaExtraidos}
+      />
     </div>
   )
 }

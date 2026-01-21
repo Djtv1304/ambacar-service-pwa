@@ -24,9 +24,8 @@ export const clienteSchema = z.object({
 export const vehiculoSchema = z.object({
   placa: z
     .string()
-    .min(6, "La placa debe tener al menos 6 caracteres")
-    .max(10, "La placa no puede exceder 10 caracteres")
-    .regex(/^[A-Z0-9-]+$/i, "Formato de placa inválido"),
+    .min(1, "La placa es requerida")
+    .regex(/^[A-Z]{3}\d{3,4}$/i, "La placa debe tener el formato AAA222 o AAA2222 (3 letras y 3-4 números)"),
   marca: z.union([z.string(), z.number()]).refine((val) => val !== "" && val !== 0, {
     message: "La marca es requerida",
   }),
@@ -38,6 +37,16 @@ export const vehiculoSchema = z.object({
     .min(1990, "El año debe ser mayor a 1990")
     .max(new Date().getFullYear() + 1, "El año no puede ser futuro"),
   kilometraje: z.number().min(1, "El kilometraje debe ser mayor a 0").max(999999, "El kilometraje es muy alto"),
+  color: z
+    .string()
+    .min(1, "El color es requerido")
+    .max(30, "El color no puede exceder 30 caracteres")
+    .regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "El color solo puede contener letras"),
+  vin: z
+    .string()
+    .min(17, "El VIN debe tener exactamente 17 caracteres")
+    .max(17, "El VIN debe tener exactamente 17 caracteres")
+    .regex(/^[A-HJ-NPR-Z0-9]{17}$/i, "El VIN debe tener 17 caracteres alfanuméricos (no se permiten I, O, Q)"),
 })
 
 export const citaSchema = z.object({

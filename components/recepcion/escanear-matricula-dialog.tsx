@@ -26,17 +26,34 @@ export function EscanearMatriculaDialog({ open, onClose, onDatosExtraidos }: Esc
   const [archivoImagen, setArchivoImagen] = useState<File | null>(null)
 
   const iniciarCamara = async () => {
+    // Activar estado primero para que el elemento video se renderice
+    setCameraActive(true)
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       })
+
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        setCameraActive(true)
+
+        // Asegurar que el video se reproduzca
+        try {
+          await videoRef.current.play()
+        } catch (playError) {
+          console.error("Error al reproducir video:", playError)
+        }
       }
     } catch (error) {
       console.error("Error al acceder a la cámara:", error)
-      toast.error("No se pudo acceder a la cámara")
+      setCameraActive(false)
+      toast.error("No se pudo acceder a la cámara", {
+        description: "Por favor verifica los permisos de la cámara en tu navegador",
+      })
     }
   }
 

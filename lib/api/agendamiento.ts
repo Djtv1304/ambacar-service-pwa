@@ -400,6 +400,8 @@ export async function registrarVehiculoAPI(
     modelo: number
     anio_fabricacion: number
     kilometraje_actual: number
+    color: string
+    vin: string
   },
   token: string
 ): Promise<any> {
