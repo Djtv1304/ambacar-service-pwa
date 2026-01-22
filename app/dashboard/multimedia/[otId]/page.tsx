@@ -37,6 +37,7 @@ const FILTER_LABELS: Record<FilterOption, string> = {
   REPARACION: "Reparación",
   ENTREGA: "Entrega",
   INSPECCION: "Inspecciones",
+  HALLAZGO: "Hallazgos",
 }
 
 const FILTER_COLORS: Record<FilterOption, string> = {
@@ -46,6 +47,7 @@ const FILTER_COLORS: Record<FilterOption, string> = {
   REPARACION: "bg-orange-100 text-orange-700",
   ENTREGA: "bg-green-100 text-green-700",
   INSPECCION: "bg-red-100 text-red-700",
+  HALLAZGO: "bg-yellow-100 text-yellow-700",
 }
 
 export default function MultimediaDetailPage() {
@@ -97,6 +99,7 @@ export default function MultimediaDetailPage() {
           reparacion: [],
           entrega: [],
           inspecciones: [],
+          hallazgos: [],
         }
         setGaleria(galeriaData)
         toast.warning("Sin fotografías", {
@@ -107,7 +110,7 @@ export default function MultimediaDetailPage() {
       // Cargar información de usuarios únicos solo si hay fotos
       if (galeriaData.total_fotos > 0) {
         const usuariosUnicos = new Set<number>()
-        ;[...galeriaData.recepcion, ...galeriaData.diagnostico, ...galeriaData.reparacion, ...galeriaData.entrega, ...galeriaData.inspecciones].forEach(
+        ;[...galeriaData.recepcion, ...galeriaData.diagnostico, ...galeriaData.reparacion, ...galeriaData.entrega, ...galeriaData.inspecciones, ...galeriaData.hallazgos].forEach(
           (media) => usuariosUnicos.add(media.usuario_id)
         )
 
@@ -144,6 +147,7 @@ export default function MultimediaDetailPage() {
         ...galeria.reparacion,
         ...galeria.entrega,
         ...galeria.inspecciones,
+        ...galeria.hallazgos,
       ]
     }
 
@@ -158,6 +162,8 @@ export default function MultimediaDetailPage() {
         return galeria.entrega
       case "INSPECCION":
         return galeria.inspecciones
+      case "HALLAZGO":
+        return galeria.hallazgos
       default:
         return []
     }
@@ -178,6 +184,8 @@ export default function MultimediaDetailPage() {
         return galeria.entrega.length
       case "INSPECCION":
         return galeria.inspecciones.length
+      case "HALLAZGO":
+        return galeria.hallazgos.length
       default:
         return 0
     }
@@ -303,7 +311,7 @@ export default function MultimediaDetailPage() {
         {/* OT Info */}
         <Card className="mt-4">
           <CardContent className="p-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
               <div>
                 <span className="text-gray-500 dark:text-gray-400">Cliente:</span>
                 <p className="font-medium">
@@ -311,11 +319,14 @@ export default function MultimediaDetailPage() {
                 </p>
               </div>
               <div>
+                <span className="text-gray-500 dark:text-gray-400">Placa:</span>
+                <p className="font-medium">{ordenTrabajo.vehiculo_detalle.placa}</p>
+              </div>
+              <div>
                 <span className="text-gray-500 dark:text-gray-400">Vehículo:</span>
-                <p className="font-medium">
-                  {ordenTrabajo.vehiculo_detalle.placa} -{" "}
-                  {ordenTrabajo.vehiculo_detalle.modelo_tecnico_detalle?.marca}{" "}
-                  {ordenTrabajo.vehiculo_detalle.modelo_tecnico_detalle?.modelo}
+                <p className="font-medium">{ordenTrabajo.vehiculo_detalle.marca}</p>
+                <p className="font-medium text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                  {ordenTrabajo.vehiculo_detalle.modelo}
                 </p>
               </div>
               <div>
@@ -385,16 +396,17 @@ export default function MultimediaDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {imagenesFiltradas.map((media, index) => (
                 <motion.div
-                  key={media.media_id}
+                  key={`${media.media_type}-${media.media_id}`}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.2, delay: index * 0.02 }}
+                  className="h-full"
                 >
                   <Card
-                    className="cursor-pointer hover:shadow-lg transition-all group overflow-hidden"
+                    className="cursor-pointer hover:shadow-lg transition-all group overflow-hidden h-full flex flex-col pt-0 pb-4"
                     onClick={() => setImagenSeleccionada(media)}
                   >
-                    <div className="relative aspect-video bg-gray-100 dark:bg-muted">
+                    <div className="relative aspect-video bg-gray-100 dark:bg-muted overflow-hidden rounded-t-lg">
                       <img
                         src={media.imagen_url_firmada}
                         alt={media.tipo_foto}
@@ -406,34 +418,38 @@ export default function MultimediaDetailPage() {
                       </Badge>
                     </div>
 
-                    <CardContent className="p-3">
-                      <div className="space-y-2">
+                    <CardContent className="p-3 pt-3 flex-1 flex flex-col">
+                      <div className="space-y-2 flex-1 flex flex-col">
                         <div className="flex items-center justify-between">
                           <h4 className="font-semibold text-sm text-[#202020] dark:text-gray-200 truncate">
                             {media.tipo_foto}
                           </h4>
-                          <FileImage className="h-4 w-4 text-gray-400" />
+                          <FileImage className="h-4 w-4 text-gray-400 flex-shrink-0" />
                         </div>
 
-                        {media.punto_inspeccion && (
-                          <div className="flex items-center gap-1">
-                            <Badge variant="outline" className="text-xs">
-                              {media.punto_inspeccion}
-                            </Badge>
-                            {media.estado_inspeccion && (
-                              <Badge
-                                className={cn(
-                                  "text-xs",
-                                  media.estado_inspeccion === "VERDE" && "bg-green-500",
-                                  media.estado_inspeccion === "AMARILLO" && "bg-yellow-500",
-                                  media.estado_inspeccion === "ROJO" && "bg-red-500"
-                                )}
-                              >
-                                {media.estado_inspeccion}
+                        {/* Espacio reservado para badges de inspección - altura fija */}
+                        <div className="min-h-[24px] flex items-start">
+                          {media.punto_inspeccion && (
+                            <div className="flex items-center gap-1 flex-wrap">
+                              <Badge variant="outline" className="text-xs">
+                                {media.punto_inspeccion}
                               </Badge>
-                            )}
-                          </div>
-                        )}
+                              {media.estado_inspeccion && (
+                                <Badge
+                                  className={cn(
+                                    "text-xs",
+                                    media.estado_inspeccion === "VERDE" && "bg-green-500",
+                                    media.estado_inspeccion === "AMARILLO" && "bg-yellow-500",
+                                    media.estado_inspeccion === "ROJO" && "bg-red-500",
+                                    media.estado_inspeccion === "CRITICO" && "bg-red-600"
+                                  )}
+                                >
+                                  {media.estado_inspeccion}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
+                        </div>
 
                         <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                           <div className="flex items-center gap-1">

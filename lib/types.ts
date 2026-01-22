@@ -728,7 +728,7 @@ export interface HallazgoOT {
 }
 
 // Multimedia Gallery Types
-export type MediaType = "RECEPCION" | "DIAGNOSTICO" | "REPARACION" | "ENTREGA" | "INSPECCION"
+export type MediaType = "RECEPCION" | "DIAGNOSTICO" | "REPARACION" | "ENTREGA" | "INSPECCION" | "HALLAZGO"
 
 export interface MediaItem {
   media_id: number
@@ -761,6 +761,7 @@ export interface GaleriaOTResponse {
   reparacion: MediaItem[]
   entrega: MediaItem[]
   inspecciones: MediaItem[]
+  hallazgos: MediaItem[]
 }
 
 // Anotaciones Types

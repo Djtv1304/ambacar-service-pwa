@@ -60,6 +60,8 @@ export default function MultimediaPage() {
               primeraImagen = galeria.reparacion[0].imagen_url_firmada
             } else if (galeria.entrega.length > 0) {
               primeraImagen = galeria.entrega[0].imagen_url_firmada
+            } else if (galeria.hallazgos.length > 0) {
+              primeraImagen = galeria.hallazgos[0].imagen_url_firmada
             }
 
             return {
@@ -106,8 +108,8 @@ export default function MultimediaPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-[#202020] mb-2">Registro Multimedia</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-[#202020] dark:text-gray-200 mb-2">Registro Multimedia</h1>
+        <p className="text-gray-600 dark:text-gray-400">
           Galería fotográfica de todas las órdenes de trabajo
         </p>
       </div>
@@ -116,8 +118,8 @@ export default function MultimediaPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <ImageIcon className="h-16 w-16 text-gray-400 mb-4" />
-            <p className="text-gray-600 text-lg mb-2">No hay registros multimedia</p>
-            <p className="text-gray-500 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">No hay registros multimedia</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm">
               Las fotografías aparecerán aquí cuando se capturen durante el proceso de trabajo
             </p>
           </CardContent>
@@ -137,7 +139,7 @@ export default function MultimediaPage() {
                 onClick={() => handleOTClick(ot.id)}
               >
                 {/* Image container - sin padding para que llegue hasta el borde */}
-                <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
+                <div className="relative aspect-[4/3] bg-gray-100 dark:bg-muted overflow-hidden">
                   {ot.previewImage ? (
                     <img
                       src={ot.previewImage}
@@ -159,7 +161,7 @@ export default function MultimediaPage() {
                     {/* Header: En mobile lado a lado, en desktop stack vertical para badges largos */}
                     <div className="flex flex-col md:flex-col gap-2">
                       <div className="flex items-center justify-between md:justify-start gap-2">
-                        <h3 className="font-semibold text-[#202020] flex-shrink-0">{ot.numero_orden}</h3>
+                        <h3 className="font-semibold text-[#202020] dark:text-gray-200 flex-shrink-0">{ot.numero_orden}</h3>
                         <Badge variant="outline" className="text-xs md:hidden flex-shrink-0">
                           {ot.estado_detalle.nombre}
                         </Badge>
@@ -169,7 +171,7 @@ export default function MultimediaPage() {
                       </Badge>
                     </div>
 
-                    <div className="space-y-1 text-sm text-gray-600">
+                    <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
                       <div className="flex items-center gap-2">
                         <Car className="h-4 w-4 text-gray-400" />
                         <span className="truncate">
@@ -189,7 +191,7 @@ export default function MultimediaPage() {
                         </span>
                       </div>
 
-                      <p className="text-xs text-gray-500 mt-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                         Cliente: {ot.cliente_detalle.first_name} {ot.cliente_detalle.last_name}
                       </p>
                     </div>

@@ -400,7 +400,7 @@ export function ServiceList({
                   className="space-y-4"
                 >
                   {activeServices.map((service) => (
-                    <motion.div key={service.id} variants={itemVariants}>
+                    <motion.div key={`${service.tipo}-${service.id}`} variants={itemVariants}>
                       <ServiceCard service={service} />
                     </motion.div>
                   ))}
@@ -425,7 +425,7 @@ export function ServiceList({
                   className="space-y-4"
                 >
                   {completedServices.map((service) => (
-                    <motion.div key={service.id} variants={itemVariants}>
+                    <motion.div key={`${service.tipo}-${service.id}`} variants={itemVariants}>
                       <ServiceCard service={service} />
                     </motion.div>
                   ))}
