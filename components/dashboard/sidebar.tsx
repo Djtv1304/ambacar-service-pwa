@@ -222,7 +222,7 @@ function DesktopSidebar() {
                   "hover:bg-accent hover:text-accent-foreground",
                   isActive
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-white"
-                    : "bg-white text-muted-foreground"
+                    : "bg-white dark:bg-transparent text-muted-foreground"
                 )}
               >
                 <Icon className="h-5 w-5 shrink-0" />
@@ -321,7 +321,7 @@ function MobileSidebar() {
                         "hover:bg-accent hover:text-accent-foreground",
                         isActive
                           ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-white"
-                          : "bg-white text-muted-foreground"
+                          : "bg-white dark:bg-transparent text-muted-foreground"
                       )}
                     >
                       <Icon className="h-5 w-5 shrink-0" />

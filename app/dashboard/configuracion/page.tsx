@@ -11,8 +11,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Building2, Bell, Shield, Palette, Database } from "lucide-react"
 import { WorkflowsPage } from "@/components/configuracion/workflows-page"
 import { UsuariosTab } from "@/components/configuracion/usuarios-tab"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
 export default function ConfiguracionPage() {
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <div className="space-y-6">
@@ -96,20 +105,11 @@ export default function ConfiguracionPage() {
                   <Label>Tema Oscuro</Label>
                   <p className="text-sm text-muted-foreground">Activa el modo oscuro en toda la aplicación</p>
                 </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label htmlFor="idioma">Idioma</Label>
-                <Select defaultValue="es">
-                  <SelectTrigger id="idioma">
-                    <SelectValue placeholder="Selecciona un idioma" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="es">Español (Ecuador)</SelectItem>
-                    <SelectItem value="en">English</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Switch
+                  checked={mounted ? theme === 'dark' : false}
+                  onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
+                  disabled={!mounted}
+                />
               </div>
             </CardContent>
           </Card>

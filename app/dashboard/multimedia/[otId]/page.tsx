@@ -194,7 +194,7 @@ export default function MultimediaDetailPage() {
   const FilterSidebar = () => (
     <div className="space-y-2">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-sm text-gray-700 flex items-center gap-2">
+        <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
           <Filter className="h-4 w-4" />
           Filtrar por Fase
         </h3>
@@ -225,7 +225,7 @@ export default function MultimediaDetailPage() {
               "w-full text-left px-4 py-3 rounded-lg transition-all flex items-center justify-between",
               filtroActivo === filtro
                 ? "bg-[#ED1C24] text-white shadow-md"
-                : "bg-white hover:bg-gray-50 text-gray-700"
+                : "bg-white dark:bg-transparent hover:bg-gray-50 dark:hover:bg-accent text-gray-700 dark:text-gray-300"
             )}
           >
             <span className="font-medium text-sm">{FILTER_LABELS[filtro]}</span>
@@ -257,7 +257,7 @@ export default function MultimediaDetailPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <ImageIcon className="h-16 w-16 text-gray-400 mb-4" />
-            <p className="text-gray-600 text-lg">No se encontraron datos</p>
+            <p className="text-gray-600 dark:text-gray-400 text-lg">No se encontraron datos</p>
           </CardContent>
         </Card>
       </div>
@@ -279,10 +279,10 @@ export default function MultimediaDetailPage() {
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#202020] mb-2">
+            <h1 className="text-3xl font-bold text-[#202020] dark:text-gray-200 mb-2">
               Registro Fotográfico
             </h1>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               Orden de Trabajo: {ordenTrabajo.numero_orden} • {galeria.total_fotos} fotografías
             </p>
           </div>
@@ -305,13 +305,13 @@ export default function MultimediaDetailPage() {
           <CardContent className="p-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
               <div>
-                <span className="text-gray-500">Cliente:</span>
+                <span className="text-gray-500 dark:text-gray-400">Cliente:</span>
                 <p className="font-medium">
                   {ordenTrabajo.cliente_detalle.first_name} {ordenTrabajo.cliente_detalle.last_name}
                 </p>
               </div>
               <div>
-                <span className="text-gray-500">Vehículo:</span>
+                <span className="text-gray-500 dark:text-gray-400">Vehículo:</span>
                 <p className="font-medium">
                   {ordenTrabajo.vehiculo_detalle.placa} -{" "}
                   {ordenTrabajo.vehiculo_detalle.modelo_tecnico_detalle?.marca}{" "}
@@ -319,7 +319,7 @@ export default function MultimediaDetailPage() {
                 </p>
               </div>
               <div>
-                <span className="text-gray-500">Fecha Apertura:</span>
+                <span className="text-gray-500 dark:text-gray-400">Fecha Apertura:</span>
                 <p className="font-medium">
                   {new Date(ordenTrabajo.fecha_apertura).toLocaleDateString("es-EC", {
                     year: "numeric",
@@ -364,7 +364,7 @@ export default function MultimediaDetailPage() {
               initial={{ x: "-100%" }}
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
-              className="bg-white h-full w-80 p-6 overflow-y-auto"
+              className="bg-white dark:bg-card h-full w-80 p-6 overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <FilterSidebar />
@@ -378,7 +378,7 @@ export default function MultimediaDetailPage() {
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <ImageIcon className="h-16 w-16 text-gray-400 mb-4" />
-                <p className="text-gray-600 text-lg">No hay fotografías en esta fase</p>
+                <p className="text-gray-600 dark:text-gray-400 text-lg">No hay fotografías en esta fase</p>
               </CardContent>
             </Card>
           ) : (
@@ -394,7 +394,7 @@ export default function MultimediaDetailPage() {
                     className="cursor-pointer hover:shadow-lg transition-all group overflow-hidden"
                     onClick={() => setImagenSeleccionada(media)}
                   >
-                    <div className="relative aspect-video bg-gray-100">
+                    <div className="relative aspect-video bg-gray-100 dark:bg-muted">
                       <img
                         src={media.imagen_url_firmada}
                         alt={media.tipo_foto}
@@ -409,7 +409,7 @@ export default function MultimediaDetailPage() {
                     <CardContent className="p-3">
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-semibold text-sm text-[#202020] truncate">
+                          <h4 className="font-semibold text-sm text-[#202020] dark:text-gray-200 truncate">
                             {media.tipo_foto}
                           </h4>
                           <FileImage className="h-4 w-4 text-gray-400" />
@@ -435,7 +435,7 @@ export default function MultimediaDetailPage() {
                           </div>
                         )}
 
-                        <div className="text-xs text-gray-500 space-y-1">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
                             {new Date(media.fecha_captura).toLocaleString("es-EC", {
@@ -499,7 +499,7 @@ export default function MultimediaDetailPage() {
                 {/* Header con título y acciones */}
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="min-w-0">
-                    <DialogTitle className="text-lg font-bold text-[#202020] mb-2 truncate">
+                    <DialogTitle className="text-lg font-bold text-[#202020] dark:text-gray-200 mb-2 truncate">
                       {imagenSeleccionada.tipo_foto}
                     </DialogTitle>
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -549,9 +549,9 @@ export default function MultimediaDetailPage() {
                 </div>
 
                 {/* Metadata - Compact grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm bg-gray-50 rounded-lg p-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-sm bg-gray-50 dark:bg-muted rounded-lg p-3">
                   <div>
-                    <span className="text-gray-500 text-xs">Capturada por</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">Capturada por</span>
                     <p className="font-medium text-sm truncate">
                       {usuariosCache[imagenSeleccionada.usuario_id]
                         ? `${usuariosCache[imagenSeleccionada.usuario_id].first_name} ${usuariosCache[imagenSeleccionada.usuario_id].last_name}`
@@ -559,7 +559,7 @@ export default function MultimediaDetailPage() {
                     </p>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-xs">Fecha</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">Fecha</span>
                     <p className="font-medium text-sm">
                       {new Date(imagenSeleccionada.fecha_captura).toLocaleString("es-EC", {
                         month: "short",
@@ -570,13 +570,13 @@ export default function MultimediaDetailPage() {
                     </p>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-xs">Dimensiones</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">Dimensiones</span>
                     <p className="font-medium text-sm">
                       {imagenSeleccionada.ancho_px} x {imagenSeleccionada.alto_px}
                     </p>
                   </div>
                   <div>
-                    <span className="text-gray-500 text-xs">Tamaño</span>
+                    <span className="text-gray-500 dark:text-gray-400 text-xs">Tamaño</span>
                     <p className="font-medium text-sm">
                       {formatBytes(imagenSeleccionada.tamano_bytes)}
                     </p>
@@ -592,10 +592,10 @@ export default function MultimediaDetailPage() {
                 )}
 
                 {/* Anotaciones Section */}
-                <div className="border-t border-gray-200 pt-4 space-y-3">
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
                   <div>
-                    <h4 className="font-semibold text-[#202020] text-base">Agregar Anotaciones</h4>
-                    <p className="text-xs text-gray-500">
+                    <h4 className="font-semibold text-[#202020] dark:text-gray-200 text-base">Agregar Anotaciones</h4>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       Documenta hallazgos sobre esta fotografía
                     </p>
                   </div>

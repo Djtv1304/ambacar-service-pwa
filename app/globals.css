@@ -39,6 +39,51 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+.dark {
+  --background: oklch(0.145 0 0);          /* #191919 - Notion base */
+  --foreground: oklch(0.93 0 0);           /* #e3e3e3 - soft white text */
+
+  --card: oklch(0.19 0 0);                 /* #252525 - elevated surface */
+  --card-foreground: oklch(0.93 0 0);
+
+  --popover: oklch(0.19 0 0);
+  --popover-foreground: oklch(0.93 0 0);
+
+  --primary: oklch(0.627 0.257 27.4);      /* Keep Ambacar red */
+  --primary-foreground: oklch(0.985 0 0);
+
+  --secondary: oklch(0.22 0 0);            /* #2f2f2f */
+  --secondary-foreground: oklch(0.90 0 0);
+
+  --muted: oklch(0.22 0 0);               /* #2f2f2f */
+  --muted-foreground: oklch(0.72 0 0);    /* #a3a3a3 - readable muted text */
+
+  --accent: oklch(0.24 0 0);              /* #333333 - visible hover */
+  --accent-foreground: oklch(0.93 0 0);
+
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --border: oklch(0.30 0 0);              /* #3d3d3d - visible borders */
+  --input: oklch(0.30 0 0);              /* #3d3d3d - visible input borders */
+  --ring: oklch(0.627 0.257 27.4);
+
+  --chart-1: oklch(0.55 0.20 250);
+  --chart-2: oklch(0.60 0.15 200);
+  --chart-3: oklch(0.65 0.10 180);
+  --chart-4: oklch(0.70 0.18 120);
+  --chart-5: oklch(0.75 0.17 90);
+
+  --sidebar: oklch(0.145 0 0);            /* Same as background */
+  --sidebar-foreground: oklch(0.85 0 0);
+  --sidebar-primary: oklch(0.93 0 0);
+  --sidebar-primary-foreground: oklch(0.145 0 0);
+  --sidebar-accent: oklch(0.24 0 0);      /* Visible hover on sidebar items */
+  --sidebar-accent-foreground: oklch(0.93 0 0);
+  --sidebar-border: oklch(0.30 0 0);
+  --sidebar-ring: oklch(0.627 0.257 27.4);
+}
+
 @theme inline {
   /* Typography */
   --font-sans: var(--font-geist-sans);

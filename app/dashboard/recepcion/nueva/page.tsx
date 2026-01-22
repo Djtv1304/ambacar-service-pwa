@@ -115,7 +115,7 @@ export default function NuevaRecepcionPage() {
                 idx < step
                   ? "bg-[#ED1C24] text-white"
                   : idx === step
-                    ? "bg-[#ED1C24] text-white ring-2 ring-[#ED1C24] ring-offset-2"
+                    ? "bg-[#ED1C24] text-white ring-2 ring-[#ED1C24] ring-offset-2 dark:ring-offset-background"
                     : "bg-muted text-muted-foreground"
               }`}
             >
