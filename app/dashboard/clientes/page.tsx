@@ -484,9 +484,19 @@ interface EditarClienteDialogProps {
   onSuccess: () => void
 }
 
+interface OriginalClienteValues {
+  email: string
+  username: string
+  first_name: string
+  last_name: string
+  cedula: string
+  phone: string
+}
+
 function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: EditarClienteDialogProps) {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const [originalValues, setOriginalValues] = useState<OriginalClienteValues | null>(null)
 
   const form = useForm<EditarClienteFormData>({
     resolver: zodResolver(editarClienteSchema),
@@ -500,33 +510,80 @@ function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: EditarC
     },
   })
 
+  // Watch all form values for change detection
+  const watchedValues = form.watch()
+
   // Update form when cliente changes
   useEffect(() => {
-    if (cliente) {
-      form.reset({
+    if (cliente && open) {
+      const values = {
         email: cliente.email,
         username: cliente.username,
         first_name: cliente.first_name,
         last_name: cliente.last_name,
         cedula: cliente.cedula,
         phone: cliente.phone,
-      })
+      }
+      form.reset(values)
+      setOriginalValues(values)
     }
-  }, [cliente, form])
+  }, [cliente, open, form])
+
+  // Check if there are any changes
+  const hasChanges = useMemo(() => {
+    if (!originalValues) return false
+
+    // Normalize phone for comparison (remove spaces)
+    const normalizePhone = (phone: string) => phone.replace(/\s+/g, "")
+
+    return (
+      watchedValues.email !== originalValues.email ||
+      watchedValues.username !== originalValues.username ||
+      watchedValues.first_name !== originalValues.first_name ||
+      watchedValues.last_name !== originalValues.last_name ||
+      watchedValues.cedula !== originalValues.cedula ||
+      normalizePhone(watchedValues.phone) !== normalizePhone(originalValues.phone)
+    )
+  }, [watchedValues, originalValues])
+
+  // Build partial payload with only changed fields
+  const buildPayload = (data: EditarClienteFormData): Partial<EditarClienteFormData> => {
+    if (!originalValues) return {}
+
+    const payload: Partial<EditarClienteFormData> = {}
+    const normalizePhone = (phone: string) => phone.replace(/\s+/g, "")
+
+    if (data.email !== originalValues.email) {
+      payload.email = data.email
+    }
+    if (data.username !== originalValues.username) {
+      payload.username = data.username
+    }
+    if (data.first_name !== originalValues.first_name) {
+      payload.first_name = data.first_name
+    }
+    if (data.last_name !== originalValues.last_name) {
+      payload.last_name = data.last_name
+    }
+    if (data.cedula !== originalValues.cedula) {
+      payload.cedula = data.cedula
+    }
+    if (normalizePhone(data.phone) !== normalizePhone(originalValues.phone)) {
+      payload.phone = normalizePhone(data.phone)
+    }
+
+    return payload
+  }
 
   const onSubmit = async (data: EditarClienteFormData) => {
-    if (!cliente) return
+    if (!cliente || !hasChanges) return
+
+    const payload = buildPayload(data)
+    if (Object.keys(payload).length === 0) return
 
     setIsLoading(true)
     try {
-      await editarUsuario(cliente.id, {
-        email: data.email,
-        username: data.username,
-        first_name: data.first_name,
-        last_name: data.last_name,
-        cedula: data.cedula,
-        phone: data.phone.replace(/\s+/g, ""),
-      })
+      await editarUsuario(cliente.id, payload)
 
       toast({
         title: "Cliente actualizado",
@@ -679,7 +736,7 @@ function EditarClienteDialog({ cliente, open, onOpenChange, onSuccess }: EditarC
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading}>
+              <Button type="submit" disabled={isLoading || !hasChanges}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
