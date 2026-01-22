@@ -673,6 +673,23 @@ export interface InspeccionDetalle {
   porcentaje_completado: number
 }
 
+// Foto de hallazgo (NovedadOrdenTrabajo)
+export interface FotoHallazgo {
+  id: number
+  novedad: number
+  imagen: string
+  descripcion?: string | null
+  nombre_archivo_original: string
+  formato_original: string
+  tamano_bytes: number
+  ancho_imagen: number
+  alto_imagen: number
+  usuario_captura: number
+  usuario_captura_nombre: string
+  fecha_captura: string
+  created_at: string
+}
+
 // Payload para crear un hallazgo (NovedadOrdenTrabajo)
 export interface HallazgoOTPayload {
   orden_trabajo: number
@@ -688,23 +705,26 @@ export interface HallazgoOTPayload {
 
 // Respuesta del backend para un hallazgo
 export interface HallazgoOT {
-  id?: number
+  id: number
   orden_trabajo: number
+  usuario_reporte_nombre: string
+  tipo_novedad_display: string
   tipo_novedad: "HALLAZGO" | "PROBLEMA" | "RECOMENDACION" | "OBSERVACION" | "CAMBIO"
   descripcion: string
-  justificacion_tecnica?: string
+  justificacion_tecnica?: string | null
   severidad: "CRITICO" | "IMPORTANTE" | "RECOMENDADO" | "OPCIONAL"
-  costo_mano_obra: number
-  costo_repuestos: number
-  costo_total?: number
+  costo_mano_obra: string
+  costo_repuestos: string
   requiere_autorizacion: boolean
   estado_aprobacion: "PENDIENTE" | "APROBADO" | "RECHAZADO"
+  autorizado: boolean
   usuario_reporte: number
-  usuario_aprobacion?: number
-  fecha_reporte?: string
-  fecha_respuesta?: string
-  created_at?: string
-  updated_at?: string
+  usuario_aprobacion?: number | null
+  fecha_reporte: string
+  fecha_respuesta?: string | null
+  created_at: string
+  updated_at: string
+  fotos: FotoHallazgo[]
 }
 
 // Multimedia Gallery Types

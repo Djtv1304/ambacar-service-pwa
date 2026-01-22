@@ -180,7 +180,7 @@ export async function cambiarEstadoOrdenTrabajo(
 }
 
 /**
- * Registra un hallazgo (novedad) para una Orden de Trabajo
+ * Registra un hallazgo (novedad) para una Orden de Trabajo (sin fotos)
  * POST /api/novedades-orden-trabajo/
  */
 export async function registrarHallazgo(
@@ -192,5 +192,63 @@ export async function registrarHallazgo(
     token,
     body: JSON.stringify(payload),
   })
+}
+
+/**
+ * Registra un hallazgo (novedad) para una Orden de Trabajo con fotos
+ * POST /api/novedades-orden-trabajo/
+ * @param payload - Datos del hallazgo
+ * @param fotos - Array de archivos de fotos (máximo 6)
+ * @param token - Token de autenticación
+ */
+export async function registrarHallazgoConFotos(
+  payload: HallazgoOTPayload,
+  fotos: File[],
+  token: string
+): Promise<HallazgoOT> {
+  const formData = new FormData()
+
+  // Agregar campos del hallazgo
+  formData.append("orden_trabajo", payload.orden_trabajo.toString())
+  formData.append("tipo_novedad", payload.tipo_novedad)
+  formData.append("descripcion", payload.descripcion)
+
+  if (payload.justificacion_tecnica) {
+    formData.append("justificacion_tecnica", payload.justificacion_tecnica)
+  }
+
+  formData.append("severidad", payload.severidad)
+
+  if (payload.costo_mano_obra !== undefined) {
+    formData.append("costo_mano_obra", payload.costo_mano_obra.toString())
+  }
+
+  if (payload.costo_repuestos !== undefined) {
+    formData.append("costo_repuestos", payload.costo_repuestos.toString())
+  }
+
+  formData.append("requiere_autorizacion", payload.requiere_autorizacion.toString())
+  formData.append("usuario_reporte", payload.usuario_reporte.toString())
+
+  // Agregar fotos
+  fotos.forEach((foto) => {
+    formData.append("fotos", foto)
+  })
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+  const response = await fetch(`${baseUrl}/api/novedades-orden-trabajo/`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.detail || `Error ${response.status}: ${response.statusText}`)
+  }
+
+  return response.json()
 }
 
