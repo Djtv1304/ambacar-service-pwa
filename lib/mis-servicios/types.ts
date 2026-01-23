@@ -142,7 +142,7 @@ export interface AdditionalWork {
   costoRepuestos: number
   costoTotal: number
   repuestos: AdditionalWorkPart[]
-  fotos?: string[]
+  fotos?: AdditionalWorkPhoto[]
   estado: "pendiente" | "aprobado" | "rechazado"
   fechaSolicitud: Date
   fechaRespuesta?: Date
@@ -154,6 +154,13 @@ export interface AdditionalWorkPart {
   cantidad: number
   precioUnitario: number
   subtotal: number
+}
+
+export interface AdditionalWorkPhoto {
+  id: number
+  url: string
+  descripcion: string | null
+  fecha: string
 }
 
 // Service Detail - Complete service information
@@ -255,7 +262,7 @@ export interface AdditionalWorkAPIResponse {
   costoRepuestos: string // "220.00"
   costoTotal: string     // "300.00"
   repuestos: AdditionalWorkPart[]
-  fotos: string[]
+  fotos: AdditionalWorkPhoto[]
   estado: "pendiente" | "aprobado" | "rechazado"
   fechaSolicitud: string  // ISO string
   fechaRespuesta: string | null  // ISO string or null

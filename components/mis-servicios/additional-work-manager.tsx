@@ -8,7 +8,8 @@ import {
   Check,
   X,
   ChevronDown,
-  Loader2
+  Loader2,
+  Info
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -19,7 +20,25 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import type { AdditionalWork } from "@/lib/mis-servicios/types"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import type { AdditionalWork, AdditionalWorkPhoto } from "@/lib/mis-servicios/types"
 import { cn } from "@/lib/utils"
 
 interface AdditionalWorkManagerProps {
@@ -64,6 +83,44 @@ const severityConfig = {
   },
 }
 
+function PhotoModal({
+  photo,
+  open,
+  onClose
+}: {
+  photo: AdditionalWorkPhoto | null
+  open: boolean
+  onClose: () => void
+}) {
+  if (!photo) return null
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>{photo.descripcion || "Evidencia fotográfica"}</DialogTitle>
+        </DialogHeader>
+        <div className="mt-4">
+          <img
+            src={photo.url}
+            alt={photo.descripcion || "Evidencia"}
+            className="w-full rounded-lg"
+          />
+          <p className="text-xs text-muted-foreground mt-2">
+            Capturada: {new Date(photo.fecha).toLocaleString("es-EC", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 interface WorkItemCardProps {
   work: AdditionalWork
   onApprove?: (workId: number) => Promise<void>
@@ -85,6 +142,9 @@ function WorkItemCard({
   const [isExpanded, setIsExpanded] = useState(false)
   const [isApproving, setIsApproving] = useState(false)
   const [isRejecting, setIsRejecting] = useState(false)
+  const [selectedPhoto, setSelectedPhoto] = useState<AdditionalWorkPhoto | null>(null)
+  const [showApproveDialog, setShowApproveDialog] = useState(false)
+  const [showRejectDialog, setShowRejectDialog] = useState(false)
 
   const severity = severityConfig[work.severidad]
   const SeverityIcon = severity.icon
@@ -94,6 +154,7 @@ function WorkItemCard({
     setIsApproving(true)
     try {
       await onApprove(work.id)
+      setShowApproveDialog(false)
     } finally {
       setIsApproving(false)
     }
@@ -104,6 +165,7 @@ function WorkItemCard({
     setIsRejecting(true)
     try {
       await onReject(work.id)
+      setShowRejectDialog(false)
     } finally {
       setIsRejecting(false)
     }
@@ -158,7 +220,7 @@ function WorkItemCard({
               )}>
                 ${work.costoTotal.toFixed(2)}
               </p>
-              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-xs text-muted-foreground">Presupuesto</p>
             </div>
           </div>
 
@@ -210,7 +272,7 @@ function WorkItemCard({
                 </div>
 
                 {/* Cost breakdown */}
-                <div className="bg-muted/50 rounded-lg p-3">
+                <div className="bg-muted/50 rounded-lg p-3 space-y-3">
                   <p className="text-xs font-medium text-muted-foreground mb-2">
                     Desglose de costos:
                   </p>
@@ -228,6 +290,14 @@ function WorkItemCard({
                       <span>Total:</span>
                       <span>${work.costoTotal.toFixed(2)}</span>
                     </div>
+                  </div>
+
+                  {/* Price disclaimer */}
+                  <div className="flex items-start gap-2 p-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-md">
+                    <Info className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+                    <p className="text-xs text-blue-900 dark:text-blue-300">
+                      <strong>Presupuesto referencial.</strong> El costo final puede variar según disponibilidad de repuestos y hallazgos durante la reparación.
+                    </p>
                   </div>
                 </div>
 
@@ -258,18 +328,21 @@ function WorkItemCard({
                     <p className="text-xs font-medium text-muted-foreground mb-2">
                       Evidencia fotográfica:
                     </p>
-                    <div className="flex gap-2">
-                      {work.fotos.map((foto, idx) => (
-                        <div
-                          key={idx}
-                          className="h-16 w-16 rounded-lg overflow-hidden border bg-muted"
+                    <div className="flex gap-2 flex-wrap">
+                      {work.fotos.map((foto) => (
+                        <motion.button
+                          key={foto.id}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setSelectedPhoto(foto)}
+                          className="relative h-16 w-16 rounded-lg overflow-hidden border border-border bg-muted hover:border-primary transition-colors"
                         >
                           <img
-                            src={foto}
-                            alt={`Evidencia ${idx + 1}`}
+                            src={foto.url}
+                            alt={foto.descripcion || "Evidencia"}
                             className="h-full w-full object-cover"
                           />
-                        </div>
+                        </motion.button>
                       ))}
                     </div>
                   </div>
@@ -282,28 +355,20 @@ function WorkItemCard({
           {showActions && !status && !readOnly && (
             <div className="flex gap-3 mt-4 pt-4 border-t">
               <Button
-                onClick={handleReject}
+                onClick={() => setShowRejectDialog(true)}
                 variant="outline"
                 className="flex-1 border-red-500/30 text-red-600 hover:bg-red-500/10"
                 disabled={isApproving || isRejecting}
               >
-                {isRejecting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <X className="h-4 w-4 mr-2" />
-                )}
+                <X className="h-4 w-4 mr-2" />
                 Rechazar
               </Button>
               <Button
-                onClick={handleApprove}
+                onClick={() => setShowApproveDialog(true)}
                 className="flex-1 bg-green-600 hover:bg-green-700 text-white"
                 disabled={isApproving || isRejecting}
               >
-                {isApproving ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4 mr-2" />
-                )}
+                <Check className="h-4 w-4 mr-2" />
                 Aprobar
               </Button>
             </div>
@@ -322,6 +387,102 @@ function WorkItemCard({
           )}
         </CardContent>
       </Card>
+
+      {/* Photo Modal */}
+      <PhotoModal
+        photo={selectedPhoto}
+        open={!!selectedPhoto}
+        onClose={() => setSelectedPhoto(null)}
+      />
+
+      {/* Approve Confirmation Dialog */}
+      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Aprobar trabajo adicional?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <div>
+                Estás a punto de aprobar <strong>{work.titulo}</strong> por un costo estimado de{" "}
+                <strong className="text-green-600">${work.costoTotal.toFixed(2)}</strong>.
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                <div className="text-sm text-blue-900 dark:text-blue-300">
+                  <Info className="h-4 w-4 inline mr-1" />
+                  Este monto es un <strong>presupuesto referencial</strong>. El costo final puede variar según disponibilidad de repuestos y hallazgos adicionales durante la reparación.
+                </div>
+              </div>
+              <div className="text-sm">
+                Al aprobar, autorizas al taller a proceder con este trabajo. Esta acción no se puede deshacer.
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isApproving}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleApprove}
+              disabled={isApproving}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {isApproving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Aprobando...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Sí, aprobar trabajo
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reject Confirmation Dialog */}
+      <AlertDialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Rechazar trabajo adicional?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <div>
+                Estás a punto de rechazar <strong>{work.titulo}</strong>.
+              </div>
+              {work.severidad === "critico" && (
+                <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                  <div className="text-sm text-red-900 dark:text-red-300">
+                    <AlertTriangle className="h-4 w-4 inline mr-1" />
+                    <strong>Advertencia:</strong> Este trabajo está marcado como crítico. Rechazarlo podría afectar la seguridad o funcionalidad de tu vehículo.
+                  </div>
+                </div>
+              )}
+              <div className="text-sm">
+                Al rechazar, el taller no realizará este trabajo. Esta acción no se puede deshacer.
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRejecting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReject}
+              disabled={isRejecting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isRejecting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Rechazando...
+                </>
+              ) : (
+                <>
+                  <X className="h-4 w-4 mr-2" />
+                  Sí, rechazar trabajo
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </motion.div>
   )
 }
