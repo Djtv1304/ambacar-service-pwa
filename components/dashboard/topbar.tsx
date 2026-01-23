@@ -1,7 +1,8 @@
 "use client"
 
-import { Bell, LogOut, User } from "lucide-react"
-import { useTransition } from "react"
+import { Bell, LogOut, User, Sun, Moon, Palette } from "lucide-react"
+import { useTransition, useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -15,6 +16,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { useAuth } from "@/components/auth/auth-provider"
 import { logoutAction } from "@/lib/auth/actions"
 import { useToast } from "@/hooks/use-toast"
+import { useTheme } from "next-themes"
 import type { UserRole } from "@/lib/types"
 
 const roleLabels: Record<UserRole, string> = {
@@ -28,7 +30,23 @@ const roleLabels: Record<UserRole, string> = {
 export function Topbar() {
   const { user } = useAuth()
   const { toast } = useToast()
+  const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const handleGoToProfile = () => {
+    router.push("/dashboard/configuracion?tab=perfil")
+  }
+
+  const handleToggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark")
+  }
 
   const handleLogout = () => {
     startTransition(async () => {
@@ -86,6 +104,25 @@ export function Topbar() {
           <span className="sr-only">Notificaciones</span>
         </Button>
 
+        {/* Theme Toggle */}
+        {mounted && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="relative"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
+            ) : (
+              <Moon className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+            )}
+            <span className="sr-only">
+              {theme === "dark" ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            </span>
+          </Button>
+        )}
+
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -104,10 +141,25 @@ export function Topbar() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleGoToProfile}>
               <User className="mr-2 h-4 w-4" />
               Perfil
             </DropdownMenuItem>
+            {mounted && (
+              <DropdownMenuItem onClick={handleToggleTheme}>
+                {theme === "dark" ? (
+                  <>
+                    <Sun className="mr-2 h-4 w-4 text-yellow-500" />
+                    Modo Claro
+                  </>
+                ) : (
+                  <>
+                    <Moon className="mr-2 h-4 w-4 text-slate-700" />
+                    Modo Oscuro
+                  </>
+                )}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} disabled={isPending} className="text-destructive">
               <LogOut className="mr-2 h-4 w-4" />

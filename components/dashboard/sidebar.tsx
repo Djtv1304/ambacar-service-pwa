@@ -132,7 +132,7 @@ const navItems: NavItem[] = [
     title: "Configuración",
     href: "/dashboard/configuracion",
     icon: Settings,
-    roles: ["admin"],
+    roles: [], // Habilitado para todos los usuarios
   },
   {
     title: "Laboratorio IA",

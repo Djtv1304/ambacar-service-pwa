@@ -1202,7 +1202,11 @@ function EliminarUsuarioDialog({ usuario, open, onOpenChange, onSuccess }: Elimi
     )
 }
 
-export function UsuariosTab() {
+interface UsuariosTabProps {
+    userIdToView?: number
+}
+
+export function UsuariosTab({ userIdToView }: UsuariosTabProps = {}) {
     const { toast } = useToast()
     const { user: currentUser } = useAuth()
     const [usuarios, setUsuarios] = useState<Usuario[]>([])
@@ -1252,6 +1256,17 @@ export function UsuariosTab() {
             fetchUsuarios()
         }
     }, [currentUser])
+
+    // Auto-open detail dialog if userIdToView is provided
+    useEffect(() => {
+        if (userIdToView && usuarios.length > 0 && !isLoading) {
+            const userToView = usuarios.find(u => u.id === userIdToView)
+            if (userToView) {
+                setSelectedUsuario(userToView)
+                setShowDetalleDialog(true)
+            }
+        }
+    }, [userIdToView, usuarios, isLoading])
 
     const filteredUsuarios = useMemo(() => {
         return usuarios.filter((usuario) => {

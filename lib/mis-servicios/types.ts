@@ -132,6 +132,8 @@ export interface TimelineEvidence {
 }
 
 // Additional Work Item (Trabajo Adicional)
+export type TipoNovedad = "HALLAZGO" | "PROBLEMA" | "RECOMENDACION" | "OBSERVACION" | "CAMBIO"
+
 export interface AdditionalWork {
   id: number
   titulo: string
@@ -146,6 +148,7 @@ export interface AdditionalWork {
   estado: "pendiente" | "aprobado" | "rechazado"
   fechaSolicitud: Date
   fechaRespuesta?: Date
+  tipoNovedad: TipoNovedad
 }
 
 export interface AdditionalWorkPart {
@@ -266,6 +269,7 @@ export interface AdditionalWorkAPIResponse {
   estado: "pendiente" | "aprobado" | "rechazado"
   fechaSolicitud: string  // ISO string
   fechaRespuesta: string | null  // ISO string or null
+  tipoNovedad: TipoNovedad
 }
 
 // Evento de timeline como viene de la API (fecha como string)

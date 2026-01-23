@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useRef, useState } from "react"
+import { use, useRef, useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { motion } from "framer-motion"
@@ -14,7 +14,12 @@ import {
   Fuel,
   Gauge,
   Receipt,
-  CheckCircle
+  CheckCircle,
+  Search,
+  AlertTriangle,
+  Info,
+  Eye,
+  Repeat
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,16 +32,56 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { ScrollableTabs, TabsContent } from "@/components/ui/scrollable-tabs"
 import { TimelineVertical } from "@/components/mis-servicios/timeline-vertical"
 import { AdditionalWorkManager } from "@/components/mis-servicios/additional-work-manager"
 import { ProformaSheet } from "@/components/mis-servicios/proforma-sheet"
 import { ServiceCompletionReport } from "@/components/mis-servicios/service-completion-report"
 import { useServiceData } from "@/hooks/use-service-data"
-import { SERVICE_STATUS_MAP } from "@/lib/mis-servicios/types"
+import { SERVICE_STATUS_MAP, type TipoNovedad } from "@/lib/mis-servicios/types"
 import { isCustomer, isInternalUser } from "@/lib/auth/roles"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useSidebar } from "@/components/dashboard/sidebar-context"
+
+// Configuración de tabs por tipo de novedad
+const NOVEDAD_TABS_CONFIG = {
+  HALLAZGO: {
+    label: "Hallazgos",
+    icon: Search,
+    description: "Hallazgo en Diagnóstico",
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-500/10",
+  },
+  PROBLEMA: {
+    label: "Problemas",
+    icon: AlertTriangle,
+    description: "Problema Encontrado",
+    color: "text-red-600 dark:text-red-400",
+    bgColor: "bg-red-500/10",
+  },
+  RECOMENDACION: {
+    label: "Recomendaciones",
+    icon: Info,
+    description: "Recomendación",
+    color: "text-green-600 dark:text-green-400",
+    bgColor: "bg-green-500/10",
+  },
+  OBSERVACION: {
+    label: "Observaciones",
+    icon: Eye,
+    description: "Observación General",
+    color: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-500/10",
+  },
+  CAMBIO: {
+    label: "Cambios",
+    icon: Repeat,
+    description: "Cambio en el Servicio",
+    color: "text-orange-600 dark:text-orange-400",
+    bgColor: "bg-orange-500/10",
+  },
+} as const
 
 export default function ServiceDetailPage({
   params
@@ -56,6 +101,52 @@ export default function ServiceDetailPage({
   // Use centralized role utilities
   const userIsCustomer = isCustomer(user)
   const userIsInternal = isInternalUser(user)
+
+  // Agrupar trabajos adicionales por tipo de novedad
+  const trabajosAgrupados = useMemo(() => {
+    if (!service) return null
+
+    const todos = [
+      ...service.trabajosAdicionales,
+      ...service.trabajosAprobados,
+      ...service.trabajosRechazados,
+    ]
+
+    const grouped = todos.reduce((acc, trabajo) => {
+      const tipo = trabajo.tipoNovedad
+      if (!acc[tipo]) {
+        acc[tipo] = { pendiente: [], aprobado: [], rechazado: [] }
+      }
+      acc[tipo][trabajo.estado].push(trabajo)
+      return acc
+    }, {} as Record<TipoNovedad, { pendiente: any[], aprobado: any[], rechazado: any[] }>)
+
+    return grouped
+  }, [service])
+
+  // Crear tabs dinámicamente según los tipos de novedad presentes
+  const novedadTabs = useMemo(() => {
+    if (!trabajosAgrupados) return []
+
+    return Object.keys(trabajosAgrupados).map((tipo) => {
+      const config = NOVEDAD_TABS_CONFIG[tipo as TipoNovedad]
+      const count =
+        trabajosAgrupados[tipo as TipoNovedad].pendiente.length +
+        trabajosAgrupados[tipo as TipoNovedad].aprobado.length +
+        trabajosAgrupados[tipo as TipoNovedad].rechazado.length
+
+      return {
+        value: tipo,
+        label: config.label,
+        icon: <config.icon className="h-4 w-4" />,
+        badge: count > 0 ? (
+          <span className="ml-1 px-1.5 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
+            {count}
+          </span>
+        ) : null,
+      }
+    })
+  }, [trabajosAgrupados])
 
   const scrollToApprovals = () => {
     approvalsRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -244,16 +335,44 @@ export default function ServiceDetailPage({
 
           {/* Right column - Approvals and Details */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Additional Work Manager */}
+            {/* Hallazgos y Novedades con Tabs */}
             <div ref={approvalsRef}>
-              <AdditionalWorkManager
-                pendingWork={service.trabajosAdicionales}
-                approvedWork={service.trabajosAprobados}
-                rejectedWork={service.trabajosRechazados}
-                onApprove={approveWork}
-                onReject={rejectWork}
-                readOnly={userIsInternal}
-              />
+              {novedadTabs.length > 0 ? (
+                <Card>
+                  <CardHeader className="px-4 md:px-6 pb-2">
+                    <CardTitle className="text-base">Hallazgos y Novedades</CardTitle>
+                  </CardHeader>
+                  <CardContent className="px-4 md:px-6">
+                    <ScrollableTabs tabs={novedadTabs} defaultValue={novedadTabs[0]?.value}>
+                      {Object.keys(trabajosAgrupados || {}).map((tipo) => {
+                        const trabajos = trabajosAgrupados![tipo as TipoNovedad]
+
+                        return (
+                          <TabsContent key={tipo} value={tipo} className="mt-4">
+                            <AdditionalWorkManager
+                              pendingWork={trabajos.pendiente}
+                              approvedWork={trabajos.aprobado}
+                              rejectedWork={trabajos.rechazado}
+                              onApprove={approveWork}
+                              onReject={rejectWork}
+                              readOnly={userIsInternal}
+                            />
+                          </TabsContent>
+                        )
+                      })}
+                    </ScrollableTabs>
+                  </CardContent>
+                </Card>
+              ) : (
+                <Card>
+                  <CardContent className="p-6 text-center">
+                    <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                      <Info className="h-10 w-10" />
+                      <p className="text-sm">Sin hallazgos o novedades registradas</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Service Details Accordion */}
