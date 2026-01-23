@@ -217,7 +217,7 @@ export function NuevaRecepcionForm({ onRecepcionInitiated }: NuevaRecepcionFormP
 
         {/* Cliente Selection */}
         <div className="space-y-2">
-          <Label htmlFor="cliente" className="text-[#202020] dark:text-gray-200 flex items-center gap-2">
+          <Label htmlFor="cliente" className="text-foreground dark:text-gray-200 flex items-center gap-2">
             <UserIcon className="h-4 w-4" />
             Cliente *
           </Label>
@@ -227,7 +227,7 @@ export function NuevaRecepcionForm({ onRecepcionInitiated }: NuevaRecepcionFormP
                 variant="outline"
                 role="combobox"
                 aria-expanded={clienteOpen}
-                className="w-full justify-between border-gray-300 dark:border-gray-600 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                className="w-full justify-between border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
                 disabled={isLoading}
               >
                 {selectedCliente
@@ -280,23 +280,23 @@ export function NuevaRecepcionForm({ onRecepcionInitiated }: NuevaRecepcionFormP
 
         {/* Vehiculo Selection */}
         <div className="space-y-2">
-          <Label htmlFor="vehiculo" className="text-[#202020] dark:text-gray-200 flex items-center gap-2">
+          <Label htmlFor="vehiculo" className="text-foreground dark:text-gray-200 flex items-center gap-2">
             <Car className="h-4 w-4" />
             Vehículo *
           </Label>
 
           {watchCliente && filteredVehiculos.length === 0 ? (
             <div className="space-y-2">
-              <Alert className="border-yellow-200 bg-yellow-50">
+              <Alert className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30">
                 <AlertCircle className="h-4 w-4 text-yellow-600" />
-                <AlertDescription className="text-yellow-900 text-sm">
+                <AlertDescription className="text-yellow-900 dark:text-yellow-300 text-sm">
                   Este cliente no tiene vehículos registrados. Por favor registra uno.
                 </AlertDescription>
               </Alert>
               <Button
                 type="button"
                 onClick={() => setShowRegistrarVehiculo(true)}
-                className="w-full bg-[#ED1C24] hover:bg-[#c41820] text-white"
+                className="w-full bg-primary hover:bg-primary/90 text-white"
                 disabled={isLoading}
               >
                 <Car className="mr-2 h-4 w-4" />
@@ -313,7 +313,7 @@ export function NuevaRecepcionForm({ onRecepcionInitiated }: NuevaRecepcionFormP
                 }}
                 disabled={isLoading || !watchCliente || filteredVehiculos.length === 0}
               >
-                <SelectTrigger className="w-full border-gray-300 dark:border-gray-600 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                <SelectTrigger className="w-full border-gray-300 dark:border-border focus:border-primary focus:ring-primary">
                   <SelectValue placeholder="Selecciona un vehículo..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -349,7 +349,7 @@ export function NuevaRecepcionForm({ onRecepcionInitiated }: NuevaRecepcionFormP
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Kilometraje */}
           <div className="space-y-2">
-            <Label htmlFor="kilometraje_ingreso" className="text-[#202020] dark:text-gray-200 flex items-center gap-2">
+            <Label htmlFor="kilometraje_ingreso" className="text-foreground dark:text-gray-200 flex items-center gap-2">
               <Gauge className="h-4 w-4" />
               Kilometraje de Ingreso *
             </Label>
@@ -358,7 +358,7 @@ export function NuevaRecepcionForm({ onRecepcionInitiated }: NuevaRecepcionFormP
               type="number"
               {...register("kilometraje_ingreso", { valueAsNumber: true })}
               placeholder="0"
-              className="border-gray-300 dark:border-gray-600 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+              className="border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
               disabled={isLoading}
             />
             {errors.kilometraje_ingreso && (
@@ -368,7 +368,7 @@ export function NuevaRecepcionForm({ onRecepcionInitiated }: NuevaRecepcionFormP
 
           {/* Nivel de Combustible */}
           <div className="space-y-2">
-            <Label htmlFor="nivel_combustible" className="text-[#202020] dark:text-gray-200">
+            <Label htmlFor="nivel_combustible" className="text-foreground dark:text-gray-200">
               Nivel de Combustible *
             </Label>
             <Select
@@ -376,7 +376,7 @@ export function NuevaRecepcionForm({ onRecepcionInitiated }: NuevaRecepcionFormP
               onValueChange={(value) => setValue("nivel_combustible", value)}
               disabled={isLoading}
             >
-              <SelectTrigger className="w-full border-gray-300 dark:border-gray-600 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+              <SelectTrigger className="w-full border-gray-300 dark:border-border focus:border-primary focus:ring-primary">
                 <SelectValue placeholder="Selecciona el nivel de combustible" />
               </SelectTrigger>
               <SelectContent>
@@ -395,14 +395,14 @@ export function NuevaRecepcionForm({ onRecepcionInitiated }: NuevaRecepcionFormP
 
         {/* Motivo de Visita */}
         <div className="space-y-2">
-          <Label htmlFor="motivo_visita" className="text-[#202020] dark:text-gray-200">
+          <Label htmlFor="motivo_visita" className="text-foreground dark:text-gray-200">
             Motivo de Visita *
           </Label>
           <Input
             id="motivo_visita"
             {...register("motivo_visita")}
             placeholder="Ej: Mantenimiento preventivo, Reparación de frenos, etc."
-            className="border-gray-300 dark:border-gray-600 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+            className="border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
             disabled={isLoading}
           />
           {errors.motivo_visita && <p className="text-sm text-red-500">{errors.motivo_visita.message}</p>}
@@ -410,14 +410,14 @@ export function NuevaRecepcionForm({ onRecepcionInitiated }: NuevaRecepcionFormP
 
         {/* Observaciones del Cliente */}
         <div className="space-y-2">
-          <Label htmlFor="observaciones_cliente" className="text-[#202020] dark:text-gray-200">
+          <Label htmlFor="observaciones_cliente" className="text-foreground dark:text-gray-200">
             Observaciones del Cliente
           </Label>
           <Textarea
             id="observaciones_cliente"
             {...register("observaciones_cliente")}
             placeholder="Anota cualquier observación importante del cliente..."
-            className="resize-none border-gray-300 dark:border-gray-600 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+            className="resize-none border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
             rows={3}
             disabled={isLoading}
           />
@@ -447,7 +447,7 @@ export function NuevaRecepcionForm({ onRecepcionInitiated }: NuevaRecepcionFormP
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#ED1C24] hover:bg-[#c41820] text-white"
+            className="w-full bg-primary hover:bg-primary/90 text-white"
           >
             {isLoading ? (
               <>

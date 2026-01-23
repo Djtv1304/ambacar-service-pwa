@@ -165,7 +165,7 @@ export default function RecepcionDetailPage() {
                     </div>
                 </div>
                 <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#ED1C24]" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
                 <LoadingSkeleton />
             </div>
@@ -224,16 +224,16 @@ export default function RecepcionDetailPage() {
                         <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm transition-all ${
                                 idx < step
-                                    ? "bg-[#ED1C24] text-white"
+                                    ? "bg-primary text-white"
                                     : idx === step
-                                        ? "bg-[#ED1C24] text-white ring-2 ring-[#ED1C24] ring-offset-2"
+                                        ? "bg-primary text-white ring-2 ring-primary ring-offset-2 dark:ring-offset-background"
                                         : "bg-muted text-muted-foreground"
                             }`}
                         >
                             {idx < step ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
                         </div>
                         {idx < stepLabels.length - 1 && (
-                            <div className={`flex-1 h-1 mx-2 transition-colors ${idx < step ? "bg-[#ED1C24]" : "bg-muted"}`} />
+                            <div className={`flex-1 h-1 mx-2 transition-colors ${idx < step ? "bg-primary" : "bg-muted"}`} />
                         )}
                     </motion.div>
                 ))}
@@ -265,9 +265,9 @@ export default function RecepcionDetailPage() {
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                                 onClick={() => setShowCamera(true)}
-                                className="w-full p-8 rounded-lg border-2 border-dashed border-[#ED1C24]/30 hover:border-[#ED1C24] flex flex-col items-center justify-center gap-3 transition-colors"
+                                className="w-full p-8 rounded-lg border-2 border-dashed border-primary/30 hover:border-primary flex flex-col items-center justify-center gap-3 transition-colors"
                             >
-                                <Camera className="w-8 h-8 text-[#ED1C24]" />
+                                <Camera className="w-8 h-8 text-primary" />
                                 <span className="font-medium">Abrir Cámara</span>
                                 <span className="text-xs text-muted-foreground">
                   {fotosCapturadas.length}/{FOTOS_REQUERIDAS} fotos capturadas

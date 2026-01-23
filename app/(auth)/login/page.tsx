@@ -167,7 +167,7 @@ export default function LoginPage() {
         >
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#ED1C24] shadow-lg shadow-red-500/30">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/30">
               <span className="text-2xl font-bold text-white">A</span>
             </div>
             <div>
@@ -185,7 +185,7 @@ export default function LoginPage() {
             >
               <h2 className="text-5xl font-bold leading-tight">
                 Donde la<br />
-                <span className="text-[#ED1C24]">excelencia</span><br />
+                <span className="text-primary">excelencia</span><br />
                 se encuentra
               </h2>
             </motion.div>
@@ -230,7 +230,7 @@ export default function LoginPage() {
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="flex justify-center mb-4"
               >
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#ED1C24] shadow-lg shadow-red-500/30">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/30">
                   <span className="text-3xl font-bold text-white">A</span>
                 </div>
               </motion.div>
@@ -239,10 +239,10 @@ export default function LoginPage() {
             </div>
 
             {/* Form Card */}
-            <div className="backdrop-blur-xl bg-white/95 rounded-3xl shadow-2xl p-8 sm:p-10">
+            <div className="backdrop-blur-xl bg-white/95 dark:bg-card/95 rounded-3xl shadow-2xl p-8 sm:p-10">
               <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900">Bienvenido</h2>
-                <p className="text-gray-600 mt-1">Ingresa tus credenciales para continuar</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-foreground">Bienvenido</h2>
+                <p className="text-gray-600 dark:text-muted-foreground mt-1">Ingresa tus credenciales para continuar</p>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -253,7 +253,7 @@ export default function LoginPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                     >
-                      <Alert variant="destructive" className="bg-red-50 border-red-200">
+                      <Alert variant="destructive" className="bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>{serverError}</AlertDescription>
                       </Alert>
@@ -262,7 +262,7 @@ export default function LoginPage() {
                 </AnimatePresence>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-700 font-medium">
+                  <Label htmlFor="email" className="text-gray-700 dark:text-foreground font-medium">
                     Correo Electrónico
                   </Label>
                   <div className="relative">
@@ -271,7 +271,7 @@ export default function LoginPage() {
                       id="email"
                       type="email"
                       placeholder="tu@email.com"
-                      className="pl-12 h-12 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-[#ED1C24] focus:ring-[#ED1C24] transition-all"
+                      className="pl-12 h-12 bg-gray-50 dark:bg-muted border-gray-200 dark:border-border rounded-xl focus:bg-white dark:focus:bg-card focus:border-primary focus:ring-primary transition-all"
                       {...register("email")}
                       disabled={isPending}
                     />
@@ -289,12 +289,12 @@ export default function LoginPage() {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-gray-700 font-medium">
+                    <Label htmlFor="password" className="text-gray-700 dark:text-foreground font-medium">
                       Contraseña
                     </Label>
                     <Link
                       href="/recuperar-clave"
-                      className="text-sm text-[#ED1C24] hover:text-[#c41820] font-medium transition-colors"
+                      className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
                     >
                       ¿Olvidaste tu contraseña?
                     </Link>
@@ -305,14 +305,14 @@ export default function LoginPage() {
                       id="password"
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      className="pl-12 pr-12 h-12 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-[#ED1C24] focus:ring-[#ED1C24] transition-all"
+                      className="pl-12 pr-12 h-12 bg-gray-50 dark:bg-muted border-gray-200 dark:border-border rounded-xl focus:bg-white dark:focus:bg-card focus:border-primary focus:ring-primary transition-all"
                       {...register("password")}
                       disabled={isPending}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none transition-colors"
                       disabled={isPending}
                     >
                       {showPassword ? (
@@ -338,7 +338,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowTestCredentials(!showTestCredentials)}
-                    className="text-xs text-gray-500 hover:text-gray-700 underline transition-colors"
+                    className="text-xs text-gray-500 dark:text-muted-foreground hover:text-gray-700 dark:hover:text-foreground underline transition-colors"
                   >
                     {showTestCredentials ? "Ocultar credenciales de prueba" : "Ver credenciales de prueba"}
                   </button>
@@ -350,9 +350,9 @@ export default function LoginPage() {
                         exit={{ opacity: 0, height: 0 }}
                         className="mt-2 overflow-hidden"
                       >
-                        <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                          <p className="text-xs text-gray-600 mb-2">Credenciales de prueba:</p>
-                          <div className="space-y-1 text-xs font-mono text-gray-700">
+                        <div className="bg-gray-50 dark:bg-muted rounded-xl p-4 border border-gray-200 dark:border-border">
+                          <p className="text-xs text-gray-600 dark:text-muted-foreground mb-2">Credenciales de prueba:</p>
+                          <div className="space-y-1 text-xs font-mono text-gray-700 dark:text-foreground">
                             <p>juan.perez@example.com</p>
                             <p>MiPassword123!</p>
                           </div>
@@ -373,7 +373,7 @@ export default function LoginPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 bg-[#ED1C24] hover:bg-[#c41820] text-white rounded-xl font-semibold text-base shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all duration-300"
+                  className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold text-base shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300"
                   disabled={isPending}
                 >
                   {isPending ? (
@@ -390,12 +390,12 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <p className="text-center text-gray-600">
+              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-border">
+                <p className="text-center text-gray-600 dark:text-muted-foreground">
                   ¿No tienes una cuenta?{" "}
                   <Link
                     href="/registro"
-                    className="text-[#ED1C24] hover:text-[#c41820] font-semibold transition-colors"
+                    className="text-primary hover:text-primary/80 font-semibold transition-colors"
                   >
                     Regístrate aquí
                   </Link>

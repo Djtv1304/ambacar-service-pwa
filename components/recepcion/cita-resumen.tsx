@@ -120,7 +120,7 @@ export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
                         placeholder="Ingresa el kilometraje actual"
                         className="text-base"
                       />
-                      <Button onClick={handleGuardarKm} className="w-full bg-[#ED1C24] hover:bg-[#c41820]">
+                      <Button onClick={handleGuardarKm} className="w-full bg-primary hover:bg-primary/90">
                         Guardar
                       </Button>
                     </div>
@@ -141,7 +141,7 @@ export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
           <CardContent className="space-y-3">
             <div>
               <p className="text-xs text-muted-foreground mb-1">Tipo de Servicio</p>
-              <Badge className="bg-[#ED1C24]/10 text-[#ED1C24] border-[#ED1C24]/20">
+              <Badge className="bg-primary/10 text-primary border-primary/20">
                 {cita.tipo_servicio.nombre}
               </Badge>
             </div>
@@ -186,7 +186,7 @@ export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
       {/* CTA */}
       {onProceed && (
         <motion.div variants={itemVariants}>
-          <Button onClick={onProceed} size="lg" className="w-full bg-[#ED1C24] hover:bg-[#c41820] text-white">
+          <Button onClick={onProceed} size="lg" className="w-full bg-primary hover:bg-primary/90 text-white">
             Continuar con Recepción
           </Button>
         </motion.div>

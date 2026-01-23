@@ -209,7 +209,7 @@ export function SubirFotosDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubiendo}>
               Cancelar
             </Button>
-            <Button onClick={handleSubirFotos} disabled={!puedeSubir} className="bg-[#ED1C24] hover:bg-[#c41820]">
+            <Button onClick={handleSubirFotos} disabled={!puedeSubir} className="bg-primary hover:bg-primary/90">
               {isSubiendo ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

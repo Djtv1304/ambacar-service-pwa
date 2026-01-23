@@ -149,6 +149,7 @@ export interface AdditionalWork {
   fechaSolicitud: Date
   fechaRespuesta?: Date
   tipoNovedad: TipoNovedad
+  requiereAprobacion: boolean
 }
 
 export interface AdditionalWorkPart {
@@ -270,19 +271,27 @@ export interface AdditionalWorkAPIResponse {
   fechaSolicitud: string  // ISO string
   fechaRespuesta: string | null  // ISO string or null
   tipoNovedad: TipoNovedad
+  requiereAprobacion: boolean
 }
 
-// Evento de timeline como viene de la API (fecha como string)
+// Evento de timeline como viene de la API
 export interface TimelineEventAPIResponse {
   id: string
-  fase: string
-  descripcion: string
-  fecha: string  // ISO string
-  completada: boolean
-  enProgreso: boolean
-  evidencia: TimelineEvidence[]
-  responsable: string
-  notas: string | null
+  nombre: string  // maps to "fase" in UI
+  descripcion?: string
+  estado: "completed" | "in_progress" | "pending"
+  fechaInicio: string | null  // ISO string
+  fechaFin: string | null     // ISO string
+  duracionMinutos?: number
+  observaciones: string | null  // maps to "notas"
+  responsable?: string
+  evidencia: TimelineEvidenceAPIResponse[]
+}
+
+export interface TimelineEvidenceAPIResponse {
+  id: string
+  url: string
+  descripcion?: string
 }
 
 // Detalle del servicio como viene de la API

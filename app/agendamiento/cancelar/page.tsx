@@ -102,21 +102,21 @@ export default function CancelarCitaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white dark:from-background dark:via-background dark:to-background">
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+      <header className="border-b border-gray-200 dark:border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-[#ED1C24] flex items-center justify-center">
+              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
                 <XCircle className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-[#202020]">Ambacar</h1>
-                <p className="text-xs text-gray-600">Cancelar Cita</p>
+                <h1 className="text-xl font-bold text-foreground">Ambacar</h1>
+                <p className="text-xs text-gray-600 dark:text-muted-foreground">Cancelar Cita</p>
               </div>
             </div>
-            <Button variant="ghost" onClick={() => router.push("/agendamiento")} className="text-gray-600">
+            <Button variant="ghost" onClick={() => router.push("/agendamiento")} className="text-gray-600 dark:text-muted-foreground">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Volver
             </Button>
@@ -132,45 +132,45 @@ export default function CancelarCitaPage() {
           className="max-w-2xl mx-auto"
         >
           {!citaEncontrada && !cancelada && (
-            <Card className="border-gray-200 shadow-lg">
+            <Card className="border-gray-200 dark:border-border shadow-lg dark:bg-card">
               <CardHeader>
-                <CardTitle className="text-2xl text-[#202020]">Cancelar Cita</CardTitle>
+                <CardTitle className="text-2xl text-foreground">Cancelar Cita</CardTitle>
                 <CardDescription>Ingresa los datos de tu cita para cancelarla</CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit(onBuscar)} className="space-y-6">
-                  <Alert className="border-amber-200 bg-amber-50">
+                  <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
                     <AlertTriangle className="h-4 w-4 text-amber-600" />
-                    <AlertDescription className="text-amber-900">
+                    <AlertDescription className="text-amber-900 dark:text-amber-300">
                       Una vez cancelada, deberás agendar una nueva cita si deseas programar un servicio.
                     </AlertDescription>
                   </Alert>
 
                   <div>
-                    <Label htmlFor="cedula" className="text-[#202020]">
-                      Número de Cédula <span className="text-[#ED1C24]">*</span>
+                    <Label htmlFor="cedula" className="text-foreground">
+                      Número de Cédula <span className="text-primary">*</span>
                     </Label>
                     <Input
                       id="cedula"
                       {...register("cedula")}
                       placeholder="1234567890"
-                      className="mt-2 border-gray-300"
+                      className="mt-2 border-gray-300 dark:border-border"
                     />
-                    {errors.cedula && <p className="text-sm text-[#ED1C24] mt-1">{errors.cedula.message}</p>}
+                    {errors.cedula && <p className="text-sm text-primary mt-1">{errors.cedula.message}</p>}
                   </div>
 
                   <div>
-                    <Label htmlFor="referencia" className="text-[#202020]">
-                      Número de Referencia <span className="text-[#ED1C24]">*</span>
+                    <Label htmlFor="referencia" className="text-foreground">
+                      Número de Referencia <span className="text-primary">*</span>
                     </Label>
                     <Input
                       id="referencia"
                       {...register("referencia")}
                       placeholder="CITA-123456789"
-                      className="mt-2 border-gray-300"
+                      className="mt-2 border-gray-300 dark:border-border"
                     />
-                    {errors.referencia && <p className="text-sm text-[#ED1C24] mt-1">{errors.referencia.message}</p>}
-                    <p className="text-xs text-gray-500 mt-1">
+                    {errors.referencia && <p className="text-sm text-primary mt-1">{errors.referencia.message}</p>}
+                    <p className="text-xs text-gray-500 dark:text-muted-foreground mt-1">
                       Puedes encontrar este número en el email de confirmación
                     </p>
                   </div>
@@ -178,7 +178,7 @@ export default function CancelarCitaPage() {
                   <Button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-[#ED1C24] hover:bg-[#c41820] text-white py-6"
+                    className="w-full bg-primary hover:bg-primary/90 text-white py-6"
                   >
                     {loading ? (
                       <>
@@ -196,34 +196,34 @@ export default function CancelarCitaPage() {
 
           {citaEncontrada && !cancelada && (
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-6">
-              <Card className="border-gray-200 shadow-lg">
+              <Card className="border-gray-200 dark:border-border shadow-lg dark:bg-card">
                 <CardHeader>
-                  <CardTitle className="text-2xl text-[#202020]">Detalles de la Cita</CardTitle>
+                  <CardTitle className="text-2xl text-foreground">Detalles de la Cita</CardTitle>
                   <CardDescription>Verifica que esta sea la cita que deseas cancelar</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="bg-gray-50 rounded-xl p-6 space-y-4">
+                  <div className="bg-gray-50 dark:bg-muted rounded-xl p-6 space-y-4">
                     <div>
-                      <p className="text-sm text-gray-600">Referencia</p>
-                      <p className="font-mono font-bold text-[#202020]">{citaEncontrada.id}</p>
+                      <p className="text-sm text-gray-600 dark:text-muted-foreground">Referencia</p>
+                      <p className="font-mono font-bold text-foreground">{citaEncontrada.id}</p>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className="text-sm text-gray-600">Fecha</p>
-                        <p className="font-semibold text-[#202020]">{citaEncontrada.fecha}</p>
+                        <p className="text-sm text-gray-600 dark:text-muted-foreground">Fecha</p>
+                        <p className="font-semibold text-foreground">{citaEncontrada.fecha}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-600">Hora</p>
-                        <p className="font-semibold text-[#202020]">{citaEncontrada.hora}</p>
+                        <p className="text-sm text-gray-600 dark:text-muted-foreground">Hora</p>
+                        <p className="font-semibold text-foreground">{citaEncontrada.hora}</p>
                       </div>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Vehículo</p>
-                      <p className="font-semibold text-[#202020]">{citaEncontrada.vehiculoPlaca}</p>
+                      <p className="text-sm text-gray-600 dark:text-muted-foreground">Vehículo</p>
+                      <p className="font-semibold text-foreground">{citaEncontrada.vehiculoPlaca}</p>
                     </div>
                     <div>
-                      <p className="text-sm text-gray-600">Servicio</p>
-                      <p className="font-semibold text-[#202020]">{citaEncontrada.servicio}</p>
+                      <p className="text-sm text-gray-600 dark:text-muted-foreground">Servicio</p>
+                      <p className="font-semibold text-foreground">{citaEncontrada.servicio}</p>
                     </div>
                   </div>
 
@@ -239,7 +239,7 @@ export default function CancelarCitaPage() {
                     <Button
                       onClick={onCancelar}
                       disabled={loading}
-                      className="flex-1 bg-[#ED1C24] hover:bg-[#c41820] text-white"
+                      className="flex-1 bg-primary hover:bg-primary/90 text-white"
                     >
                       {loading ? (
                         <>
@@ -265,20 +265,20 @@ export default function CancelarCitaPage() {
               animate={{ opacity: 1, scale: 1 }}
               className="text-center"
             >
-              <Card className="border-gray-200 shadow-lg">
+              <Card className="border-gray-200 dark:border-border shadow-lg dark:bg-card">
                 <CardContent className="pt-8 pb-8">
                   <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-6">
                     <XCircle className="h-8 w-8 text-green-600" />
                   </div>
 
-                  <h2 className="text-3xl font-bold text-[#202020] mb-4">Cita Cancelada</h2>
-                  <p className="text-gray-600 mb-8">
+                  <h2 className="text-3xl font-bold text-foreground mb-4">Cita Cancelada</h2>
+                  <p className="text-gray-600 dark:text-muted-foreground mb-8">
                     Tu cita ha sido cancelada exitosamente. Recibirás una confirmación por email y WhatsApp.
                   </p>
 
                   <Button
                     onClick={() => router.push("/agendamiento")}
-                    className="bg-[#ED1C24] hover:bg-[#c41820] text-white px-8"
+                    className="bg-primary hover:bg-primary/90 text-white px-8"
                   >
                     Volver al Inicio
                   </Button>

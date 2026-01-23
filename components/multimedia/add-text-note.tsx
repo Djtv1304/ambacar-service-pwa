@@ -81,8 +81,8 @@ export function AddTextNote({ mediaType, mediaId, onSuccess }: AddTextNoteProps)
           {/* Header */}
           <div className="flex items-center justify-between pb-2 border-b">
             <div className="flex items-center gap-2">
-              <MessageSquarePlus className="h-5 w-5 text-[#ED1C24]" />
-              <span className="font-semibold text-[#202020]">Nueva Nota</span>
+              <MessageSquarePlus className="h-5 w-5 text-primary" />
+              <span className="font-semibold text-foreground">Nueva Nota</span>
             </div>
             <Button
               variant="ghost"
@@ -92,7 +92,7 @@ export function AddTextNote({ mediaType, mediaId, onSuccess }: AddTextNoteProps)
                 setNoteText("")
               }}
               disabled={loading}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-gray-600 hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground"
             >
               Cancelar
             </Button>
@@ -104,19 +104,19 @@ export function AddTextNote({ mediaType, mediaId, onSuccess }: AddTextNoteProps)
             value={noteText}
             onChange={(e) => setNoteText(e.target.value)}
             rows={4}
-            className="resize-none border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+            className="resize-none border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
             disabled={loading}
           />
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-2">
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-gray-500 dark:text-muted-foreground">
               {noteText.length} {noteText.length === 1 ? "carácter" : "caracteres"}
             </span>
             <Button
               onClick={handleSubmit}
               disabled={loading || !noteText.trim()}
-              className="bg-[#ED1C24] hover:bg-[#c41820] text-white font-medium"
+              className="bg-primary hover:bg-primary/90 text-white font-medium"
               size="sm"
             >
               {loading ? (

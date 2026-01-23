@@ -258,7 +258,7 @@ export function HeroChart({ data, range }: HeroChartProps) {
       className={`relative overflow-hidden rounded-xl border shadow-sm transition-colors duration-300 ${
         isDark
           ? "border-gray-800 bg-gray-950"
-          : "border-gray-200 bg-white"
+          : "border-gray-200 bg-white dark:border-border dark:bg-card"
       }`}
     >
       {/* Chart Title - Integrated */}
@@ -266,20 +266,20 @@ export function HeroChart({ data, range }: HeroChartProps) {
         className={`flex items-center justify-between border-b px-3 py-2 sm:px-4 sm:py-3 ${
           isDark
             ? "border-gray-800 bg-gradient-to-r from-gray-900/50 to-transparent"
-            : "border-gray-200 bg-gradient-to-r from-gray-50 to-transparent"
+            : "border-gray-200 bg-gradient-to-r from-gray-50 to-transparent dark:border-border dark:bg-gradient-to-r dark:from-muted dark:to-transparent"
         }`}
       >
         <div className="min-w-0 flex-1">
           <h3
             className={`text-sm font-semibold sm:text-base ${
-              isDark ? "text-gray-100" : "text-gray-900"
+              isDark ? "text-gray-100" : "text-gray-900 dark:text-foreground"
             }`}
           >
             Proyección de Demanda
           </h3>
           <p
             className={`text-[10px] sm:text-xs mt-0.5 ${
-              isDark ? "text-gray-400" : "text-gray-600"
+              isDark ? "text-gray-400" : "text-gray-600 dark:text-muted-foreground"
             }`}
           >
             {range === "weekly" ? "7 días + 7 días" : "30 días + 30 días"}
@@ -294,7 +294,7 @@ export function HeroChart({ data, range }: HeroChartProps) {
           className={`h-7 px-2 gap-1.5 shrink-0 ${
             isDark
               ? "border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-gray-100"
-              : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100"
+              : "border-gray-300 bg-white text-gray-700 hover:bg-gray-100 dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-muted"
           }`}
         >
           {isDark ? (
@@ -321,7 +321,7 @@ export function HeroChart({ data, range }: HeroChartProps) {
             className={`pointer-events-none absolute z-10 min-w-[140px] rounded-lg border p-2 shadow-lg transition-all duration-150 ${
               isDark
                 ? "border-gray-700 bg-gray-900/95 backdrop-blur-sm"
-                : "border-gray-200 bg-white/95 backdrop-blur-sm"
+                : "border-gray-200 bg-white/95 backdrop-blur-sm dark:border-border dark:bg-card/95"
             }`}
             style={{
               left: Math.min(tooltipData.x + 12, (chartContainerRef.current?.clientWidth || 300) - 160),
@@ -366,7 +366,7 @@ export function HeroChart({ data, range }: HeroChartProps) {
 
             {/* Date */}
             <p
-              className={`text-[10px] mb-0.5 ${isDark ? "text-gray-400" : "text-gray-500"}`}
+              className={`text-[10px] mb-0.5 ${isDark ? "text-gray-400" : "text-gray-500 dark:text-muted-foreground"}`}
             >
               {formatTooltipDate(tooltipData.date)}
             </p>
@@ -374,13 +374,13 @@ export function HeroChart({ data, range }: HeroChartProps) {
             {/* Value */}
             <p
               className={`text-base font-bold ${
-                isDark ? "text-gray-100" : "text-gray-900"
+                isDark ? "text-gray-100" : "text-gray-900 dark:text-foreground"
               }`}
             >
               {tooltipData.value}{" "}
               <span
                 className={`text-xs font-normal ${
-                  isDark ? "text-gray-400" : "text-gray-500"
+                  isDark ? "text-gray-400" : "text-gray-500 dark:text-muted-foreground"
                 }`}
               >
                 serv.
@@ -393,14 +393,14 @@ export function HeroChart({ data, range }: HeroChartProps) {
       {/* Legend - Bottom Integrated */}
       <div
         className={`flex items-center justify-center gap-4 border-t px-3 py-1.5 sm:px-4 sm:py-2 ${
-          isDark ? "border-gray-800 bg-gray-900/50" : "border-gray-200 bg-gray-50"
+          isDark ? "border-gray-800 bg-gray-900/50" : "border-gray-200 bg-gray-50 dark:border-border dark:bg-muted"
         }`}
       >
         <div className="flex items-center gap-1.5">
           <div className="h-0.5 w-5 bg-blue-500 rounded-full" />
           <span
             className={`text-[10px] sm:text-xs font-medium ${
-              isDark ? "text-gray-300" : "text-gray-700"
+              isDark ? "text-gray-300" : "text-gray-700 dark:text-foreground"
             }`}
           >
             Histórico
@@ -410,7 +410,7 @@ export function HeroChart({ data, range }: HeroChartProps) {
           <div className="h-0.5 w-5 border-t-2 border-dashed border-orange-500 rounded-full" />
           <span
             className={`text-[10px] sm:text-xs font-medium ${
-              isDark ? "text-gray-300" : "text-gray-700"
+              isDark ? "text-gray-300" : "text-gray-700 dark:text-foreground"
             }`}
           >
             Proyectado

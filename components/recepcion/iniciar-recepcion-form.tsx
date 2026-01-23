@@ -164,7 +164,7 @@ export function IniciarRecepcionForm({ cita, kmIngreso, onRecepcionInitiated }: 
                         type="submit"
                         disabled={isLoading}
                         size="lg"
-                        className="w-full bg-[#ED1C24] hover:bg-[#c41820] text-white"
+                        className="w-full bg-primary hover:bg-primary/90 text-white"
                     >
                         {isLoading ? (
                             <>

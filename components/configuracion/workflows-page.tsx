@@ -421,7 +421,7 @@ export function WorkflowsPage({ className }: WorkflowsPageProps) {
             <Button
               onClick={handleSave}
               disabled={isSaving || !hasChanges}
-              className="bg-[#E60000] hover:bg-[#CC0000] text-white flex-1 sm:flex-none"
+              className="bg-primary hover:bg-primary/90 text-white flex-1 sm:flex-none"
             >
               {isSaving ? (
                 <>

@@ -30,11 +30,10 @@ export function StepsIndicator({ steps, currentStep }: StepsIndicatorProps) {
                   initial={false}
                   animate={{
                     scale: isCurrent ? 1.1 : 1,
-                    backgroundColor: isCompleted || isCurrent ? "#ED1C24" : "#e5e7eb",
                   }}
                   className={cn(
                     "w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full flex items-center justify-center font-semibold transition-colors text-sm sm:text-base",
-                    isCompleted || isCurrent ? "text-white" : "text-gray-500",
+                    isCompleted || isCurrent ? "bg-primary text-white" : "bg-gray-200 dark:bg-muted text-gray-500 dark:text-muted-foreground",
                   )}
                 >
                   {isCompleted ? <Check className="h-4 w-4 sm:h-5 sm:w-5" /> : step.number}
@@ -42,7 +41,7 @@ export function StepsIndicator({ steps, currentStep }: StepsIndicatorProps) {
                 <p
                   className={cn(
                     "text-xs sm:text-sm mt-1 sm:mt-2 font-medium text-center whitespace-nowrap px-1",
-                    isCurrent ? "text-[#ED1C24]" : "text-gray-600"
+                    isCurrent ? "text-primary" : "text-gray-600 dark:text-muted-foreground"
                   )}
                 >
                   {step.title}
@@ -50,14 +49,14 @@ export function StepsIndicator({ steps, currentStep }: StepsIndicatorProps) {
               </div>
 
               {!isLast && (
-                <div className="w-12 sm:w-16 md:w-24 h-0.5 mx-2 sm:mx-3 md:mx-4 bg-gray-200 relative overflow-hidden">
+                <div className="w-12 sm:w-16 md:w-24 h-0.5 mx-2 sm:mx-3 md:mx-4 bg-gray-200 dark:bg-muted relative overflow-hidden">
                   <motion.div
                     initial={false}
                     animate={{
                       width: isCompleted ? "100%" : "0%",
                     }}
                     transition={{ duration: 0.3 }}
-                    className="absolute inset-0 bg-[#ED1C24]"
+                    className="absolute inset-0 bg-primary"
                   />
                 </div>
               )}

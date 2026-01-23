@@ -502,7 +502,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
               </div>
 
               <Button
-                className="w-full bg-[#ED1C24] hover:bg-[#c41820] text-white"
+                className="w-full bg-primary hover:bg-primary/90 text-white"
                 onClick={() => setShowProformaSheet(true)}
               >
                 <Receipt className="mr-2 h-5 w-5" />

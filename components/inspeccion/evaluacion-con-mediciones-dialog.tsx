@@ -171,7 +171,7 @@ export function EvaluacionConMedicionesDialog({
         <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="space-y-2">
-              <Badge className="bg-blue-100 text-blue-800 border-blue-200 w-fit">
+              <Badge className="bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800 w-fit">
                 {puntoCatalogo.categoria_display.toUpperCase()}
               </Badge>
               <DialogTitle className="text-2xl">{puntoCatalogo.nombre}</DialogTitle>
@@ -182,7 +182,7 @@ export function EvaluacionConMedicionesDialog({
           <div className="space-y-6 py-4">
             {/* Mediciones (si requiere) */}
             {puntoCatalogo.requiere_mediciones && puntoCatalogo.campos_medicion && (
-              <Card className="border-blue-200 bg-blue-50/50">
+              <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30">
                 <CardHeader>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <Ruler className="h-5 w-5 text-blue-600" />
@@ -317,9 +317,9 @@ export function EvaluacionConMedicionesDialog({
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Alert className="border-blue-200 bg-blue-50">
+                  <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
                     <AlertCircle className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-900">
+                    <AlertDescription className="text-blue-900 dark:text-blue-300">
                       Después de guardar este punto, podrás agregar las fotografías de evidencia requeridas para el estado
                       crítico.
                     </AlertDescription>
@@ -333,7 +333,7 @@ export function EvaluacionConMedicionesDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGuardando}>
               Cancelar
             </Button>
-            <Button onClick={handleGuardar} disabled={!puedeGuardar || isGuardando} className="bg-[#ED1C24] hover:bg-[#c41820]">
+            <Button onClick={handleGuardar} disabled={!puedeGuardar || isGuardando} className="bg-primary hover:bg-primary/90">
               {isGuardando ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

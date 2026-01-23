@@ -789,24 +789,24 @@ export default function NuevaCitaPage() {
   if (!cliente) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#ED1C24]" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-gray-200 dark:border-border bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-[#ED1C24] flex items-center justify-center flex-shrink-0">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
                 <Car className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-base sm:text-xl font-bold text-[#202020]">Ambacar</h1>
-                <p className="text-xs text-gray-600 hidden sm:block">Nueva Cita</p>
+                <h1 className="text-base sm:text-xl font-bold text-foreground">Ambacar</h1>
+                <p className="text-xs text-gray-600 dark:text-muted-foreground hidden sm:block">Nueva Cita</p>
               </div>
             </div>
             <Button
@@ -819,7 +819,7 @@ export default function NuevaCitaPage() {
                 }
                 router.push("/agendamiento")
               }}
-              className="text-gray-600 hover:text-[#ED1C24] transition-colors text-sm sm:text-base px-2 sm:px-4"
+              className="text-gray-600 dark:text-muted-foreground hover:text-primary transition-colors text-sm sm:text-base px-2 sm:px-4"
             >
               <ArrowLeft className="h-4 w-4 mr-1 sm:mr-2" />
               <span className="hidden xs:inline">Volver al</span> Inicio
@@ -849,7 +849,7 @@ export default function NuevaCitaPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.2 }}
-                    className="text-xl sm:text-2xl font-bold text-[#202020] dark:text-white mb-4 sm:mb-6"
+                    className="text-xl sm:text-2xl font-bold text-foreground dark:text-white mb-4 sm:mb-6"
                   >
                     {nuevoVehiculo ? "Registra tu Vehículo" : "Selecciona tu Vehículo"}
                   </motion.h2>
@@ -912,7 +912,7 @@ export default function NuevaCitaPage() {
 
                 {loadingVehiculos ? (
                   <div className="flex justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#ED1C24]" />
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                   </div>
                 ) : (
                   <form onSubmit={vehiculoForm.handleSubmit(handleVehiculoSubmit)} className="space-y-6">
@@ -925,7 +925,7 @@ export default function NuevaCitaPage() {
                           exit={{ opacity: 0, x: -20 }}
                           transition={{ duration: 0.3 }}
                         >
-                          <Label className="text-[#202020] dark:text-white font-medium">Vehículos Registrados</Label>
+                          <Label className="text-foreground dark:text-white font-medium">Vehículos Registrados</Label>
                           <div className="grid gap-3 mt-2">
                             {vehiculos.map((veh) => (
                               <button
@@ -934,11 +934,11 @@ export default function NuevaCitaPage() {
                                 onClick={() => setVehiculoSeleccionado(veh)}
                                 className={`p-4 rounded-lg border-2 text-left transition-all ${
                                   vehiculoSeleccionado?.id === veh.id
-                                    ? "border-[#ED1C24] bg-[#ED1C24]/5"
+                                    ? "border-primary bg-primary/5"
                                     : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
                                 }`}
                               >
-                                <div className="font-semibold text-[#202020] dark:text-white">
+                                <div className="font-semibold text-foreground dark:text-white">
                                   {veh.marca} {veh.modelo} ({veh.anio})
                                 </div>
                                 <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -977,7 +977,7 @@ export default function NuevaCitaPage() {
                           className="space-y-5"
                         >
                           <div className="flex items-center justify-between">
-                            <Label className="text-[#202020] dark:text-white font-medium">Nuevo Vehículo</Label>
+                            <Label className="text-foreground dark:text-white font-medium">Nuevo Vehículo</Label>
                             {vehiculos.length > 0 && (
                               <Button
                                 type="button"
@@ -987,7 +987,7 @@ export default function NuevaCitaPage() {
                                   setVehiculoNotification(null) // Clear notifications when manually switching modes
                                   setNuevoVehiculo(false)
                                 }}
-                                className="text-[#ED1C24]"
+                                className="text-primary"
                               >
                                 Usar vehículo existente
                               </Button>
@@ -999,7 +999,7 @@ export default function NuevaCitaPage() {
                             type="button"
                             variant="outline"
                             onClick={() => setShowEscanearMatricula(true)}
-                            className="w-full border-[#ED1C24] text-[#ED1C24] hover:bg-[#ED1C24]/10 dark:border-[#ED1C24] dark:text-[#ED1C24] dark:hover:bg-[#ED1C24]/10"
+                            className="w-full border-primary text-primary hover:bg-primary/10"
                           >
                             <ScanLine className="mr-2 h-4 w-4" />
                             Escanear Matrícula
@@ -1027,7 +1027,7 @@ export default function NuevaCitaPage() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-1 sm:col-span-2">
                               <Label htmlFor="placa" className="mb-2 block">
-                                Placa <span className="text-[#ED1C24]">*</span>
+                                Placa <span className="text-primary">*</span>
                               </Label>
                               <Input
                                 id="placa"
@@ -1055,7 +1055,7 @@ export default function NuevaCitaPage() {
                                 }}
                               />
                               {vehiculoForm.formState.errors.placa && (
-                                <p className="text-sm text-[#ED1C24] mt-1">
+                                <p className="text-sm text-primary mt-1">
                                   {vehiculoForm.formState.errors.placa.message}
                                 </p>
                               )}
@@ -1063,11 +1063,11 @@ export default function NuevaCitaPage() {
 
                             <div className="col-span-1">
                               <Label htmlFor="marca" className="mb-2 block">
-                                Marca <span className="text-[#ED1C24]">*</span>
+                                Marca <span className="text-primary">*</span>
                               </Label>
                               {loadingCatalogo ? (
                                 <div className="flex items-center justify-center h-10 border border-gray-200 dark:border-gray-700 rounded-lg">
-                                  <Loader2 className="h-4 w-4 animate-spin text-[#ED1C24]" />
+                                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
                                 </div>
                               ) : (
                                 <Select
@@ -1077,7 +1077,7 @@ export default function NuevaCitaPage() {
                                     setSelectedModelo("") // Reset modelo when marca changes
                                   }}
                                 >
-                                  <SelectTrigger className="w-full border-gray-300 dark:border-gray-700 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                                  <SelectTrigger className="w-full border-gray-300 dark:border-gray-700 focus:border-primary focus:ring-primary">
                                     <SelectValue placeholder="Selecciona una marca" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1090,7 +1090,7 @@ export default function NuevaCitaPage() {
                                 </Select>
                               )}
                               {vehiculoForm.formState.errors.marca && (
-                                <p className="text-sm text-[#ED1C24] mt-1">
+                                <p className="text-sm text-primary mt-1">
                                   {vehiculoForm.formState.errors.marca.message}
                                 </p>
                               )}
@@ -1098,11 +1098,11 @@ export default function NuevaCitaPage() {
 
                             <div className="col-span-1">
                               <Label htmlFor="modelo" className="mb-2 block">
-                                Modelo <span className="text-[#ED1C24]">*</span>
+                                Modelo <span className="text-primary">*</span>
                               </Label>
                               {loadingCatalogo ? (
                                 <div className="flex items-center justify-center h-10 border border-gray-200 dark:border-gray-700 rounded-lg">
-                                  <Loader2 className="h-4 w-4 animate-spin text-[#ED1C24]" />
+                                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
                                 </div>
                               ) : !selectedMarca ? (
                                 <Select disabled>
@@ -1112,7 +1112,7 @@ export default function NuevaCitaPage() {
                                 </Select>
                               ) : (
                                 <Select value={selectedModelo} onValueChange={setSelectedModelo}>
-                                  <SelectTrigger className="w-full border-gray-300 dark:border-gray-700 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                                  <SelectTrigger className="w-full border-gray-300 dark:border-gray-700 focus:border-primary focus:ring-primary">
                                     <SelectValue placeholder="Selecciona un modelo" />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -1127,7 +1127,7 @@ export default function NuevaCitaPage() {
                                 </Select>
                               )}
                               {vehiculoForm.formState.errors.modelo && (
-                                <p className="text-sm text-[#ED1C24] mt-1">
+                                <p className="text-sm text-primary mt-1">
                                   {vehiculoForm.formState.errors.modelo.message}
                                 </p>
                               )}
@@ -1135,7 +1135,7 @@ export default function NuevaCitaPage() {
 
                             <div className="col-span-1">
                               <Label htmlFor="anio" className="mb-2 block">
-                                Año <span className="text-[#ED1C24]">*</span>
+                                Año <span className="text-primary">*</span>
                               </Label>
                               <Input
                                 id="anio"
@@ -1145,7 +1145,7 @@ export default function NuevaCitaPage() {
                                 className="w-full"
                               />
                               {vehiculoForm.formState.errors.anio && (
-                                <p className="text-sm text-[#ED1C24] mt-1">
+                                <p className="text-sm text-primary mt-1">
                                   {vehiculoForm.formState.errors.anio.message}
                                 </p>
                               )}
@@ -1153,7 +1153,7 @@ export default function NuevaCitaPage() {
 
                             <div className="col-span-1">
                               <Label htmlFor="kilometraje" className="mb-2 block">
-                                Kilometraje <span className="text-[#ED1C24]">*</span>
+                                Kilometraje <span className="text-primary">*</span>
                               </Label>
                               <Input
                                 id="kilometraje"
@@ -1163,7 +1163,7 @@ export default function NuevaCitaPage() {
                                 className="w-full"
                               />
                               {vehiculoForm.formState.errors.kilometraje && (
-                                <p className="text-sm text-[#ED1C24] mt-1">
+                                <p className="text-sm text-primary mt-1">
                                   {vehiculoForm.formState.errors.kilometraje.message}
                                 </p>
                               )}
@@ -1171,7 +1171,7 @@ export default function NuevaCitaPage() {
 
                             <div className="col-span-1">
                               <Label htmlFor="color" className="mb-2 block">
-                                Color <span className="text-[#ED1C24]">*</span>
+                                Color <span className="text-primary">*</span>
                               </Label>
                               <Input
                                 id="color"
@@ -1193,7 +1193,7 @@ export default function NuevaCitaPage() {
                                 }}
                               />
                               {vehiculoForm.formState.errors.color && (
-                                <p className="text-sm text-[#ED1C24] mt-1">
+                                <p className="text-sm text-primary mt-1">
                                   {vehiculoForm.formState.errors.color.message}
                                 </p>
                               )}
@@ -1201,7 +1201,7 @@ export default function NuevaCitaPage() {
 
                             <div className="col-span-1">
                               <Label htmlFor="vin" className="mb-2 block">
-                                VIN <span className="text-[#ED1C24]">*</span>
+                                VIN <span className="text-primary">*</span>
                               </Label>
                               <Input
                                 id="vin"
@@ -1221,7 +1221,7 @@ export default function NuevaCitaPage() {
                                 }}
                               />
                               {vehiculoForm.formState.errors.vin && (
-                                <p className="text-sm text-[#ED1C24] mt-1">
+                                <p className="text-sm text-primary mt-1">
                                   {vehiculoForm.formState.errors.vin.message}
                                 </p>
                               )}
@@ -1255,7 +1255,7 @@ export default function NuevaCitaPage() {
                         type="button"
                         onClick={handleContinuarVehiculo}
                         disabled={loading || (!nuevoVehiculo && !vehiculoSeleccionado)}
-                        className="bg-[#ED1C24] hover:bg-[#c41820] text-white px-8"
+                        className="bg-primary hover:bg-primary/90 text-white px-8"
                       >
                         {loading ? (
                           <>
@@ -1285,37 +1285,37 @@ export default function NuevaCitaPage() {
               exit={{ opacity: 0, x: -20 }}
               className="max-w-5xl mx-auto"
             >
-              <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 md:p-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-[#202020] mb-4 sm:mb-6">Selecciona Fecha y Hora</h2>
+              <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 dark:border-border p-4 sm:p-6 md:p-8">
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-4 sm:mb-6">Selecciona Fecha y Hora</h2>
 
                 <div className="space-y-4 sm:space-y-6">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                     <div className="w-full">
-                      <Label className="text-[#202020] font-medium mb-2 sm:mb-3 block text-sm sm:text-base">Fecha</Label>
+                      <Label className="text-foreground font-medium mb-2 sm:mb-3 block text-sm sm:text-base">Fecha</Label>
                       <div className="flex justify-center">
                         <Calendar
                           mode="single"
                           selected={selectedDate}
                           onSelect={setSelectedDate}
                           disabled={isDateDisabled}
-                          className="rounded-lg border border-gray-200 scale-90 sm:scale-100"
+                          className="rounded-lg border border-gray-200 dark:border-border scale-90 sm:scale-100"
                         />
                       </div>
                     </div>
 
                     <div className="w-full">
-                      <Label className="text-[#202020] font-medium mb-2 sm:mb-3 block text-sm sm:text-base">Hora Disponible</Label>
+                      <Label className="text-foreground font-medium mb-2 sm:mb-3 block text-sm sm:text-base">Hora Disponible</Label>
                       {!selectedDate ? (
-                        <div className="flex items-center justify-center h-full min-h-[200px] border border-gray-200 rounded-lg bg-gray-50">
-                          <p className="text-gray-500 text-sm">Primero selecciona una fecha</p>
+                        <div className="flex items-center justify-center h-full min-h-[200px] border border-gray-200 dark:border-border rounded-lg bg-gray-50 dark:bg-muted">
+                          <p className="text-gray-500 dark:text-muted-foreground text-sm">Primero selecciona una fecha</p>
                         </div>
                       ) : loadingHorarios ? (
-                        <div className="flex items-center justify-center h-full min-h-[200px] border border-gray-200 rounded-lg">
-                          <Loader2 className="h-6 w-6 animate-spin text-[#ED1C24]" />
+                        <div className="flex items-center justify-center h-full min-h-[200px] border border-gray-200 dark:border-border rounded-lg">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
                         </div>
                       ) : horariosDisponibles.length === 0 ? (
-                        <div className="flex items-center justify-center h-full min-h-[150px] sm:min-h-[200px] border border-gray-200 rounded-lg bg-gray-50">
-                          <p className="text-gray-500 text-xs sm:text-sm text-center px-4">No hay horarios disponibles para esta fecha</p>
+                        <div className="flex items-center justify-center h-full min-h-[150px] sm:min-h-[200px] border border-gray-200 dark:border-border rounded-lg bg-gray-50 dark:bg-muted">
+                          <p className="text-gray-500 dark:text-muted-foreground text-xs sm:text-sm text-center px-4">No hay horarios disponibles para esta fecha</p>
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[300px] sm:max-h-[350px] overflow-y-auto pr-1 sm:pr-2">
@@ -1327,10 +1327,10 @@ export default function NuevaCitaPage() {
                               disabled={!horario.disponible}
                               className={`p-2 sm:p-3 rounded-lg border-2 text-xs sm:text-sm font-medium transition-all ${
                                 selectedHora === horario.hora
-                                  ? "border-[#ED1C24] bg-[#ED1C24] text-white"
+                                  ? "border-primary bg-primary text-white"
                                   : horario.disponible
-                                  ? "border-gray-200 hover:border-[#ED1C24] text-[#202020]"
-                                  : "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
+                                  ? "border-gray-200 dark:border-border hover:border-primary text-foreground"
+                                  : "border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-muted text-gray-400 dark:text-muted-foreground cursor-not-allowed"
                               }`}
                             >
                               {horario.hora_display}
@@ -1342,17 +1342,17 @@ export default function NuevaCitaPage() {
                   </div>
 
                   <div>
-                    <Label htmlFor="servicio" className="text-[#202020] font-medium">
-                      Servicio Requerido <span className="text-[#ED1C24]">*</span>
+                    <Label htmlFor="servicio" className="text-foreground font-medium">
+                      Servicio Requerido <span className="text-primary">*</span>
                     </Label>
                     {loadingServicios ? (
-                      <div className="mt-2 p-3 border border-gray-200 rounded-lg flex items-center justify-center">
-                        <Loader2 className="h-5 w-5 animate-spin text-[#ED1C24] mr-2" />
-                        <span className="text-sm text-gray-600">Cargando servicios...</span>
+                      <div className="mt-2 p-3 border border-gray-200 dark:border-border rounded-lg flex items-center justify-center">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
+                        <span className="text-sm text-gray-600 dark:text-muted-foreground">Cargando servicios...</span>
                       </div>
                     ) : (
                       <Select value={selectedServicio} onValueChange={setSelectedServicio}>
-                        <SelectTrigger className="w-full mt-2 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                        <SelectTrigger className="w-full mt-2 border-gray-300 dark:border-border focus:border-primary focus:ring-primary">
                           <SelectValue placeholder="Selecciona un servicio" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1365,11 +1365,11 @@ export default function NuevaCitaPage() {
                       </Select>
                     )}
                     {citaForm.formState.errors.servicio && (
-                      <p className="text-sm text-[#ED1C24] mt-1">{citaForm.formState.errors.servicio.message}</p>
+                      <p className="text-sm text-primary mt-1">{citaForm.formState.errors.servicio.message}</p>
                     )}
 
                     {selectedServicioData && (
-                      <div className="mt-3 p-4 bg-[#ED1C24]/5 border-2 border-[#ED1C24]/20 rounded-lg">
+                      <div className="mt-3 p-4 bg-primary/5 border-2 border-primary/20 rounded-lg">
                         <AnimatePresence mode="wait">
                           <motion.div
                             key={selectedServicioData.id}
@@ -1378,11 +1378,11 @@ export default function NuevaCitaPage() {
                             exit={{ opacity: 0, y: -10 }}
                             transition={{ duration: 0.2 }}
                           >
-                            <p className="text-sm text-[#202020] mb-2">
-                              <strong className="text-[#ED1C24]">Descripción:</strong> {selectedServicioData.descripcion}
+                            <p className="text-sm text-foreground mb-2">
+                              <strong className="text-primary">Descripción:</strong> {selectedServicioData.descripcion}
                             </p>
-                            <p className="text-sm text-[#202020]">
-                              <strong className="text-[#ED1C24]">Duración Estimada:</strong>{" "}
+                            <p className="text-sm text-foreground">
+                              <strong className="text-primary">Duración Estimada:</strong>{" "}
                               {selectedServicioData.duracion_estimada} minutos
                             </p>
                           </motion.div>
@@ -1394,11 +1394,11 @@ export default function NuevaCitaPage() {
                   {/* Subtipo de Servicio - Solo se muestra si el servicio seleccionado tiene subtipos */}
                   {selectedServicioData?.subtipos && selectedServicioData.subtipos.length > 0 && (
                     <div>
-                      <Label htmlFor="subtipo" className="text-[#202020] font-medium">
+                      <Label htmlFor="subtipo" className="text-foreground font-medium">
                         Tipo de Servicio Específico
                       </Label>
                       <Select value={selectedSubtipo} onValueChange={setSelectedSubtipo}>
-                        <SelectTrigger className="w-full mt-2 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                        <SelectTrigger className="w-full mt-2 border-gray-300 dark:border-border focus:border-primary focus:ring-primary">
                           <SelectValue placeholder="Selecciona un tipo específico (opcional)" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1410,13 +1410,13 @@ export default function NuevaCitaPage() {
                         </SelectContent>
                       </Select>
                       {selectedSubtipoData && selectedSubtipoData.descripcion && (
-                        <p className="text-sm text-gray-600 mt-2">{selectedSubtipoData.descripcion}</p>
+                        <p className="text-sm text-gray-600 dark:text-muted-foreground mt-2">{selectedSubtipoData.descripcion}</p>
                       )}
                     </div>
                   )}
 
                   <div>
-                    <Label htmlFor="observaciones" className="text-[#202020] font-medium">
+                    <Label htmlFor="observaciones" className="text-foreground font-medium">
                       Observaciones (Opcional)
                     </Label>
                     <Textarea
@@ -1424,22 +1424,22 @@ export default function NuevaCitaPage() {
                       {...citaForm.register("observaciones")}
                       placeholder="Describe cualquier detalle adicional..."
                       rows={4}
-                      className="mt-2 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                      className="mt-2 border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
                     />
                   </div>
 
                   <div>
-                    <Label htmlFor="sucursal" className="text-[#202020] font-medium">
-                      Sucursal <span className="text-[#ED1C24]">*</span>
+                    <Label htmlFor="sucursal" className="text-foreground font-medium">
+                      Sucursal <span className="text-primary">*</span>
                     </Label>
                     {loadingSucursales ? (
                       <div className="mt-2 p-3 border border-gray-200 dark:border-gray-800 rounded-lg flex items-center justify-center">
-                        <Loader2 className="h-5 w-5 animate-spin text-[#ED1C24] mr-2" />
+                        <Loader2 className="h-5 w-5 animate-spin text-primary mr-2" />
                         <span className="text-sm text-gray-600 dark:text-gray-400">Cargando sucursales...</span>
                       </div>
                     ) : (
                       <Select value={selectedSucursal} onValueChange={setSelectedSucursal}>
-                        <SelectTrigger className="w-full mt-2 border-gray-300 dark:border-gray-700 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                        <SelectTrigger className="w-full mt-2 border-gray-300 dark:border-gray-700 focus:border-primary focus:ring-primary">
                           <SelectValue placeholder="Selecciona una sucursal" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1452,7 +1452,7 @@ export default function NuevaCitaPage() {
                       </Select>
                     )}
                     {citaForm.formState.errors.sucursal && (
-                      <p className="text-sm text-[#ED1C24] mt-1">{citaForm.formState.errors.sucursal.message}</p>
+                      <p className="text-sm text-primary mt-1">{citaForm.formState.errors.sucursal.message}</p>
                     )}
                   </div>
 
@@ -1470,7 +1470,7 @@ export default function NuevaCitaPage() {
                       type="button"
                       onClick={handleCitaSubmit}
                       disabled={loading || !selectedDate || !selectedHora || !selectedServicio || !selectedSucursal}
-                      className="bg-[#ED1C24] hover:bg-[#c41820] active:scale-95 text-white px-6 sm:px-8 cursor-pointer transition-all duration-150 w-full sm:w-auto"
+                      className="bg-primary hover:bg-primary/90 active:scale-95 text-white px-6 sm:px-8 cursor-pointer transition-all duration-150 w-full sm:w-auto"
                     >
                       Revisar Datos
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -1496,14 +1496,14 @@ export default function NuevaCitaPage() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
-                  className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 md:p-8 text-center"
+                  className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 dark:border-border p-4 sm:p-6 md:p-8 text-center"
                 >
                   {/* Icono de éxito animado */}
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
-                    className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4 sm:mb-6"
+                    className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-4 sm:mb-6"
                   >
                     <CheckCircle2 className="h-8 w-8 sm:h-10 sm:w-10 text-green-600" />
                   </motion.div>
@@ -1513,8 +1513,8 @@ export default function NuevaCitaPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.3 }}
                   >
-                    <h2 className="text-2xl sm:text-3xl font-bold text-[#202020] mb-2">¡Cita Agendada!</h2>
-                    <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">Tu cita ha sido confirmada exitosamente</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">¡Cita Agendada!</h2>
+                    <p className="text-sm sm:text-base text-gray-600 dark:text-muted-foreground mb-6 sm:mb-8">Tu cita ha sido confirmada exitosamente</p>
                   </motion.div>
 
                   {/* Número de referencia destacado */}
@@ -1522,11 +1522,11 @@ export default function NuevaCitaPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4 }}
-                    className="bg-[#ED1C24]/5 border-2 border-[#ED1C24]/20 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6"
+                    className="bg-primary/5 border-2 border-primary/20 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6"
                   >
-                    <p className="text-xs sm:text-sm text-gray-600 mb-2">Número de Referencia</p>
-                    <p className="font-mono font-bold text-[#ED1C24] text-lg sm:text-2xl tracking-wider break-all">{citaCreada.id}</p>
-                    <p className="text-xs text-gray-500 mt-2">Guarda este número para consultar tu cita</p>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-muted-foreground mb-2">Número de Referencia</p>
+                    <p className="font-mono font-bold text-primary text-lg sm:text-2xl tracking-wider break-all">{citaCreada.id}</p>
+                    <p className="text-xs text-gray-500 dark:text-muted-foreground mt-2">Guarda este número para consultar tu cita</p>
                   </motion.div>
 
                   {/* Detalles de la cita */}
@@ -1534,18 +1534,18 @@ export default function NuevaCitaPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="bg-gray-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 text-left"
+                    className="bg-gray-50 dark:bg-muted rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 text-left"
                   >
-                    <h3 className="font-semibold text-[#202020] mb-3 sm:mb-4 text-center text-sm sm:text-base">Detalles de tu Cita</h3>
+                    <h3 className="font-semibold text-foreground mb-3 sm:mb-4 text-center text-sm sm:text-base">Detalles de tu Cita</h3>
                     <div className="space-y-3 sm:space-y-4">
-                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg">
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white dark:bg-card rounded-lg">
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center flex-shrink-0">
-                            <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-[#ED1C24]" />
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
                           <div>
-                            <p className="text-xs text-gray-600">Fecha</p>
-                            <p className="font-semibold text-[#202020] text-xs sm:text-sm">
+                            <p className="text-xs text-gray-600 dark:text-muted-foreground">Fecha</p>
+                            <p className="font-semibold text-foreground text-xs sm:text-sm">
                               {(() => {
                                 // Parse date as YYYY-MM-DD and create date in local timezone
                                 const [year, month, day] = citaCreada.fecha.split('-').map(Number)
@@ -1562,49 +1562,49 @@ export default function NuevaCitaPage() {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg">
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white dark:bg-card rounded-lg">
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center flex-shrink-0">
-                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-[#ED1C24]" />
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
                           <div>
-                            <p className="text-xs text-gray-600">Hora</p>
-                            <p className="font-semibold text-[#202020] text-xs sm:text-sm">{citaCreada.hora}</p>
+                            <p className="text-xs text-gray-600 dark:text-muted-foreground">Hora</p>
+                            <p className="font-semibold text-foreground text-xs sm:text-sm">{citaCreada.hora}</p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg">
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white dark:bg-card rounded-lg">
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center flex-shrink-0">
-                            <Car className="h-4 w-4 sm:h-5 sm:w-5 text-[#ED1C24]" />
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <Car className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
                           <div>
-                            <p className="text-xs text-gray-600">Vehículo</p>
-                            <p className="font-semibold text-[#202020] text-xs sm:text-sm">
+                            <p className="text-xs text-gray-600 dark:text-muted-foreground">Vehículo</p>
+                            <p className="font-semibold text-foreground text-xs sm:text-sm">
                               {vehiculoSeleccionado?.marca} {vehiculoSeleccionado?.modelo}
                             </p>
-                            <p className="text-xs text-gray-500">Placa: {citaCreada.vehiculoPlaca}</p>
+                            <p className="text-xs text-gray-500 dark:text-muted-foreground">Placa: {citaCreada.vehiculoPlaca}</p>
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg">
+                      <div className="flex items-center justify-between p-2 sm:p-3 bg-white dark:bg-card rounded-lg">
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center flex-shrink-0">
-                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-[#ED1C24]" />
+                          <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                           </div>
                           <div>
-                            <p className="text-xs text-gray-600">Servicio</p>
-                            <p className="font-semibold text-[#202020] text-xs sm:text-sm">{citaCreada.servicio}</p>
+                            <p className="text-xs text-gray-600 dark:text-muted-foreground">Servicio</p>
+                            <p className="font-semibold text-foreground text-xs sm:text-sm">{citaCreada.servicio}</p>
                           </div>
                         </div>
                       </div>
 
                       {citaCreada.observaciones && (
-                        <div className="p-2 sm:p-3 bg-white rounded-lg">
-                          <p className="text-xs text-gray-600 mb-1">Observaciones</p>
-                          <p className="text-xs sm:text-sm text-[#202020]">{citaCreada.observaciones}</p>
+                        <div className="p-2 sm:p-3 bg-white dark:bg-card rounded-lg">
+                          <p className="text-xs text-gray-600 dark:text-muted-foreground mb-1">Observaciones</p>
+                          <p className="text-xs sm:text-sm text-foreground">{citaCreada.observaciones}</p>
                         </div>
                       )}
                     </div>
@@ -1615,9 +1615,9 @@ export default function NuevaCitaPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.6 }}
-                    className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 text-left"
+                    className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6 text-left"
                   >
-                    <p className="text-sm text-blue-900">
+                    <p className="text-sm text-blue-900 dark:text-blue-200">
                       <strong>📧 Confirmación enviada:</strong> Recibirás un email con los detalles de tu cita.
                       También te contactaremos por WhatsApp para confirmar tu asistencia.
                     </p>
@@ -1655,7 +1655,7 @@ export default function NuevaCitaPage() {
                         // Redirect to agendamiento page
                         router.push("/agendamiento")
                       }}
-                      className="flex-1 bg-[#ED1C24] hover:bg-[#c41820] text-white cursor-pointer text-sm sm:text-base"
+                      className="flex-1 bg-primary hover:bg-primary/90 text-white cursor-pointer text-sm sm:text-base"
                     >
                       Finalizar
                     </Button>
@@ -1663,75 +1663,75 @@ export default function NuevaCitaPage() {
                 </motion.div>
               ) : (
                 // Revisión de datos antes de confirmar
-                <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-4 sm:p-6 md:p-8">
-                  <h2 className="text-xl sm:text-2xl font-bold text-[#202020] mb-2">Revisa tu Cita</h2>
-                  <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Verifica que todos los datos sean correctos antes de confirmar</p>
+                <div className="bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 dark:border-border p-4 sm:p-6 md:p-8">
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2">Revisa tu Cita</h2>
+                  <p className="text-sm sm:text-base text-gray-600 dark:text-muted-foreground mb-4 sm:mb-6">Verifica que todos los datos sean correctos antes de confirmar</p>
 
                   <div className="space-y-4 sm:space-y-6">
                     {/* Información del Cliente */}
-                    <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                      <h3 className="font-semibold text-[#202020] mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
-                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-2 sm:mr-3 text-sm flex-shrink-0">
+                    <div className="bg-gray-50 dark:bg-muted rounded-xl p-4 sm:p-6">
+                      <h3 className="font-semibold text-foreground mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
+                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-primary text-white flex items-center justify-center mr-2 sm:mr-3 text-sm flex-shrink-0">
                           1
                         </div>
                         Información del Cliente
                       </h3>
                       <div className="ml-9 sm:ml-11 space-y-2">
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                          <span className="text-gray-600 text-xs sm:text-sm">Nombre:</span>
-                          <span className="font-medium text-[#202020] text-sm sm:text-base">
+                          <span className="text-gray-600 dark:text-muted-foreground text-xs sm:text-sm">Nombre:</span>
+                          <span className="font-medium text-foreground text-sm sm:text-base">
                             {cliente?.nombre} {cliente?.apellido}
                           </span>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                          <span className="text-gray-600 text-xs sm:text-sm">Email:</span>
-                          <span className="font-medium text-[#202020] text-sm sm:text-base break-all">{cliente?.email}</span>
+                          <span className="text-gray-600 dark:text-muted-foreground text-xs sm:text-sm">Email:</span>
+                          <span className="font-medium text-foreground text-sm sm:text-base break-all">{cliente?.email}</span>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                          <span className="text-gray-600 text-xs sm:text-sm">Teléfono:</span>
-                          <span className="font-medium text-[#202020] text-sm sm:text-base">{cliente?.telefono}</span>
+                          <span className="text-gray-600 dark:text-muted-foreground text-xs sm:text-sm">Teléfono:</span>
+                          <span className="font-medium text-foreground text-sm sm:text-base">{cliente?.telefono}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Información del Vehículo */}
-                    <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                      <h3 className="font-semibold text-[#202020] mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
-                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-2 sm:mr-3 text-sm flex-shrink-0">
+                    <div className="bg-gray-50 dark:bg-muted rounded-xl p-4 sm:p-6">
+                      <h3 className="font-semibold text-foreground mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
+                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-primary text-white flex items-center justify-center mr-2 sm:mr-3 text-sm flex-shrink-0">
                           2
                         </div>
                         Vehículo
                       </h3>
                       <div className="ml-9 sm:ml-11 space-y-2">
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                          <span className="text-gray-600 text-xs sm:text-sm">Placa:</span>
-                          <span className="font-medium text-[#202020] text-sm sm:text-base">{vehiculoSeleccionado?.placa}</span>
+                          <span className="text-gray-600 dark:text-muted-foreground text-xs sm:text-sm">Placa:</span>
+                          <span className="font-medium text-foreground text-sm sm:text-base">{vehiculoSeleccionado?.placa}</span>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                          <span className="text-gray-600 text-xs sm:text-sm">Vehículo:</span>
-                          <span className="font-medium text-[#202020] text-sm sm:text-base">
+                          <span className="text-gray-600 dark:text-muted-foreground text-xs sm:text-sm">Vehículo:</span>
+                          <span className="font-medium text-foreground text-sm sm:text-base">
                             {vehiculoSeleccionado?.marca} {vehiculoSeleccionado?.modelo} ({vehiculoSeleccionado?.anio})
                           </span>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                          <span className="text-gray-600 text-xs sm:text-sm">Color:</span>
-                          <span className="font-medium text-[#202020] text-sm sm:text-base">{vehiculoSeleccionado?.color}</span>
+                          <span className="text-gray-600 dark:text-muted-foreground text-xs sm:text-sm">Color:</span>
+                          <span className="font-medium text-foreground text-sm sm:text-base">{vehiculoSeleccionado?.color}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* Detalles de la Cita */}
-                    <div className="bg-gray-50 rounded-xl p-4 sm:p-6">
-                      <h3 className="font-semibold text-[#202020] mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
-                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-[#ED1C24] text-white flex items-center justify-center mr-2 sm:mr-3 text-sm flex-shrink-0">
+                    <div className="bg-gray-50 dark:bg-muted rounded-xl p-4 sm:p-6">
+                      <h3 className="font-semibold text-foreground mb-3 sm:mb-4 flex items-center text-sm sm:text-base">
+                        <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-primary text-white flex items-center justify-center mr-2 sm:mr-3 text-sm flex-shrink-0">
                           3
                         </div>
                         Detalles de la Cita
                       </h3>
                       <div className="ml-9 sm:ml-11 space-y-2">
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                          <span className="text-gray-600 text-xs sm:text-sm">Fecha:</span>
-                          <span className="font-medium text-[#202020] text-sm sm:text-base text-right">
+                          <span className="text-gray-600 dark:text-muted-foreground text-xs sm:text-sm">Fecha:</span>
+                          <span className="font-medium text-foreground text-sm sm:text-base text-right">
                             {selectedDate?.toLocaleDateString("es-EC", {
                               weekday: "long",
                               year: "numeric",
@@ -1741,31 +1741,31 @@ export default function NuevaCitaPage() {
                           </span>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                          <span className="text-gray-600 text-xs sm:text-sm">Hora:</span>
-                          <span className="font-medium text-[#202020] text-sm sm:text-base">
+                          <span className="text-gray-600 dark:text-muted-foreground text-xs sm:text-sm">Hora:</span>
+                          <span className="font-medium text-foreground text-sm sm:text-base">
                             {horariosDisponibles.find((h) => h.hora === selectedHora)?.hora_display || selectedHora}
                           </span>
                         </div>
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                          <span className="text-gray-600 text-xs sm:text-sm">Servicio:</span>
-                          <span className="font-medium text-[#202020] text-sm sm:text-base text-right">{selectedServicioData?.nombre}</span>
+                          <span className="text-gray-600 dark:text-muted-foreground text-xs sm:text-sm">Servicio:</span>
+                          <span className="font-medium text-foreground text-sm sm:text-base text-right">{selectedServicioData?.nombre}</span>
                         </div>
                         {selectedSubtipoData && (
                           <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                            <span className="text-gray-600 text-xs sm:text-sm">Tipo Específico:</span>
-                            <span className="font-medium text-[#202020] text-sm sm:text-base text-right">{selectedSubtipoData.nombre}</span>
+                            <span className="text-gray-600 dark:text-muted-foreground text-xs sm:text-sm">Tipo Específico:</span>
+                            <span className="font-medium text-foreground text-sm sm:text-base text-right">{selectedSubtipoData.nombre}</span>
                           </div>
                         )}
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-1 sm:gap-0">
-                          <span className="text-gray-600 text-xs sm:text-sm">Sucursal:</span>
-                          <span className="font-medium text-[#202020] text-sm sm:text-base text-right">
+                          <span className="text-gray-600 dark:text-muted-foreground text-xs sm:text-sm">Sucursal:</span>
+                          <span className="font-medium text-foreground text-sm sm:text-base text-right">
                             {sucursales.find((s) => s.id.toString() === selectedSucursal)?.nombre} - {sucursales.find((s) => s.id.toString() === selectedSucursal)?.ciudad}
                           </span>
                         </div>
                         {citaForm.getValues("observaciones") && (
-                          <div className="pt-2 border-t border-gray-200">
-                            <span className="text-gray-600 block mb-1 text-xs sm:text-sm">Observaciones:</span>
-                            <p className="font-medium text-[#202020] text-xs sm:text-sm">
+                          <div className="pt-2 border-t border-gray-200 dark:border-border">
+                            <span className="text-gray-600 dark:text-muted-foreground block mb-1 text-xs sm:text-sm">Observaciones:</span>
+                            <p className="font-medium text-foreground text-xs sm:text-sm">
                               {citaForm.getValues("observaciones")}
                             </p>
                           </div>
@@ -1774,7 +1774,7 @@ export default function NuevaCitaPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6 mt-4 sm:mt-6 border-t border-gray-200">
+                  <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 sm:gap-0 pt-4 sm:pt-6 mt-4 sm:mt-6 border-t border-gray-200 dark:border-border">
                     <Button
                       type="button"
                       variant="outline"
@@ -1788,7 +1788,7 @@ export default function NuevaCitaPage() {
                     <Button
                       onClick={handleConfirmarCita}
                       disabled={loading}
-                      className="bg-[#ED1C24] hover:bg-[#c41820] text-white px-6 sm:px-8 w-full sm:w-auto"
+                      className="bg-primary hover:bg-primary/90 text-white px-6 sm:px-8 w-full sm:w-auto"
                     >
                       {loading ? (
                         <>

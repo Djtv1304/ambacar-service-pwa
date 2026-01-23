@@ -238,24 +238,24 @@ export default function AgendamientoPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-white dark:from-background dark:via-background dark:to-background">
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm">
+      <header className="border-b border-gray-200 dark:border-border bg-white/80 dark:bg-card/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-[#ED1C24] flex items-center justify-center">
+              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
                 <Car className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-[#202020]">Ambacar</h1>
-                <p className="text-xs text-gray-600">Servicio Automotriz</p>
+                <h1 className="text-xl font-bold text-foreground">Ambacar</h1>
+                <p className="text-xs text-gray-600 dark:text-muted-foreground">Servicio Automotriz</p>
               </div>
             </div>
             <Button
               variant="ghost"
               onClick={() => router.push("/agendamiento/cancelar")}
-              className="text-gray-600 hover:text-[#ED1C24]"
+              className="text-gray-600 dark:text-muted-foreground hover:text-primary"
             >
               Cancelar Cita
             </Button>
@@ -271,8 +271,8 @@ export default function AgendamientoPage() {
           transition={{ duration: 0.6 }}
           className="max-w-4xl mx-auto text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-[#202020] mb-4">Agenda tu Cita de Servicio</h2>
-          <p className="text-lg text-gray-600 mb-8">
+          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">Agenda tu Cita de Servicio</h2>
+          <p className="text-lg text-gray-600 dark:text-muted-foreground mb-8">
             Rápido, fácil y sin complicaciones. Elige el mejor horario para ti.
           </p>
         </motion.div>
@@ -284,28 +284,28 @@ export default function AgendamientoPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-16"
         >
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="h-12 w-12 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center mb-4">
-              <Calendar className="h-6 w-6 text-[#ED1C24]" />
+          <div className="bg-white dark:bg-card rounded-xl p-6 shadow-sm border border-gray-200 dark:border-border">
+            <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+              <Calendar className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-[#202020] mb-2">Elige tu Fecha</h3>
-            <p className="text-sm text-gray-600">Selecciona el día y hora que mejor se ajuste a tu agenda</p>
+            <h3 className="font-semibold text-foreground mb-2">Elige tu Fecha</h3>
+            <p className="text-sm text-gray-600 dark:text-muted-foreground">Selecciona el día y hora que mejor se ajuste a tu agenda</p>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="h-12 w-12 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center mb-4">
-              <Clock className="h-6 w-6 text-[#ED1C24]" />
+          <div className="bg-white dark:bg-card rounded-xl p-6 shadow-sm border border-gray-200 dark:border-border">
+            <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+              <Clock className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-[#202020] mb-2">Confirmación Inmediata</h3>
-            <p className="text-sm text-gray-600">Recibe tu confirmación al instante por email y WhatsApp</p>
+            <h3 className="font-semibold text-foreground mb-2">Confirmación Inmediata</h3>
+            <p className="text-sm text-gray-600 dark:text-muted-foreground">Recibe tu confirmación al instante por email y WhatsApp</p>
           </div>
 
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="h-12 w-12 rounded-lg bg-[#ED1C24]/10 flex items-center justify-center mb-4">
-              <CheckCircle2 className="h-6 w-6 text-[#ED1C24]" />
+          <div className="bg-white dark:bg-card rounded-xl p-6 shadow-sm border border-gray-200 dark:border-border">
+            <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+              <CheckCircle2 className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="font-semibold text-[#202020] mb-2">Servicio Garantizado</h3>
-            <p className="text-sm text-gray-600">Técnicos certificados y repuestos originales</p>
+            <h3 className="font-semibold text-foreground mb-2">Servicio Garantizado</h3>
+            <p className="text-sm text-gray-600 dark:text-muted-foreground">Técnicos certificados y repuestos originales</p>
           </div>
         </motion.div>
 
@@ -313,7 +313,7 @@ export default function AgendamientoPage() {
         {isCheckingAuth ? (
           <div className="flex items-center justify-center py-16">
             <div className="text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-[#ED1C24] mx-auto mb-4" />
+              <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
               <p className="text-gray-600 dark:text-gray-400">Verificando sesión...</p>
             </div>
           </div>
@@ -343,7 +343,7 @@ export default function AgendamientoPage() {
                     </div>
 
                     {/* Heading */}
-                    <h2 className="text-2xl font-bold text-center text-[#202020] dark:text-white mb-2">
+                    <h2 className="text-2xl font-bold text-center text-foreground mb-2">
                       Bienvenido de Nuevo
                     </h2>
                     <p className="text-center text-gray-600 dark:text-gray-400 mb-6">
@@ -372,20 +372,20 @@ export default function AgendamientoPage() {
                     {/* User Info Card */}
                     <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mb-6 space-y-2">
                       <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-gray-500" />
+                        <User className="h-4 w-4 text-gray-500 dark:text-muted-foreground" />
                         <p className="text-sm text-gray-900 dark:text-gray-100">
                           <strong>Nombre:</strong> {loggedInUser.first_name} {loggedInUser.last_name}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-gray-500" />
+                        <Mail className="h-4 w-4 text-gray-500 dark:text-muted-foreground" />
                         <p className="text-sm text-gray-900 dark:text-gray-100">
                           <strong>Email:</strong> {loggedInUser.email}
                         </p>
                       </div>
                       {loggedInUser.cedula && (
                         <div className="flex items-center gap-2">
-                          <IdCard className="h-4 w-4 text-gray-500" />
+                          <IdCard className="h-4 w-4 text-gray-500 dark:text-muted-foreground" />
                           <p className="text-sm text-gray-900 dark:text-gray-100">
                             <strong>Cédula:</strong> {loggedInUser.cedula}
                           </p>
@@ -397,7 +397,7 @@ export default function AgendamientoPage() {
                     <div className="space-y-3">
                       <Button
                         onClick={() => router.push("/agendamiento/nueva")}
-                        className="w-full bg-[#ED1C24] hover:bg-[#c41820] text-white h-12 text-base"
+                        className="w-full bg-primary hover:bg-primary/90 text-white h-12 text-base"
                       >
                         Continuar al Agendamiento
                         <ArrowRight className="ml-2 h-5 w-5" />
@@ -443,13 +443,13 @@ export default function AgendamientoPage() {
                   className="w-full max-w-md mx-auto"
                 >
                   <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800">
-                    <h3 className="text-2xl font-bold text-[#202020] dark:text-white mb-6 text-center">
+                    <h3 className="text-2xl font-bold text-foreground mb-6 text-center">
                       Comienza Aquí
                     </h3>
 
                     <div className="space-y-4">
                       <div>
-                        <Label htmlFor="cedula" className="text-[#202020] dark:text-white font-medium">
+                        <Label htmlFor="cedula" className="text-foreground font-medium">
                           Número de Cédula
                         </Label>
                         <Input
@@ -459,7 +459,7 @@ export default function AgendamientoPage() {
                           value={cedula}
                           onChange={(e) => setCedula(e.target.value.replace(/\D/g, ""))}
                           maxLength={13}
-                          className="mt-2 border-gray-300 dark:border-gray-700 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                          className="mt-2 border-gray-300 dark:border-gray-700 focus:border-primary focus:ring-primary"
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               handleVerificarCedula()
@@ -475,7 +475,7 @@ export default function AgendamientoPage() {
                       <Button
                         onClick={handleVerificarCedula}
                         disabled={loading || cedula.length < 10}
-                        className="w-full bg-[#ED1C24] hover:bg-[#c41820] text-white font-semibold py-6 text-lg"
+                        className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-6 text-lg"
                       >
                         {loading ? "Verificando..." : "Continuar"}
                       </Button>
@@ -498,7 +498,7 @@ export default function AgendamientoPage() {
                   className="w-full max-w-md mx-auto"
                 >
                   <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8 border border-gray-200 dark:border-gray-800">
-                    <h3 className="text-2xl font-bold text-[#202020] dark:text-white mb-6 text-center">
+                    <h3 className="text-2xl font-bold text-foreground mb-6 text-center">
                       Ingresa tu Contraseña
                     </h3>
 
@@ -506,25 +506,25 @@ export default function AgendamientoPage() {
                       {/* Usuario Info */}
                       <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
                         <p className="text-sm text-gray-600 dark:text-gray-400">Ingresando como:</p>
-                        <p className="font-semibold text-[#202020] dark:text-white">
+                        <p className="font-semibold text-foreground">
                           {usuarioVerificado?.first_name} {usuarioVerificado?.last_name}
                         </p>
                         <p className="text-sm text-gray-600 dark:text-gray-400">{usuarioVerificado?.email}</p>
                       </div>
 
                       <div>
-                        <Label htmlFor="password" className="text-[#202020] dark:text-white font-medium">
+                        <Label htmlFor="password" className="text-foreground font-medium">
                           Contraseña
                         </Label>
                         <div className="relative mt-2">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500" />
+                          <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-500 dark:text-muted-foreground" />
                           <Input
                             id="password"
                             type="password"
                             placeholder="Ingresa tu contraseña"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="pl-10 border-gray-300 dark:border-gray-700 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                            className="pl-10 border-gray-300 dark:border-gray-700 focus:border-primary focus:ring-primary"
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
                                 handleLogin()
@@ -551,7 +551,7 @@ export default function AgendamientoPage() {
                         <Button
                           onClick={handleLogin}
                           disabled={loading || !password}
-                          className="flex-1 bg-[#ED1C24] hover:bg-[#c41820] text-white font-semibold"
+                          className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold"
                         >
                           {loading ? "Iniciando..." : "Iniciar Sesión"}
                         </Button>

@@ -322,7 +322,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                         ? `Retomando foto ${fotoSeleccionadaRetomar + 1}/${FOTOS_REQUERIDAS}`
                                         : `Foto ${fotosCapturadas.length + 1}/${FOTOS_REQUERIDAS}`}
                             </span>
-                            <Badge className="bg-[#ED1C24]/10 text-[#ED1C24] border-[#ED1C24]/20">
+                            <Badge className="bg-primary/10 text-primary border-primary/20">
                                 {fotosCapturadas.length >= FOTOS_REQUERIDAS && !cameraActive
                                     ? "Revisar Fotos"
                                     : fotoSeleccionadaRetomar !== null
@@ -332,7 +332,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                         </div>
                         <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                             <motion.div
-                                className="bg-[#ED1C24] h-full"
+                                className="bg-primary h-full"
                                 initial={{ width: 0 }}
                                 animate={{ width: `${(fotosCapturadas.length / FOTOS_REQUERIDAS) * 100}%` }}
                                 transition={{ duration: 0.3 }}
@@ -390,7 +390,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                         onClick={capturarFoto}
                                         disabled={isCapturing}
                                         size="lg"
-                                        className="w-full sm:flex-1 bg-[#ED1C24] hover:bg-[#c41820]"
+                                        className="w-full sm:flex-1 bg-primary hover:bg-primary/90"
                                     >
                                         {isCapturing ? (
                                             <>
@@ -423,9 +423,9 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                     }}
                                 >
                                     {fotosCapturadas.length === FOTOS_REQUERIDAS && (
-                                        <Alert className="bg-blue-50 border-blue-200">
+                                        <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
                                             <Check className="h-4 w-4 text-blue-600" />
-                                            <AlertDescription className="text-blue-900 font-medium">
+                                            <AlertDescription className="text-blue-900 dark:text-blue-300 font-medium">
                                                 ¿Deseas retomar alguna foto? Selecciona la imagen y presiona el botón con el ícono de repetir
                                             </AlertDescription>
                                         </Alert>
@@ -459,7 +459,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                                         }}
                                                         className={`w-full rounded-lg overflow-hidden transition-all ${
                                                             fotoSeleccionadaRetomar === idx
-                                                                ? "ring-[3px] ring-[#ED1C24] shadow-lg"
+                                                                ? "ring-[3px] ring-primary shadow-lg"
                                                                 : "hover:ring-2 hover:ring-gray-300"
                                                         }`}
                                                         disabled={cameraActive}
@@ -470,7 +470,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                                             className="w-full aspect-video object-cover rounded-lg"
                                                         />
                                                     </button>
-                                                    <Badge className="absolute top-2 right-2 bg-[#ED1C24] rounded-md">{foto.tipo}</Badge>
+                                                    <Badge className="absolute top-2 right-2 bg-primary rounded-md">{foto.tipo}</Badge>
                                                 </motion.div>
                                             ))}
                                         </AnimatePresence>
@@ -483,7 +483,7 @@ export function CameraDialog({ open, onOpenChange, onFotosCapturadas, isLoading 
                                     <Button
                                         onClick={iniciarCamara}
                                         size="lg"
-                                        className="w-full sm:flex-1 bg-[#ED1C24] hover:bg-[#c41820]"
+                                        className="w-full sm:flex-1 bg-primary hover:bg-primary/90"
                                         disabled={isLoading}
                                     >
                                         <Camera className="mr-2 h-4 w-4" />

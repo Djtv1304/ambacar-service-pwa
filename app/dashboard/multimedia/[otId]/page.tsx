@@ -232,7 +232,7 @@ export default function MultimediaDetailPage() {
             className={cn(
               "w-full text-left px-4 py-3 rounded-lg transition-all flex items-center justify-between",
               filtroActivo === filtro
-                ? "bg-[#ED1C24] text-white shadow-md"
+                ? "bg-primary text-white shadow-md"
                 : "bg-white dark:bg-transparent hover:bg-gray-50 dark:hover:bg-accent text-gray-700 dark:text-gray-300"
             )}
           >
@@ -254,7 +254,7 @@ export default function MultimediaDetailPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#ED1C24]" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -287,7 +287,7 @@ export default function MultimediaDetailPage() {
 
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#202020] dark:text-gray-200 mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Registro Fotográfico
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
@@ -421,7 +421,7 @@ export default function MultimediaDetailPage() {
                     <CardContent className="p-3 pt-3 flex-1 flex flex-col">
                       <div className="space-y-2 flex-1 flex flex-col">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-semibold text-sm text-[#202020] dark:text-gray-200 truncate">
+                          <h4 className="font-semibold text-sm text-foreground truncate">
                             {media.tipo_foto}
                           </h4>
                           <FileImage className="h-4 w-4 text-gray-400 flex-shrink-0" />
@@ -515,7 +515,7 @@ export default function MultimediaDetailPage() {
                 {/* Header con título y acciones */}
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="min-w-0">
-                    <DialogTitle className="text-lg font-bold text-[#202020] dark:text-gray-200 mb-2 truncate">
+                    <DialogTitle className="text-lg font-bold text-foreground mb-2 truncate">
                       {imagenSeleccionada.tipo_foto}
                     </DialogTitle>
                     <div className="flex flex-wrap items-center gap-1.5">
@@ -548,7 +548,7 @@ export default function MultimediaDetailPage() {
                       variant={showAnnotationEditor ? "default" : "outline"}
                       size="sm"
                       className={cn(
-                        showAnnotationEditor && "bg-[#ED1C24] hover:bg-[#c41820]"
+                        showAnnotationEditor && "bg-primary hover:bg-primary/90"
                       )}
                     >
                       {showAnnotationEditor ? "Ver imagen" : "Anotar imagen"}
@@ -610,7 +610,7 @@ export default function MultimediaDetailPage() {
                 {/* Anotaciones Section */}
                 <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-3">
                   <div>
-                    <h4 className="font-semibold text-[#202020] dark:text-gray-200 text-base">Agregar Anotaciones</h4>
+                    <h4 className="font-semibold text-foreground text-base">Agregar Anotaciones</h4>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
                       Documenta hallazgos sobre esta fotografía
                     </p>

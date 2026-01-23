@@ -345,7 +345,7 @@ export function CameraInspeccionDialog({
                     ? "bg-blue-500"
                     : puedeConfirmar
                     ? "bg-green-500"
-                    : "bg-[#ED1C24]"
+                    : "bg-primary"
                 }
                 initial={{ width: 0 }}
                 animate={{
@@ -452,7 +452,7 @@ export function CameraInspeccionDialog({
                     onClick={capturarFoto}
                     disabled={isCapturing}
                     size="sm"
-                    className="flex-1 bg-[#ED1C24] hover:bg-[#c41820]"
+                    className="flex-1 bg-primary hover:bg-primary/90"
                   >
                     {isCapturing ? (
                       <>
@@ -502,7 +502,7 @@ export function CameraInspeccionDialog({
                             }}
                             className={`w-full rounded-lg overflow-hidden transition-all ${
                               fotoSeleccionadaRetomar === idx
-                                ? "ring-[3px] ring-[#ED1C24] shadow-lg"
+                                ? "ring-[3px] ring-primary shadow-lg"
                                 : "hover:ring-2 hover:ring-gray-300"
                             }`}
                             disabled={cameraActive}
@@ -514,7 +514,7 @@ export function CameraInspeccionDialog({
                               className="w-full aspect-video object-cover rounded-lg"
                             />
                           </button>
-                          <Badge className="absolute top-2 right-2 bg-[#ED1C24] rounded-md">{idx + 1}</Badge>
+                          <Badge className="absolute top-2 right-2 bg-primary rounded-md">{idx + 1}</Badge>
                         </motion.div>
                       ))}
                     </AnimatePresence>
@@ -524,7 +524,7 @@ export function CameraInspeccionDialog({
 
               <div className="flex flex-col sm:flex-row gap-2">
                 {fotosCapturadas.length < MAX_FOTOS_INSPECCION && (
-                  <Button onClick={iniciarCamara} size="lg" className="w-full sm:flex-1 bg-[#ED1C24] hover:bg-[#c41820]">
+                  <Button onClick={iniciarCamara} size="lg" className="w-full sm:flex-1 bg-primary hover:bg-primary/90">
                     <Camera className="mr-2 h-4 w-4" />
                     {fotosCapturadas.length === 0 && "Comenzar a Capturar"}
                     {fotosCapturadas.length > 0 && fotosCapturadas.length < MIN_FOTOS_INSPECCION && `Capturar más (${fotosCapturadas.length}/${MIN_FOTOS_INSPECCION} mínimas)`}

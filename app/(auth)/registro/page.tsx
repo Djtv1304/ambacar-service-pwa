@@ -203,7 +203,7 @@ export default function RegistroPage() {
         >
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#ED1C24] shadow-lg shadow-red-500/30">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/30">
               <span className="text-2xl font-bold text-white">A</span>
             </div>
             <div>
@@ -221,7 +221,7 @@ export default function RegistroPage() {
             >
               <h2 className="text-5xl font-bold leading-tight">
                 Únete a la<br />
-                <span className="text-[#ED1C24]">experiencia</span><br />
+                <span className="text-primary">experiencia</span><br />
                 Ambacar
               </h2>
             </motion.div>
@@ -291,7 +291,7 @@ export default function RegistroPage() {
                 transition={{ delay: 0.2, duration: 0.5 }}
                 className="flex justify-center mb-3"
               >
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#ED1C24] shadow-lg shadow-red-500/30">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/30">
                   <span className="text-2xl font-bold text-white">A</span>
                 </div>
               </motion.div>
@@ -300,19 +300,19 @@ export default function RegistroPage() {
             </div>
 
             {/* Form Card */}
-            <div className="backdrop-blur-xl bg-white/95 rounded-3xl shadow-2xl p-6 sm:p-8">
+            <div className="backdrop-blur-xl bg-white/95 dark:bg-card/95 rounded-3xl shadow-2xl p-6 sm:p-8">
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Crear Cuenta</h2>
-                <p className="text-gray-600 mt-1 text-sm">Completa el formulario para registrarte</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-foreground">Crear Cuenta</h2>
+                <p className="text-gray-600 dark:text-muted-foreground mt-1 text-sm">Completa el formulario para registrarte</p>
               </div>
 
               {/* Step Indicator */}
               <div className="flex items-center justify-center gap-2 mb-6">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors ${currentStep === 1 ? "bg-[#ED1C24] text-white" : "bg-gray-200 text-gray-600"}`}>
+                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors ${currentStep === 1 ? "bg-primary text-white" : "bg-gray-200 dark:bg-muted text-gray-600 dark:text-muted-foreground"}`}>
                   1
                 </div>
-                <div className={`w-12 h-1 rounded-full transition-colors ${currentStep === 2 ? "bg-[#ED1C24]" : "bg-gray-200"}`} />
-                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors ${currentStep === 2 ? "bg-[#ED1C24] text-white" : "bg-gray-200 text-gray-600"}`}>
+                <div className={`w-12 h-1 rounded-full transition-colors ${currentStep === 2 ? "bg-primary" : "bg-gray-200 dark:bg-muted"}`} />
+                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-semibold transition-colors ${currentStep === 2 ? "bg-primary text-white" : "bg-gray-200 dark:bg-muted text-gray-600 dark:text-muted-foreground"}`}>
                   2
                 </div>
               </div>
@@ -325,7 +325,7 @@ export default function RegistroPage() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                     >
-                      <Alert variant="destructive" className="bg-red-50 border-red-200">
+                      <Alert variant="destructive" className="bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>{serverError}</AlertDescription>
                       </Alert>
@@ -346,7 +346,7 @@ export default function RegistroPage() {
                     >
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label htmlFor="first_name" className="text-gray-700 font-medium text-sm">
+                          <Label htmlFor="first_name" className="text-gray-700 dark:text-foreground font-medium text-sm">
                             Nombre
                           </Label>
                           <div className="relative">
@@ -354,7 +354,7 @@ export default function RegistroPage() {
                             <Input
                               id="first_name"
                               placeholder="Juan"
-                              className="pl-10 h-11 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-[#ED1C24] focus:ring-[#ED1C24] text-sm"
+                              className="pl-10 h-11 bg-gray-50 dark:bg-muted border-gray-200 dark:border-border rounded-xl focus:bg-white dark:focus:bg-card focus:border-primary focus:ring-primary text-sm"
                               {...register("first_name")}
                               disabled={isPending}
                             />
@@ -368,13 +368,13 @@ export default function RegistroPage() {
                         </div>
 
                         <div className="space-y-1.5">
-                          <Label htmlFor="last_name" className="text-gray-700 font-medium text-sm">
+                          <Label htmlFor="last_name" className="text-gray-700 dark:text-foreground font-medium text-sm">
                             Apellido
                           </Label>
                           <Input
                             id="last_name"
                             placeholder="Pérez"
-                            className="h-11 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-[#ED1C24] focus:ring-[#ED1C24] text-sm"
+                            className="h-11 bg-gray-50 dark:bg-muted border-gray-200 dark:border-border rounded-xl focus:bg-white dark:focus:bg-card focus:border-primary focus:ring-primary text-sm"
                             {...register("last_name")}
                             disabled={isPending}
                           />
@@ -388,7 +388,7 @@ export default function RegistroPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="cedula" className="text-gray-700 font-medium text-sm">
+                        <Label htmlFor="cedula" className="text-gray-700 dark:text-foreground font-medium text-sm">
                           Cédula
                         </Label>
                         <Input
@@ -396,7 +396,7 @@ export default function RegistroPage() {
                           type="text"
                           placeholder="1704651841"
                           maxLength={10}
-                          className="h-11 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-[#ED1C24] focus:ring-[#ED1C24] text-sm"
+                          className="h-11 bg-gray-50 dark:bg-muted border-gray-200 dark:border-border rounded-xl focus:bg-white dark:focus:bg-card focus:border-primary focus:ring-primary text-sm"
                           {...register("cedula")}
                           disabled={isPending}
                           onChange={(e) => {
@@ -421,7 +421,7 @@ export default function RegistroPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="email" className="text-gray-700 font-medium text-sm">
+                        <Label htmlFor="email" className="text-gray-700 dark:text-foreground font-medium text-sm">
                           Correo Electrónico
                         </Label>
                         <div className="relative">
@@ -430,7 +430,7 @@ export default function RegistroPage() {
                             id="email"
                             type="email"
                             placeholder="tu@email.com"
-                            className="pl-10 h-11 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-[#ED1C24] focus:ring-[#ED1C24] text-sm"
+                            className="pl-10 h-11 bg-gray-50 dark:bg-muted border-gray-200 dark:border-border rounded-xl focus:bg-white dark:focus:bg-card focus:border-primary focus:ring-primary text-sm"
                             {...register("email")}
                             disabled={isPending}
                           />
@@ -444,7 +444,7 @@ export default function RegistroPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="phone" className="text-gray-700 font-medium text-sm">
+                        <Label htmlFor="phone" className="text-gray-700 dark:text-foreground font-medium text-sm">
                           Teléfono
                         </Label>
                         <div className="relative">
@@ -453,7 +453,7 @@ export default function RegistroPage() {
                             id="phone"
                             type="tel"
                             placeholder="+593 099 123 4567"
-                            className="pl-10 h-11 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-[#ED1C24] focus:ring-[#ED1C24] text-sm"
+                            className="pl-10 h-11 bg-gray-50 dark:bg-muted border-gray-200 dark:border-border rounded-xl focus:bg-white dark:focus:bg-card focus:border-primary focus:ring-primary text-sm"
                             {...register("phone")}
                             disabled={isPending}
                             onFocus={(e) => {
@@ -516,7 +516,7 @@ export default function RegistroPage() {
                       <Button
                         type="button"
                         onClick={goToNextStep}
-                        className="w-full h-11 bg-[#ED1C24] hover:bg-[#c41820] text-white rounded-xl font-semibold shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all duration-300"
+                        className="w-full h-11 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300"
                       >
                         Continuar
                         <ArrowRight className="ml-2 h-4 w-4" />
@@ -535,7 +535,7 @@ export default function RegistroPage() {
                       className="space-y-4"
                     >
                       <div className="space-y-1.5">
-                        <Label htmlFor="username" className="text-gray-700 font-medium text-sm">
+                        <Label htmlFor="username" className="text-gray-700 dark:text-foreground font-medium text-sm">
                           Nombre de Usuario
                         </Label>
                         <div className="relative">
@@ -543,7 +543,7 @@ export default function RegistroPage() {
                           <Input
                             id="username"
                             placeholder="juanperez"
-                            className="pl-10 h-11 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-[#ED1C24] focus:ring-[#ED1C24] text-sm"
+                            className="pl-10 h-11 bg-gray-50 dark:bg-muted border-gray-200 dark:border-border rounded-xl focus:bg-white dark:focus:bg-card focus:border-primary focus:ring-primary text-sm"
                             {...register("username")}
                             disabled={isPending}
                           />
@@ -557,7 +557,7 @@ export default function RegistroPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="password" className="text-gray-700 font-medium text-sm">
+                        <Label htmlFor="password" className="text-gray-700 dark:text-foreground font-medium text-sm">
                           Contraseña
                         </Label>
                         <div className="relative">
@@ -566,14 +566,14 @@ export default function RegistroPage() {
                             id="password"
                             type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
-                            className="pl-10 pr-10 h-11 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-[#ED1C24] focus:ring-[#ED1C24] text-sm"
+                            className="pl-10 pr-10 h-11 bg-gray-50 dark:bg-muted border-gray-200 dark:border-border rounded-xl focus:bg-white dark:focus:bg-card focus:border-primary focus:ring-primary text-sm"
                             {...register("password")}
                             disabled={isPending}
                           />
                           <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none transition-colors"
                             disabled={isPending}
                           >
                             {showPassword ? (
@@ -592,7 +592,7 @@ export default function RegistroPage() {
                       </div>
 
                       <div className="space-y-1.5">
-                        <Label htmlFor="password_confirm" className="text-gray-700 font-medium text-sm">
+                        <Label htmlFor="password_confirm" className="text-gray-700 dark:text-foreground font-medium text-sm">
                           Confirmar Contraseña
                         </Label>
                         <div className="relative">
@@ -601,14 +601,14 @@ export default function RegistroPage() {
                             id="password_confirm"
                             type={showPasswordConfirm ? "text" : "password"}
                             placeholder="••••••••"
-                            className="pl-10 pr-10 h-11 bg-gray-50 border-gray-200 rounded-xl focus:bg-white focus:border-[#ED1C24] focus:ring-[#ED1C24] text-sm"
+                            className="pl-10 pr-10 h-11 bg-gray-50 dark:bg-muted border-gray-200 dark:border-border rounded-xl focus:bg-white dark:focus:bg-card focus:border-primary focus:ring-primary text-sm"
                             {...register("password_confirm")}
                             disabled={isPending}
                           />
                           <button
                             type="button"
                             onClick={() => setShowPasswordConfirm(!showPasswordConfirm)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 focus:outline-none transition-colors"
                             disabled={isPending}
                           >
                             {showPasswordConfirm ? (
@@ -623,8 +623,8 @@ export default function RegistroPage() {
                         )}
                       </div>
 
-                      <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
-                        <p className="text-xs text-gray-600">
+                      <div className="bg-gray-50 dark:bg-muted rounded-xl p-3 border border-gray-200 dark:border-border">
+                        <p className="text-xs text-gray-600 dark:text-muted-foreground">
                           La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y números.
                         </p>
                       </div>
@@ -641,7 +641,7 @@ export default function RegistroPage() {
                         </Button>
                         <Button
                           type="submit"
-                          className="flex-1 h-11 bg-[#ED1C24] hover:bg-[#c41820] text-white rounded-xl font-semibold shadow-lg shadow-red-500/25 hover:shadow-red-500/40 transition-all duration-300"
+                          className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300"
                           disabled={isPending}
                         >
                           {isPending ? (
@@ -659,12 +659,12 @@ export default function RegistroPage() {
                 </AnimatePresence>
               </form>
 
-              <div className="mt-6 pt-5 border-t border-gray-200">
-                <p className="text-center text-gray-600 text-sm">
+              <div className="mt-6 pt-5 border-t border-gray-200 dark:border-border">
+                <p className="text-center text-gray-600 dark:text-muted-foreground text-sm">
                   ¿Ya tienes una cuenta?{" "}
                   <Link
                     href="/login"
-                    className="text-[#ED1C24] hover:text-[#c41820] font-semibold transition-colors"
+                    className="text-primary hover:text-primary/80 font-semibold transition-colors"
                   >
                     Inicia sesión aquí
                   </Link>

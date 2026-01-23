@@ -441,7 +441,7 @@ export default function RecepcionPage() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmRecepcion}
-              className="bg-[#ED1C24] hover:bg-[#c41820] text-white"
+              className="bg-primary hover:bg-primary/90 text-white"
             >
               Sí, Iniciar Recepción
             </AlertDialogAction>

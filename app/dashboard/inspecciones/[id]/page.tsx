@@ -497,7 +497,7 @@ export default function InspeccionPage({ params }: { params: Promise<{ id: strin
                   {inspeccionExistente.items_completados} de {inspeccionExistente.items_totales} puntos completados
                 </CardDescription>
               </div>
-              <Badge className="bg-[#ED1C24]/10 text-[#ED1C24] border-[#ED1C24]/20 text-lg px-4 py-2">
+              <Badge className="bg-primary/10 text-primary border-primary/20 text-lg px-4 py-2">
                 {inspeccionExistente.porcentaje_completado}%
               </Badge>
             </div>
@@ -542,10 +542,10 @@ export default function InspeccionPage({ params }: { params: Promise<{ id: strin
 
       {/* Observaciones Generales - Editable */}
       {inspeccionExistente && (
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/30">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-blue-900 flex items-center gap-2">
+              <CardTitle className="text-blue-900 dark:text-blue-300 flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 Observaciones Generales
               </CardTitle>
@@ -554,7 +554,7 @@ export default function InspeccionPage({ params }: { params: Promise<{ id: strin
                   variant="outline"
                   size="sm"
                   onClick={() => setEditandoObservaciones(!editandoObservaciones)}
-                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100 dark:text-blue-300 dark:border-blue-700 dark:hover:bg-blue-900/30"
                 >
                   {editandoObservaciones ? "Cancelar" : "Editar"}
                 </Button>
@@ -568,7 +568,7 @@ export default function InspeccionPage({ params }: { params: Promise<{ id: strin
                   value={observacionesGenerales}
                   onChange={(e) => setObservacionesGenerales(e.target.value)}
                   rows={4}
-                  className="resize-none bg-white"
+                  className="resize-none bg-white dark:bg-card"
                   placeholder="Agrega observaciones generales sobre la inspección..."
                 />
                 <div className="flex justify-end">
@@ -579,7 +579,7 @@ export default function InspeccionPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
             ) : (
-              <p className="text-blue-800">
+              <p className="text-blue-800 dark:text-blue-300">
                 {observacionesGenerales || "Sin observaciones generales"}
               </p>
             )}
@@ -589,9 +589,9 @@ export default function InspeccionPage({ params }: { params: Promise<{ id: strin
 
       {/* Alert when ready to finalize */}
       {todosCompletados && !esReadOnly && (
-        <Alert className="bg-green-50 border-green-200">
+        <Alert className="bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800">
           <CheckCircle className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-900 font-medium">
+          <AlertDescription className="text-green-900 dark:text-green-300 font-medium">
             ¡Todos los puntos completados! Ya puedes finalizar la inspección usando el botón en la parte superior.
           </AlertDescription>
         </Alert>
@@ -599,9 +599,9 @@ export default function InspeccionPage({ params }: { params: Promise<{ id: strin
 
       {/* Alert when is read-only */}
       {esReadOnly && (
-        <Alert className="bg-gray-50 border-gray-200">
-          <CheckCircle className="h-4 w-4 text-gray-600" />
-          <AlertDescription className="text-gray-900 font-medium">
+        <Alert className="bg-gray-50 border-gray-200 dark:bg-muted dark:border-border">
+          <CheckCircle className="h-4 w-4 text-gray-600 dark:text-muted-foreground" />
+          <AlertDescription className="text-gray-900 dark:text-foreground font-medium">
             Esta inspección está completada. Los puntos se muestran en modo lectura solamente.
           </AlertDescription>
         </Alert>
@@ -660,16 +660,16 @@ export default function InspeccionPage({ params }: { params: Promise<{ id: strin
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Minus className="h-4 w-4 text-gray-600" />
+                  <Minus className="h-4 w-4 text-gray-600 dark:text-muted-foreground" />
                   <div>
                     <p className="text-sm text-muted-foreground">No Aplica</p>
-                    <p className="text-2xl font-bold text-gray-600">{resumenFinalizacion.resumen.n_a}</p>
+                    <p className="text-2xl font-bold text-gray-600 dark:text-muted-foreground">{resumenFinalizacion.resumen.n_a}</p>
                   </div>
                 </div>
               </div>
 
               <div className="flex justify-center pt-4">
-                <Button onClick={handleCerrarResumen} className="w-full bg-[#ED1C24] hover:bg-[#c41820]">
+                <Button onClick={handleCerrarResumen} className="w-full bg-primary hover:bg-primary/90">
                   Ver Lista de Inspecciones
                 </Button>
               </div>

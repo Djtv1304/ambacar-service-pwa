@@ -202,24 +202,24 @@ export function EscanearMatriculaDialog({ open, onClose, onDatosExtraidos }: Esc
 
   return (
     <Dialog open={open} onOpenChange={limpiarYCerrar}>
-      <DialogContent className="sm:max-w-2xl bg-white border-gray-200">
+      <DialogContent className="sm:max-w-2xl bg-white dark:bg-card border-gray-200 dark:border-border">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-[#202020] flex items-center gap-2">
-            <Camera className="h-6 w-6 text-[#ED1C24]" />
+          <DialogTitle className="text-2xl font-bold text-foreground flex items-center gap-2">
+            <Camera className="h-6 w-6 text-primary" />
             Escanear Matrícula
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Info Alert */}
-          <Alert className="border-blue-200 bg-blue-50">
-            <AlertDescription className="text-blue-900 text-sm">
+          <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
+            <AlertDescription className="text-blue-900 dark:text-blue-300 text-sm">
               Captura o sube una imagen clara de la matrícula del vehículo. El sistema extraerá automáticamente los datos.
             </AlertDescription>
           </Alert>
 
           {/* Camera/Image Area */}
-          <div className="relative bg-gray-100 rounded-lg overflow-hidden" style={{ minHeight: "300px" }}>
+          <div className="relative bg-gray-100 dark:bg-muted rounded-lg overflow-hidden" style={{ minHeight: "300px" }}>
             {imagenCapturada ? (
               <div className="relative">
                 <img src={imagenCapturada} alt="Matrícula capturada" className="w-full h-auto" />
@@ -241,7 +241,7 @@ export function EscanearMatriculaDialog({ open, onClose, onDatosExtraidos }: Esc
               />
             ) : (
               <div className="flex items-center justify-center h-[300px]">
-                <p className="text-gray-500">Captura o sube una imagen de la matrícula</p>
+                <p className="text-gray-500 dark:text-muted-foreground">Captura o sube una imagen de la matrícula</p>
               </div>
             )}
           </div>
@@ -285,7 +285,7 @@ export function EscanearMatriculaDialog({ open, onClose, onDatosExtraidos }: Esc
                   <Button
                     type="button"
                     onClick={capturarFoto}
-                    className="w-full bg-[#ED1C24] hover:bg-[#c41820]"
+                    className="w-full bg-primary hover:bg-primary/90"
                   >
                     <Camera className="mr-2 h-4 w-4" />
                     Capturar
@@ -320,7 +320,7 @@ export function EscanearMatriculaDialog({ open, onClose, onDatosExtraidos }: Esc
                 type="button"
                 onClick={procesarMatricula}
                 disabled={loading}
-                className="flex-1 bg-[#ED1C24] hover:bg-[#c41820] text-white"
+                className="flex-1 bg-primary hover:bg-primary/90 text-white"
               >
                 {loading ? (
                   <>
@@ -336,9 +336,9 @@ export function EscanearMatriculaDialog({ open, onClose, onDatosExtraidos }: Esc
 
           {/* Error Alert */}
           {showError && (
-            <Alert className="border-red-200 bg-red-50">
+            <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30">
               <AlertCircle className="h-4 w-4 text-red-600" />
-              <AlertDescription className="text-red-900 text-sm">
+              <AlertDescription className="text-red-900 dark:text-red-300 text-sm">
                 <strong>Error al procesar la imagen.</strong> No se pudieron extraer los datos de la matrícula. Por favor, asegúrate de que la imagen sea clara y esté bien enfocada, luego intenta nuevamente.
               </AlertDescription>
             </Alert>

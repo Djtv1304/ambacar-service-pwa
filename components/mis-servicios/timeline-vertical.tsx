@@ -40,7 +40,7 @@ function EvidenceThumbnail({ evidence, onClick }: EvidenceThumbnailProps) {
     audio: Mic,
     documento: FileText,
   }
-  const Icon = iconMap[evidence.tipo]
+  const Icon = iconMap[evidence.tipo] || ImageIcon
 
   return (
     <motion.button
@@ -49,7 +49,7 @@ function EvidenceThumbnail({ evidence, onClick }: EvidenceThumbnailProps) {
       onClick={onClick}
       className="relative h-14 w-14 sm:h-16 sm:w-16 rounded-lg overflow-hidden border border-border bg-muted hover:border-primary transition-colors"
     >
-      {evidence.tipo === "foto" || evidence.tipo === "video" ? (
+      {!evidence.tipo || evidence.tipo === "foto" || evidence.tipo === "video" ? (
         <img
           src={evidence.thumbnail || evidence.url}
           alt={evidence.descripcion || "Evidencia"}
@@ -82,7 +82,7 @@ function EvidenceModal({
           <DialogTitle>{evidence.descripcion || "Evidencia"}</DialogTitle>
         </DialogHeader>
         <div className="mt-4">
-          {(evidence.tipo === "foto" || evidence.tipo === "video") && (
+          {(!evidence.tipo || evidence.tipo === "foto" || evidence.tipo === "video") && (
             <img
               src={evidence.url}
               alt={evidence.descripcion || "Evidencia"}

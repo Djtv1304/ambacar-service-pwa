@@ -83,61 +83,61 @@ export function RegistroRapidoModal({ open, onClose, cedula, onComplete }: Regis
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md bg-white border-gray-200">
+      <DialogContent className="sm:max-w-md bg-white dark:bg-card border-gray-200 dark:border-border">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-[#202020]">Registro Rápido</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-foreground">Registro Rápido</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
           {/* Alert sobre el correo */}
-          <Alert className="border-blue-200 bg-blue-50">
+          <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
             <Mail className="h-4 w-4 text-blue-600" />
-            <AlertDescription className="text-blue-900 text-sm">
+            <AlertDescription className="text-blue-900 dark:text-blue-300 text-sm">
               <strong>Importante:</strong> Asegúrate de ingresar correctamente tu correo electrónico. Se enviará una
               contraseña temporal a esta dirección.
             </AlertDescription>
           </Alert>
 
           <div>
-            <Label htmlFor="cedula" className="text-[#202020]">
+            <Label htmlFor="cedula" className="text-foreground">
               Cédula
             </Label>
-            <Input id="cedula" {...register("cedula")} disabled className="mt-1 bg-gray-50" />
-            {errors.cedula && <p className="text-sm text-[#ED1C24] mt-1">{errors.cedula.message}</p>}
+            <Input id="cedula" {...register("cedula")} disabled className="mt-1 bg-gray-50 dark:bg-muted" />
+            {errors.cedula && <p className="text-sm text-primary mt-1">{errors.cedula.message}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="nombre" className="text-[#202020]">
-                Nombre <span className="text-[#ED1C24]">*</span>
+              <Label htmlFor="nombre" className="text-foreground">
+                Nombre <span className="text-primary">*</span>
               </Label>
               <Input id="nombre" {...register("nombre")} placeholder="Juan" className="mt-1" />
-              {errors.nombre && <p className="text-sm text-[#ED1C24] mt-1">{errors.nombre.message}</p>}
+              {errors.nombre && <p className="text-sm text-primary mt-1">{errors.nombre.message}</p>}
             </div>
 
             <div>
-              <Label htmlFor="apellido" className="text-[#202020]">
-                Apellido <span className="text-[#ED1C24]">*</span>
+              <Label htmlFor="apellido" className="text-foreground">
+                Apellido <span className="text-primary">*</span>
               </Label>
               <Input id="apellido" {...register("apellido")} placeholder="Pérez" className="mt-1" />
-              {errors.apellido && <p className="text-sm text-[#ED1C24] mt-1">{errors.apellido.message}</p>}
+              {errors.apellido && <p className="text-sm text-primary mt-1">{errors.apellido.message}</p>}
             </div>
           </div>
 
           <div>
-            <Label htmlFor="telefono" className="text-[#202020]">
-              Teléfono <span className="text-[#ED1C24]">*</span>
+            <Label htmlFor="telefono" className="text-foreground">
+              Teléfono <span className="text-primary">*</span>
             </Label>
             <Input id="telefono" {...register("telefono")} placeholder="+593987654321" className="mt-1" />
-            {errors.telefono && <p className="text-sm text-[#ED1C24] mt-1">{errors.telefono.message}</p>}
+            {errors.telefono && <p className="text-sm text-primary mt-1">{errors.telefono.message}</p>}
           </div>
 
           <div>
-            <Label htmlFor="email" className="text-[#202020]">
-              Email <span className="text-[#ED1C24]">*</span>
+            <Label htmlFor="email" className="text-foreground">
+              Email <span className="text-primary">*</span>
             </Label>
             <Input id="email" type="email" {...register("email")} placeholder="juan.perez@email.com" className="mt-1" />
-            {errors.email && <p className="text-sm text-[#ED1C24] mt-1">{errors.email.message}</p>}
+            {errors.email && <p className="text-sm text-primary mt-1">{errors.email.message}</p>}
           </div>
 
           <div className="flex gap-3 pt-4">
@@ -150,7 +150,7 @@ export function RegistroRapidoModal({ open, onClose, cedula, onComplete }: Regis
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1 bg-[#ED1C24] hover:bg-[#c41820] text-white">
+            <Button type="submit" disabled={loading} className="flex-1 bg-primary hover:bg-primary/90 text-white">
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

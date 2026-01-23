@@ -352,19 +352,19 @@ export function RegistrarVehiculoModal({
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-2xl bg-white border-gray-200 max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-2xl bg-white border-gray-200 dark:bg-card dark:border-border max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-[#202020] flex items-center gap-2">
-              <Car className="h-6 w-6 text-[#ED1C24]" />
+            <DialogTitle className="text-2xl font-bold text-foreground flex items-center gap-2">
+              <Car className="h-6 w-6 text-primary" />
               Registrar Vehículo
             </DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
             {/* Alert sobre escanear matrícula */}
-            <Alert className="border-blue-200 bg-blue-50">
+            <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
               <ScanLine className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-900 text-sm">
+              <AlertDescription className="text-blue-900 dark:text-blue-300 text-sm">
                 <strong>¿Sabías que puedes escanear la matrícula?</strong>
                 <br />
                 Si subes o capturas una imagen de la matrícula del vehículo, los campos de placa, marca, modelo y año se autocompletarán.
@@ -376,7 +376,7 @@ export function RegistrarVehiculoModal({
               type="button"
               variant="outline"
               onClick={() => setShowEscanearMatricula(true)}
-              className="w-full border-[#ED1C24] text-[#ED1C24] hover:bg-[#ED1C24]/10"
+              className="w-full border-primary text-primary hover:bg-primary/10"
             >
               <ScanLine className="mr-2 h-4 w-4" />
               Escanear Matrícula
@@ -386,33 +386,33 @@ export function RegistrarVehiculoModal({
               {/* Placa */}
               <div>
                 <Label htmlFor="placa">
-                  Placa <span className="text-[#ED1C24]">*</span>
+                  Placa <span className="text-primary">*</span>
                 </Label>
                 <Input
                   id="placa"
                   {...register("placa")}
                   placeholder="ABC-1234"
-                  className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                  className="mt-1 border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
                 />
                 {errors.placa && (
-                  <p className="text-sm text-[#ED1C24] mt-1">{errors.placa.message}</p>
+                  <p className="text-sm text-primary mt-1">{errors.placa.message}</p>
                 )}
               </div>
 
               {/* Año */}
               <div>
                 <Label htmlFor="anio">
-                  Año <span className="text-[#ED1C24]">*</span>
+                  Año <span className="text-primary">*</span>
                 </Label>
                 <Input
                   id="anio"
                   type="number"
                   {...register("anio", { valueAsNumber: true })}
                   placeholder="2020"
-                  className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                  className="mt-1 border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
                 />
                 {errors.anio && (
-                  <p className="text-sm text-[#ED1C24] mt-1">{errors.anio.message}</p>
+                  <p className="text-sm text-primary mt-1">{errors.anio.message}</p>
                 )}
               </div>
             </div>
@@ -421,16 +421,16 @@ export function RegistrarVehiculoModal({
               {/* Marca */}
               <div>
                 <Label htmlFor="marca">
-                  Marca <span className="text-[#ED1C24]">*</span>
+                  Marca <span className="text-primary">*</span>
                 </Label>
                 {loadingCatalogo ? (
-                  <div className="mt-1 p-3 border border-gray-200 rounded-lg flex items-center justify-center">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#ED1C24] mr-2" />
-                    <span className="text-sm text-gray-600">Cargando marcas...</span>
+                  <div className="mt-1 p-3 border border-gray-200 dark:border-border rounded-lg flex items-center justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary mr-2" />
+                    <span className="text-sm text-gray-600 dark:text-muted-foreground">Cargando marcas...</span>
                   </div>
                 ) : (
                   <Select value={selectedMarca} onValueChange={setSelectedMarca}>
-                    <SelectTrigger className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24] w-full">
+                    <SelectTrigger className="mt-1 border-gray-300 dark:border-border focus:border-primary focus:ring-primary w-full">
                       <SelectValue placeholder="Selecciona una marca" />
                     </SelectTrigger>
                     <SelectContent>
@@ -443,29 +443,29 @@ export function RegistrarVehiculoModal({
                   </Select>
                 )}
                 {errors.marca && (
-                  <p className="text-sm text-[#ED1C24] mt-1">{errors.marca.message}</p>
+                  <p className="text-sm text-primary mt-1">{errors.marca.message}</p>
                 )}
               </div>
 
               {/* Modelo */}
               <div>
                 <Label htmlFor="modelo">
-                  Modelo <span className="text-[#ED1C24]">*</span>
+                  Modelo <span className="text-primary">*</span>
                 </Label>
                 {loadingCatalogo ? (
-                  <div className="mt-1 p-3 border border-gray-200 rounded-lg flex items-center justify-center">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#ED1C24] mr-2" />
-                    <span className="text-sm text-gray-600">Cargando modelos...</span>
+                  <div className="mt-1 p-3 border border-gray-200 dark:border-border rounded-lg flex items-center justify-center">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary mr-2" />
+                    <span className="text-sm text-gray-600 dark:text-muted-foreground">Cargando modelos...</span>
                   </div>
                 ) : !selectedMarca ? (
                   <Select disabled>
-                    <SelectTrigger className="mt-1 border-gray-300 w-full">
+                    <SelectTrigger className="mt-1 border-gray-300 dark:border-border w-full">
                       <SelectValue placeholder="Primero selecciona una marca" />
                     </SelectTrigger>
                   </Select>
                 ) : (
                   <Select value={selectedModelo} onValueChange={setSelectedModelo}>
-                    <SelectTrigger className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24] w-full">
+                    <SelectTrigger className="mt-1 border-gray-300 dark:border-border focus:border-primary focus:ring-primary w-full">
                       <SelectValue placeholder="Selecciona un modelo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -480,16 +480,16 @@ export function RegistrarVehiculoModal({
                   </Select>
                 )}
                 {errors.modelo && (
-                  <p className="text-sm text-[#ED1C24] mt-1">{errors.modelo.message}</p>
+                  <p className="text-sm text-primary mt-1">{errors.modelo.message}</p>
                 )}
               </div>
             </div>
 
             {/* Mensaje informativo sobre datos OCR no encontrados */}
             {datosOCRNoEncontrados && (
-              <Alert className="border-amber-200 bg-amber-50">
+              <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
                 <ScanLine className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-amber-900 text-sm">
+                <AlertDescription className="text-amber-900 dark:text-amber-300 text-sm">
                   <strong>Información de la matrícula escaneada:</strong>
                   <div className="mt-2 space-y-1">
                     {datosOCRNoEncontrados.marca && (
@@ -518,14 +518,14 @@ export function RegistrarVehiculoModal({
               {/* Color */}
               <div>
                 <Label htmlFor="color">
-                  Color <span className="text-[#ED1C24]">*</span>
+                  Color <span className="text-primary">*</span>
                 </Label>
                 <Input
                   id="color"
                   {...register("color")}
                   placeholder="Ej: Blanco, Negro, Rojo"
                   maxLength={30}
-                  className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24] w-full"
+                  className="mt-1 border-gray-300 dark:border-border focus:border-primary focus:ring-primary w-full"
                   onChange={(e) => {
                     let value = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')
                     if (value.length > 0) {
@@ -536,20 +536,20 @@ export function RegistrarVehiculoModal({
                   }}
                 />
                 {errors.color && (
-                  <p className="text-sm text-[#ED1C24] mt-1">{errors.color.message}</p>
+                  <p className="text-sm text-primary mt-1">{errors.color.message}</p>
                 )}
               </div>
 
               {/* VIN */}
               <div>
                 <Label htmlFor="vin">
-                  VIN (Número de Chasis) <span className="text-[#ED1C24]">*</span>
+                  VIN (Número de Chasis) <span className="text-primary">*</span>
                 </Label>
                 <Input
                   id="vin"
                   {...register("vin")}
                   placeholder="Ej: 1HGCM82633A004352"
-                  className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24] w-full uppercase"
+                  className="mt-1 border-gray-300 dark:border-border focus:border-primary focus:ring-primary w-full uppercase"
                   maxLength={17}
                   onChange={(e) => {
                     const value = e.target.value
@@ -562,7 +562,7 @@ export function RegistrarVehiculoModal({
                   }}
                 />
                 {errors.vin && (
-                  <p className="text-sm text-[#ED1C24] mt-1">{errors.vin.message}</p>
+                  <p className="text-sm text-primary mt-1">{errors.vin.message}</p>
                 )}
               </div>
             </div>
@@ -570,25 +570,25 @@ export function RegistrarVehiculoModal({
             {/* Kilometraje */}
             <div>
               <Label htmlFor="kilometraje">
-                Kilometraje <span className="text-[#ED1C24]">*</span>
+                Kilometraje <span className="text-primary">*</span>
               </Label>
               <Input
                 id="kilometraje"
                 type="number"
                 {...register("kilometraje", { valueAsNumber: true })}
                 placeholder="50000"
-                className="mt-1 border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                className="mt-1 border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
               />
               {errors.kilometraje && (
-                <p className="text-sm text-[#ED1C24] mt-1">{errors.kilometraje.message}</p>
+                <p className="text-sm text-primary mt-1">{errors.kilometraje.message}</p>
               )}
             </div>
 
             {/* Alerta de verificación OCR/IA */}
             {showOCRVerificationAlert && (
-              <Alert className="border-amber-200 bg-amber-50">
+              <Alert className="border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="text-amber-900 text-sm">
+                <AlertDescription className="text-amber-900 dark:text-amber-300 text-sm">
                   <strong>Información extraída con OCR e IA.</strong> Los datos han sido autocompletados automáticamente. Por favor, verifica que toda la información sea correcta antes de continuar.
                 </AlertDescription>
               </Alert>
@@ -596,9 +596,9 @@ export function RegistrarVehiculoModal({
 
             {/* Alerta de error de API */}
             {apiError && (
-              <Alert className="border-red-200 bg-red-50">
+              <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30">
                 <AlertCircle className="h-4 w-4 text-red-600" />
-                <AlertDescription className="text-red-900 text-sm">
+                <AlertDescription className="text-red-900 dark:text-red-300 text-sm">
                   {apiError}
                 </AlertDescription>
               </Alert>
@@ -618,7 +618,7 @@ export function RegistrarVehiculoModal({
               <Button
                 type="submit"
                 disabled={loading || !selectedMarca || !selectedModelo}
-                className="flex-1 bg-[#ED1C24] hover:bg-[#c41820] text-white"
+                className="flex-1 bg-primary hover:bg-primary/90 text-white"
               >
                 {loading ? (
                   <>

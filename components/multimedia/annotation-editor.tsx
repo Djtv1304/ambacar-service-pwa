@@ -351,10 +351,10 @@ export function AnnotationEditor({
   // Loading state
   if (imageStatus === "loading") {
     return (
-      <div className="flex items-center justify-center h-96 bg-gray-100 rounded-lg">
+      <div className="flex items-center justify-center h-96 bg-gray-100 dark:bg-muted rounded-lg">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-[#ED1C24]" />
-          <span className="text-sm text-gray-600">Cargando imagen...</span>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="text-sm text-gray-600 dark:text-muted-foreground">Cargando imagen...</span>
         </div>
       </div>
     )
@@ -362,7 +362,7 @@ export function AnnotationEditor({
   
   if (imageStatus === "failed") {
     return (
-      <div className="flex items-center justify-center h-96 bg-gray-100 rounded-lg">
+      <div className="flex items-center justify-center h-96 bg-gray-100 dark:bg-muted rounded-lg">
         <span className="text-sm text-red-600">Error al cargar la imagen</span>
       </div>
     )
@@ -539,7 +539,7 @@ export function AnnotationEditor({
       <motion.div
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="bg-white border-t border-gray-200 p-3"
+        className="bg-white dark:bg-card border-t border-gray-200 dark:border-border p-3"
       >
         {/* Mobile: Two rows layout */}
         <div className="flex flex-col gap-2 sm:hidden">
@@ -550,7 +550,7 @@ export function AnnotationEditor({
               onPressedChange={() => setTool("select")}
               size="sm"
               className={cn(
-                "data-[state=on]:bg-[#ED1C24] data-[state=on]:text-white"
+                "data-[state=on]:bg-primary data-[state=on]:text-white"
               )}
             >
               <MousePointer2 className="h-4 w-4" />
@@ -561,7 +561,7 @@ export function AnnotationEditor({
               onPressedChange={() => setTool("pencil")}
               size="sm"
               className={cn(
-                "data-[state=on]:bg-[#ED1C24] data-[state=on]:text-white"
+                "data-[state=on]:bg-primary data-[state=on]:text-white"
               )}
             >
               <Pencil className="h-4 w-4" />
@@ -588,13 +588,13 @@ export function AnnotationEditor({
               onPressedChange={() => setTool("eraser")}
               size="sm"
               className={cn(
-                "data-[state=on]:bg-[#ED1C24] data-[state=on]:text-white"
+                "data-[state=on]:bg-primary data-[state=on]:text-white"
               )}
             >
               <Eraser className="h-4 w-4" />
             </Toggle>
             
-            <div className="w-px h-6 bg-gray-200 mx-1" />
+            <div className="w-px h-6 bg-gray-200 dark:bg-border mx-1" />
             
             <Button
               variant="ghost"
@@ -636,7 +636,7 @@ export function AnnotationEditor({
             </div>
             
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">Grosor</span>
+              <span className="text-xs text-gray-500 dark:text-muted-foreground">Grosor</span>
               <Slider
                 value={[strokeWidth]}
                 onValueChange={([value]) => setStrokeWidth(value)}
@@ -648,7 +648,7 @@ export function AnnotationEditor({
             </div>
           </div>
         </div>
-        
+
         {/* Desktop: Single row layout */}
         <div className="hidden sm:flex items-center justify-center gap-1 flex-wrap">
           {/* Drawing tools */}
@@ -660,7 +660,7 @@ export function AnnotationEditor({
                   onPressedChange={() => setTool("select")}
                   size="sm"
                   className={cn(
-                    "data-[state=on]:bg-[#ED1C24] data-[state=on]:text-white"
+                    "data-[state=on]:bg-primary data-[state=on]:text-white"
                   )}
                 >
                   <MousePointer2 className="h-4 w-4" />
@@ -676,7 +676,7 @@ export function AnnotationEditor({
                   onPressedChange={() => setTool("pencil")}
                   size="sm"
                   className={cn(
-                    "data-[state=on]:bg-[#ED1C24] data-[state=on]:text-white"
+                    "data-[state=on]:bg-primary data-[state=on]:text-white"
                   )}
                 >
                   <Pencil className="h-4 w-4" />
@@ -691,7 +691,7 @@ export function AnnotationEditor({
                   variant="ghost"
                   size="icon-sm"
                   onClick={insertArrow}
-                  className="hover:bg-gray-100"
+                  className="hover:bg-gray-100 dark:hover:bg-accent"
                 >
                   <ArrowUpRight className="h-4 w-4" />
                 </Button>
@@ -705,7 +705,7 @@ export function AnnotationEditor({
                   variant="ghost"
                   size="icon-sm"
                   onClick={insertCircle}
-                  className="hover:bg-gray-100"
+                  className="hover:bg-gray-100 dark:hover:bg-accent"
                 >
                   <CircleIcon className="h-4 w-4" />
                 </Button>
@@ -720,7 +720,7 @@ export function AnnotationEditor({
                   onPressedChange={() => setTool("eraser")}
                   size="sm"
                   className={cn(
-                    "data-[state=on]:bg-[#ED1C24] data-[state=on]:text-white"
+                    "data-[state=on]:bg-primary data-[state=on]:text-white"
                   )}
                 >
                   <Eraser className="h-4 w-4" />
@@ -730,8 +730,8 @@ export function AnnotationEditor({
             </Tooltip>
           </div>
           
-          <div className="w-px h-6 bg-gray-200 mx-2" />
-          
+          <div className="w-px h-6 bg-gray-200 dark:bg-border mx-2" />
+
           {/* Colors */}
           <div className="flex items-center gap-1.5">
             {Object.entries(COLORS).map(([name, colorValue]) => (
@@ -754,11 +754,11 @@ export function AnnotationEditor({
             ))}
           </div>
           
-          <div className="w-px h-6 bg-gray-200 mx-2" />
-          
+          <div className="w-px h-6 bg-gray-200 dark:bg-border mx-2" />
+
           {/* Stroke width */}
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">Grosor</span>
+            <span className="text-xs text-gray-500 dark:text-muted-foreground">Grosor</span>
             <Slider
               value={[strokeWidth]}
               onValueChange={([value]) => setStrokeWidth(value)}
@@ -769,8 +769,8 @@ export function AnnotationEditor({
             />
           </div>
           
-          <div className="w-px h-6 bg-gray-200 mx-2" />
-          
+          <div className="w-px h-6 bg-gray-200 dark:bg-border mx-2" />
+
           {/* Actions */}
           <div className="flex items-center gap-1">
             <Tooltip>
@@ -780,7 +780,7 @@ export function AnnotationEditor({
                   size="icon-sm"
                   onClick={handleUndo}
                   disabled={history.length === 0}
-                  className="hover:bg-gray-100"
+                  className="hover:bg-gray-100 dark:hover:bg-accent"
                 >
                   <Undo2 className="h-4 w-4" />
                 </Button>
@@ -830,10 +830,10 @@ export function AnnotationEditor({
         </div>
         
         {/* Save button - Always visible */}
-        <div className="flex justify-end mt-3 pt-3 border-t border-gray-100">
+        <div className="flex justify-end mt-3 pt-3 border-t border-gray-100 dark:border-border">
           <Button
             onClick={handleSave}
-            className="bg-[#ED1C24] hover:bg-[#c41820] text-white"
+            className="bg-primary hover:bg-primary/90 text-white"
             disabled={lines.length === 0 && shapes.length === 0}
           >
             <Save className="h-4 w-4 mr-2" />

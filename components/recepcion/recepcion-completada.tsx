@@ -43,8 +43,8 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                                 <CheckCircle className="h-8 w-8 text-green-600" />
                             </div>
                             <div>
-                                <h3 className="font-semibold text-lg text-green-900">¡Recepción Completada!</h3>
-                                <p className="text-sm text-green-700 mt-1">{mensaje}</p>
+                                <h3 className="font-semibold text-lg text-green-900 dark:text-green-300">¡Recepción Completada!</h3>
+                                <p className="text-sm text-green-700 dark:text-green-400 mt-1">{mensaje}</p>
                             </div>
                         </div>
                     </CardContent>
@@ -53,14 +53,14 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
 
             {/* Orden de Trabajo */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                <Card className="bg-[#ED1C24]/5">
+                <Card className="bg-primary/5">
                     <CardHeader className="pb-3 px-4 md:px-6">
                         <CardTitle className="flex items-center justify-between gap-1.5">
                             <div className="flex items-center gap-2">
-                                <Wrench className="h-5 w-5 text-[#ED1C24]" />
+                                <Wrench className="h-5 w-5 text-primary" />
                                 <span>Orden de Trabajo Generada</span>
                             </div>
-                            <Badge className="bg-[#ED1C24] hover:bg-[#c41820]">{orden_trabajo.numero_orden}</Badge>
+                            <Badge className="bg-primary hover:bg-primary/90">{orden_trabajo.numero_orden}</Badge>
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="px-4 md:px-6">
@@ -85,7 +85,7 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                 <Card>
                     <CardHeader className="pb-3 px-4 md:px-6">
                         <CardTitle className="flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-[#ED1C24]" />
+                            <Calendar className="h-5 w-5 text-primary" />
                             <span>Detalles de Recepción</span>
                         </CardTitle>
                     </CardHeader>
@@ -140,7 +140,7 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                     <Card className="h-full">
                         <CardHeader className="pb-3 px-4 md:px-6">
                             <CardTitle className="flex items-center gap-2">
-                                <User className="h-5 w-5 text-[#ED1C24]" />
+                                <User className="h-5 w-5 text-primary" />
                                 <span>Cliente</span>
                             </CardTitle>
                         </CardHeader>
@@ -172,7 +172,7 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                     <Card className="h-full">
                         <CardHeader className="pb-3 px-4 md:px-6">
                             <CardTitle className="flex items-center gap-2">
-                                <Car className="h-5 w-5 text-[#ED1C24]" />
+                                <Car className="h-5 w-5 text-primary" />
                                 <span>Vehículo</span>
                             </CardTitle>
                         </CardHeader>
@@ -208,7 +208,7 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                     <CardHeader className="pb-3 px-4 md:px-6">
                         <CardTitle className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <ImageIcon className="h-5 w-5 text-[#ED1C24]" />
+                                <ImageIcon className="h-5 w-5 text-primary" />
                                 <span>Fotos del Vehículo</span>
                             </div>
                             <Badge variant="outline">
@@ -229,7 +229,7 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                                         onClick={() => handleImageClick(foto.url_imagen)}
                                     >
                                         {/* Image container with overlay */}
-                                        <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-muted hover:border-[#ED1C24] transition-colors">
+                                        <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-muted hover:border-primary transition-colors">
                                             <img
                                                 src={foto.url_imagen}
                                                 alt={`Foto ${foto.tipo_foto}`}
@@ -294,7 +294,7 @@ export function RecepcionCompletada({ data }: RecepcionCompletadaProps) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.8 }}
             >
-                <Button asChild className="w-full bg-[#ED1C24] hover:bg-[#c41820]">
+                <Button asChild className="w-full bg-primary hover:bg-primary/90">
                     <Link href={`/dashboard/ot/${orden_trabajo.id}`}>
                         <Eye className="mr-2 h-4 w-4" />
                         <span className="md:hidden">Ver OT Creada</span>

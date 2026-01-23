@@ -76,7 +76,7 @@ const severityConfig = {
   },
   opcional: {
     label: "Opcional",
-    color: "text-gray-600",
+    color: "text-gray-600 dark:text-muted-foreground",
     bgColor: "bg-gray-500/10",
     borderColor: "border-gray-500/30",
     icon: null,
@@ -182,7 +182,7 @@ function WorkItemCard({
         className={cn(
           "overflow-hidden transition-all",
           status === "approved" && "border-green-500/30 bg-green-500/5",
-          status === "rejected" && "border-gray-300 bg-gray-50 dark:bg-gray-900/50 opacity-75"
+          status === "rejected" && "border-gray-300 dark:border-border bg-gray-50 dark:bg-gray-900/50 opacity-75"
         )}
       >
         <CardContent className="p-4">
@@ -352,7 +352,7 @@ function WorkItemCard({
           </Collapsible>
 
           {/* Action buttons - Hidden in readOnly mode */}
-          {showActions && !status && !readOnly && (
+          {showActions && !status && !readOnly && work.requiereAprobacion && (
             <div className="flex gap-3 mt-4 pt-4 border-t">
               <Button
                 onClick={() => setShowRejectDialog(true)}
@@ -375,12 +375,23 @@ function WorkItemCard({
           )}
 
           {/* Read-only mode - Show waiting status instead of buttons */}
-          {showActions && !status && readOnly && (
+          {showActions && !status && readOnly && work.requiereAprobacion && (
             <div className="mt-4 pt-4 border-t">
               <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-amber-500/10 border border-amber-500/30">
                 <div className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
                 <span className="text-sm font-medium text-amber-600 dark:text-amber-400">
                   Esperando respuesta del cliente
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Informational-only work - no approval needed */}
+          {showActions && !status && !work.requiereAprobacion && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="flex items-center justify-center gap-2 py-2 px-4 rounded-lg bg-blue-500/10 dark:bg-blue-950/30 border border-blue-500/30 dark:border-blue-800">
+                <span className="text-sm font-medium text-blue-600 dark:text-blue-400">
+                  Trabajo informativo - No requiere aprobacion
                 </span>
               </div>
             </div>

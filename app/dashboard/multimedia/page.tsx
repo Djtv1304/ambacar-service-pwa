@@ -100,7 +100,7 @@ export default function MultimediaPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
-        <Loader2 className="h-8 w-8 animate-spin text-[#ED1C24]" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     )
   }
@@ -108,7 +108,7 @@ export default function MultimediaPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-[#202020] dark:text-gray-200 mb-2">Registro Multimedia</h1>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Registro Multimedia</h1>
         <p className="text-gray-600 dark:text-gray-400">
           Galería fotográfica de todas las órdenes de trabajo
         </p>
@@ -151,7 +151,7 @@ export default function MultimediaPage() {
                       <ImageIcon className="h-12 w-12 text-gray-300" />
                     </div>
                   )}
-                  <Badge className="absolute top-3 right-3 bg-[#ED1C24] shadow-lg">
+                  <Badge className="absolute top-3 right-3 bg-primary shadow-lg">
                     {ot.totalFotos || 0} fotos
                   </Badge>
                 </div>
@@ -161,7 +161,7 @@ export default function MultimediaPage() {
                     {/* Header: En mobile lado a lado, en desktop stack vertical para badges largos */}
                     <div className="flex flex-col md:flex-col gap-2">
                       <div className="flex items-center justify-between md:justify-start gap-2">
-                        <h3 className="font-semibold text-[#202020] dark:text-gray-200 flex-shrink-0">{ot.numero_orden}</h3>
+                        <h3 className="font-semibold text-foreground flex-shrink-0">{ot.numero_orden}</h3>
                         <Badge variant="outline" className="text-xs md:hidden flex-shrink-0">
                           {ot.estado_detalle.nombre}
                         </Badge>

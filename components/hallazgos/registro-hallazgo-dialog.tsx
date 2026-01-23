@@ -102,12 +102,12 @@ function ConfirmacionHallazgoDialog({ open, onOpenChange, hallazgo }: Confirmaci
         <div className="space-y-4 sm:space-y-6 px-6 pb-4 overflow-y-auto flex-1">
           {/* Información Principal */}
           <div className="grid gap-3 sm:gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-800">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
               <div className="flex items-center gap-3">
                 <FileText className="h-5 w-5 text-gray-500 dark:text-gray-400 shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">ID del Hallazgo</p>
-                  <p className="text-lg sm:text-xl font-bold text-[#ED1C24]">#{hallazgo.id}</p>
+                  <p className="text-lg sm:text-xl font-bold text-primary">#{hallazgo.id}</p>
                 </div>
               </div>
               {getEstadoAprobacionBadge(hallazgo.estado_aprobacion)}
@@ -137,7 +137,7 @@ function ConfirmacionHallazgoDialog({ open, onOpenChange, hallazgo }: Confirmaci
 
           {/* Detalles Adicionales */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-800">
+            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
               <User className="h-5 w-5 text-gray-500 dark:text-gray-400 mt-0.5 shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Reportado por</p>
@@ -145,7 +145,7 @@ function ConfirmacionHallazgoDialog({ open, onOpenChange, hallazgo }: Confirmaci
               </div>
             </div>
 
-            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-800">
+            <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
               <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400 mt-0.5 shrink-0" />
               <div className="min-w-0">
                 <p className="text-xs text-muted-foreground">Fecha de Registro</p>
@@ -163,19 +163,19 @@ function ConfirmacionHallazgoDialog({ open, onOpenChange, hallazgo }: Confirmaci
               </div>
               <div className="grid grid-cols-2 gap-3">
                 {parseFloat(hallazgo.costo_mano_obra) > 0 && (
-                  <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-800">
+                  <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
                     <p className="text-xs text-muted-foreground mb-1">Mano de Obra</p>
                     <p className="text-base sm:text-lg font-bold break-all">${parseFloat(hallazgo.costo_mano_obra).toFixed(2)}</p>
                   </div>
                 )}
                 {parseFloat(hallazgo.costo_repuestos) > 0 && (
-                  <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-800">
+                  <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
                     <p className="text-xs text-muted-foreground mb-1">Repuestos</p>
                     <p className="text-base sm:text-lg font-bold break-all">${parseFloat(hallazgo.costo_repuestos).toFixed(2)}</p>
                   </div>
                 )}
               </div>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 bg-[#ED1C24] text-white rounded-lg">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 sm:p-4 bg-primary text-white rounded-lg">
                 <span className="font-semibold text-sm sm:text-base">Costo Total Estimado:</span>
                 <span className="text-xl sm:text-2xl font-bold">${costoTotal.toFixed(2)}</span>
               </div>
@@ -206,7 +206,7 @@ function ConfirmacionHallazgoDialog({ open, onOpenChange, hallazgo }: Confirmaci
                     <img
                       src={foto.imagen}
                       alt={`Evidencia ${idx + 1}`}
-                      className="w-full aspect-video object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer hover:border-[#ED1C24] transition-colors"
+                      className="w-full aspect-video object-cover rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer hover:border-primary transition-colors"
                       loading="lazy"
                     />
                     <Badge className="absolute bottom-2 left-2 bg-black/80 text-xs">{idx + 1}</Badge>
@@ -233,10 +233,10 @@ function ConfirmacionHallazgoDialog({ open, onOpenChange, hallazgo }: Confirmaci
           )}
         </div>
 
-        <DialogFooter className="px-6 pb-6 pt-4 shrink-0 border-t dark:border-gray-800">
+        <DialogFooter className="px-6 pb-6 pt-4 shrink-0 border-t border-gray-200 dark:border-gray-800">
           <Button
             onClick={() => onOpenChange(false)}
-            className="w-full sm:w-auto bg-[#ED1C24] hover:bg-[#c41820] text-sm sm:text-base"
+            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-sm sm:text-base"
           >
             Entendido
           </Button>
@@ -637,9 +637,9 @@ export function RegistroHallazgoDialog({
             </div>
 
             {costoTotal > 0 && (
-              <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border dark:border-gray-800">
+              <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
                 <span className="font-medium text-gray-700 dark:text-gray-300">Costo Total Estimado:</span>
-                <span className="text-lg font-bold text-[#ED1C24]">${costoTotal.toFixed(2)}</span>
+                <span className="text-lg font-bold text-primary">${costoTotal.toFixed(2)}</span>
               </div>
             )}
           </div>
@@ -725,7 +725,7 @@ export function RegistroHallazgoDialog({
                       onClick={capturarFoto}
                       disabled={isCapturing || isGuardando}
                       size="sm"
-                      className="flex-1 bg-[#ED1C24] hover:bg-[#c41820]"
+                      className="flex-1 bg-primary hover:bg-primary/90"
                     >
                       {isCapturing ? (
                         <>
@@ -782,7 +782,7 @@ export function RegistroHallazgoDialog({
           </div>
 
           {/* Requiere Autorización */}
-          <div className="flex items-start space-x-3 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900 dark:border-gray-800">
+          <div className="flex items-start space-x-3 p-4 border border-gray-200 rounded-lg bg-gray-50 dark:bg-gray-900 dark:border-gray-800">
             <Checkbox
               id="requiereAutorizacion"
               checked={requiereAutorizacion}
@@ -805,7 +805,7 @@ export function RegistroHallazgoDialog({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <div className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-900 dark:border-gray-800 space-y-3">
+              <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 dark:bg-gray-900 dark:border-gray-800 space-y-3">
                 <p className="text-sm font-medium flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
                   Resumen del Hallazgo
@@ -829,7 +829,7 @@ export function RegistroHallazgoDialog({
                   )}
                   <p><strong>Requiere autorización:</strong> {requiereAutorizacion ? "Sí" : "No"}</p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2 pt-2 border-t dark:border-gray-700">
+                <p className="text-xs text-muted-foreground mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                   Este hallazgo será notificado a {clienteNombre}
                 </p>
               </div>
@@ -841,7 +841,7 @@ export function RegistroHallazgoDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGuardando}>
             Cancelar
           </Button>
-          <Button onClick={handleGuardar} disabled={!puedeGuardar || isGuardando} className="bg-[#ED1C24] hover:bg-[#c41820]">
+          <Button onClick={handleGuardar} disabled={!puedeGuardar || isGuardando} className="bg-primary hover:bg-primary/90">
             {isGuardando ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

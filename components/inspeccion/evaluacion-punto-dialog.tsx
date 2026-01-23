@@ -167,9 +167,9 @@ export function EvaluacionPuntoDialog({
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Alert className="border-blue-200 bg-blue-50">
+                  <Alert className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30">
                     <AlertCircle className="h-4 w-4 text-blue-600" />
-                    <AlertDescription className="text-blue-900">
+                    <AlertDescription className="text-blue-900 dark:text-blue-300">
                       Después de guardar este punto, podrás agregar las fotografías de evidencia requeridas para el estado
                       crítico.
                     </AlertDescription>
@@ -183,7 +183,7 @@ export function EvaluacionPuntoDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGuardando}>
               Cancelar
             </Button>
-            <Button onClick={handleGuardar} disabled={!puedeGuardar || isGuardando} className="bg-[#ED1C24] hover:bg-[#c41820]">
+            <Button onClick={handleGuardar} disabled={!puedeGuardar || isGuardando} className="bg-primary hover:bg-primary/90">
               {isGuardando ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

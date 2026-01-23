@@ -181,7 +181,7 @@ export default function ConfiguracionPage() {
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <h3 className="text-2xl font-bold text-[#202020] dark:text-gray-200">{userFullName}</h3>
+                  <h3 className="text-2xl font-bold text-foreground">{userFullName}</h3>
                   <Badge variant="outline" className="mt-1">{userRole}</Badge>
                 </div>
               </div>
@@ -205,31 +205,31 @@ export default function ConfiguracionPage() {
 
               {/* Información Personal */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-[#202020] dark:text-gray-200">Información Personal</h3>
+                <h3 className="font-semibold text-foreground">Información Personal</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-[#202020] dark:text-gray-200 flex items-center gap-2">
+                    <Label className="text-foreground flex items-center gap-2">
                       <User className="h-4 w-4" />
                       Nombre
                     </Label>
                     <Input value={user.first_name} disabled className="bg-muted" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[#202020] dark:text-gray-200 flex items-center gap-2">
+                    <Label className="text-foreground flex items-center gap-2">
                       <User className="h-4 w-4" />
                       Apellido
                     </Label>
                     <Input value={user.last_name} disabled className="bg-muted" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[#202020] dark:text-gray-200 flex items-center gap-2">
+                    <Label className="text-foreground flex items-center gap-2">
                       <Mail className="h-4 w-4" />
                       Correo Electrónico
                     </Label>
                     <Input value={user.email} disabled className="bg-muted" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[#202020] dark:text-gray-200 flex items-center gap-2">
+                    <Label className="text-foreground flex items-center gap-2">
                       <IdCard className="h-4 w-4" />
                       Nombre de Usuario
                     </Label>
@@ -242,10 +242,10 @@ export default function ConfiguracionPage() {
 
               {/* Información de Contacto */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-[#202020] dark:text-gray-200">Información de Contacto</h3>
+                <h3 className="font-semibold text-foreground">Información de Contacto</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-[#202020] dark:text-gray-200 flex items-center gap-2">
+                    <Label className="text-foreground flex items-center gap-2">
                       <Phone className="h-4 w-4" />
                       Teléfono
                     </Label>
@@ -256,7 +256,7 @@ export default function ConfiguracionPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[#202020] dark:text-gray-200 flex items-center gap-2">
+                    <Label className="text-foreground flex items-center gap-2">
                       <IdCard className="h-4 w-4" />
                       Cédula
                     </Label>
@@ -273,17 +273,17 @@ export default function ConfiguracionPage() {
 
               {/* Información de Cuenta */}
               <div className="space-y-4">
-                <h3 className="font-semibold text-[#202020] dark:text-gray-200">Información de Cuenta</h3>
+                <h3 className="font-semibold text-foreground">Información de Cuenta</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label className="text-[#202020] dark:text-gray-200 flex items-center gap-2">
+                    <Label className="text-foreground flex items-center gap-2">
                       <Shield className="h-4 w-4" />
                       Rol en el Sistema
                     </Label>
                     <Input value={userRole} disabled className="bg-muted" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[#202020] dark:text-gray-200 flex items-center gap-2">
+                    <Label className="text-foreground flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
                       Fecha de Creación
                     </Label>

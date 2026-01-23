@@ -222,7 +222,7 @@ export default function InspeccionesPage() {
                         </p>
 
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 bg-gray-200 rounded-full h-2">
+                          <div className="flex-1 bg-gray-200 dark:bg-muted rounded-full h-2">
                             <div
                               className={`h-2 rounded-full transition-all ${
                                 inspeccion.porcentaje_completado === 100 ? "bg-green-500" : "bg-blue-500"
@@ -239,7 +239,7 @@ export default function InspeccionesPage() {
                       </div>
 
                       <div className="flex-shrink-0">
-                        <Button asChild className="bg-[#ED1C24] hover:bg-[#c41820] w-full md:w-auto">
+                        <Button asChild className="bg-primary hover:bg-primary/90 w-full md:w-auto">
                           <Link href={buttonConfig.href}>{buttonConfig.text}</Link>
                         </Button>
                       </div>

@@ -175,7 +175,7 @@ function DesktopSidebar() {
   const { user } = useAuth()
 
   const filteredNavItems = navItems.filter(
-    (item) => !item.roles || (user && item.roles.includes(user.role))
+    (item) => !item.roles || item.roles.length === 0 || (user && item.roles.includes(user.role))
   )
 
   return (
@@ -257,7 +257,7 @@ function MobileSidebar() {
   const { user } = useAuth()
 
   const filteredNavItems = navItems.filter(
-    (item) => !item.roles || (user && item.roles.includes(user.role))
+    (item) => !item.roles || item.roles.length === 0 || (user && item.roles.includes(user.role))
   )
 
   // Close sidebar on route change

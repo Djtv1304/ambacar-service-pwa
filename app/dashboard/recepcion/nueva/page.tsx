@@ -113,16 +113,16 @@ export default function NuevaRecepcionPage() {
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm transition-all ${
                 idx < step
-                  ? "bg-[#ED1C24] text-white"
+                  ? "bg-primary text-white"
                   : idx === step
-                    ? "bg-[#ED1C24] text-white ring-2 ring-[#ED1C24] ring-offset-2 dark:ring-offset-background"
+                    ? "bg-primary text-white ring-2 ring-primary ring-offset-2 dark:ring-offset-background"
                     : "bg-muted text-muted-foreground"
               }`}
             >
               {idx < step ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
             </div>
             {idx < stepLabels.length - 1 && (
-              <div className={`w-12 md:w-20 lg:w-24 h-1 mx-2 transition-colors ${idx < step ? "bg-[#ED1C24]" : "bg-muted"}`} />
+              <div className={`w-12 md:w-20 lg:w-24 h-1 mx-2 transition-colors ${idx < step ? "bg-primary" : "bg-muted"}`} />
             )}
           </motion.div>
         ))}
@@ -145,7 +145,7 @@ export default function NuevaRecepcionPage() {
                 <h2 className="text-xl font-semibold">Captura de Fotografías</h2>
                 <p className="text-muted-foreground">
                   Número de recepción:{" "}
-                  <span className="font-semibold text-[#ED1C24]">{recepcion.numero_recepcion}</span>
+                  <span className="font-semibold text-primary">{recepcion.numero_recepcion}</span>
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Por favor, captura las fotografías requeridas del vehículo para completar la recepción.
@@ -161,7 +161,7 @@ export default function NuevaRecepcionPage() {
                         <img
                           src={foto.preview}
                           alt={`Foto ${idx + 1}`}
-                          className="w-full aspect-video object-cover rounded-lg border-2 border-gray-200"
+                          className="w-full aspect-video object-cover rounded-lg border-2 border-gray-200 dark:border-border"
                         />
                         <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
                           {foto.tipo}
@@ -181,7 +181,7 @@ export default function NuevaRecepcionPage() {
                   <Button
                     onClick={handleCompletarRecepcion}
                     disabled={isUploadingPhotos}
-                    className="w-full bg-[#ED1C24] hover:bg-[#c41820]"
+                    className="w-full bg-primary hover:bg-primary/90"
                   >
                     {isUploadingPhotos ? "Completando..." : "Completar Recepción"}
                   </Button>

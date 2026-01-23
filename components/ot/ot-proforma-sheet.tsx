@@ -383,7 +383,7 @@ export function OTProformaSheet({ ot, open, onClose }: OTProformaSheetProps) {
                   <p className="text-xs text-muted-foreground dark:text-gray-500 uppercase tracking-wide">Total Estimado</p>
                   <p className="text-xs text-muted-foreground dark:text-gray-500">Incluye IVA</p>
                 </div>
-                <p className="text-2xl font-bold text-primary dark:text-[#ED1C24]">
+                <p className="text-2xl font-bold text-primary">
                   ${total.toFixed(2)}
                 </p>
               </div>

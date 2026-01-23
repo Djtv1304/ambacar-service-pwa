@@ -215,7 +215,7 @@ export default function NuevaOrdenTrabajoPage() {
         >
           <Card className="border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-lg">
           <CardHeader>
-            <CardTitle className="text-[#202020] dark:text-gray-100">Información de la Orden</CardTitle>
+            <CardTitle className="text-foreground">Información de la Orden</CardTitle>
             <CardDescription className="text-gray-600 dark:text-gray-400">
               Completa los datos para crear una nueva orden de trabajo
             </CardDescription>
@@ -232,13 +232,13 @@ export default function NuevaOrdenTrabajoPage() {
                   name="tipo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                      <FormLabel className="text-foreground flex items-center gap-2">
                         <FileText className="h-4 w-4" />
                         Tipo de Orden *
                       </FormLabel>
                       <Select onValueChange={field.onChange} value={field.value} disabled={loading}>
                         <FormControl>
-                          <SelectTrigger className="w-full border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                          <SelectTrigger className="w-full border-gray-300 dark:border-border focus:border-primary focus:ring-primary">
                             <SelectValue placeholder="Selecciona el tipo de orden" />
                           </SelectTrigger>
                         </FormControl>
@@ -261,7 +261,7 @@ export default function NuevaOrdenTrabajoPage() {
                   name="subtipo"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                      <FormLabel className="text-foreground flex items-center gap-2">
                         <FileText className="h-4 w-4" />
                         Subtipo de Orden
                       </FormLabel>
@@ -271,7 +271,7 @@ export default function NuevaOrdenTrabajoPage() {
                         disabled={loading || !tipoValue || filteredSubtipos.length === 0}
                       >
                         <FormControl>
-                          <SelectTrigger className="w-full border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                          <SelectTrigger className="w-full border-gray-300 dark:border-border focus:border-primary focus:ring-primary">
                             <SelectValue
                               placeholder={
                                 !tipoValue
@@ -305,7 +305,7 @@ export default function NuevaOrdenTrabajoPage() {
                   name="cliente"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                      <FormLabel className="text-foreground flex items-center gap-2">
                         <UserIcon className="h-4 w-4" />
                         Cliente *
                       </FormLabel>
@@ -316,7 +316,7 @@ export default function NuevaOrdenTrabajoPage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={clienteOpen}
-                              className="w-full justify-between border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                              className="w-full justify-between border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
                               disabled={loading}
                             >
                               {field.value
@@ -352,7 +352,7 @@ export default function NuevaOrdenTrabajoPage() {
                                   >
                                     <Check
                                       className={cn(
-                                        "mr-2 h-4 w-4 flex-shrink-0 text-[#ED1C24] dark:text-[#ED1C24]",
+                                        "mr-2 h-4 w-4 flex-shrink-0 text-primary",
                                         field.value === cliente.id.toString() ? "opacity-100" : "opacity-0"
                                       )}
                                     />
@@ -377,7 +377,7 @@ export default function NuevaOrdenTrabajoPage() {
                   name="asesor"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                      <FormLabel className="text-foreground flex items-center gap-2">
                         <Wrench className="h-4 w-4" />
                         Asesor (opcional)
                       </FormLabel>
@@ -388,7 +388,7 @@ export default function NuevaOrdenTrabajoPage() {
                               variant="outline"
                               role="combobox"
                               aria-expanded={asesorOpen}
-                              className="w-full justify-between border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                              className="w-full justify-between border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
                               disabled={loading}
                             >
                               {field.value
@@ -424,7 +424,7 @@ export default function NuevaOrdenTrabajoPage() {
                                   >
                                     <Check
                                       className={cn(
-                                        "mr-2 h-4 w-4 flex-shrink-0 text-[#ED1C24] dark:text-[#ED1C24]",
+                                        "mr-2 h-4 w-4 flex-shrink-0 text-primary",
                                         field.value === asesor.id.toString() ? "opacity-100" : "opacity-0"
                                       )}
                                     />
@@ -450,7 +450,7 @@ export default function NuevaOrdenTrabajoPage() {
                 name="vehiculo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                    <FormLabel className="text-foreground flex items-center gap-2">
                       <Car className="h-4 w-4" />
                       Vehículo *
                     </FormLabel>
@@ -460,7 +460,7 @@ export default function NuevaOrdenTrabajoPage() {
                       disabled={loading || !clienteValue || filteredVehiculos.length === 0}
                     >
                       <FormControl>
-                        <SelectTrigger className="w-full border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]">
+                        <SelectTrigger className="w-full border-gray-300 dark:border-border focus:border-primary focus:ring-primary">
                           <SelectValue
                             placeholder={
                               !clienteValue
@@ -493,14 +493,14 @@ export default function NuevaOrdenTrabajoPage() {
                   name="fecha_promesa_entrega"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                      <FormLabel className="text-foreground flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         Fecha Promesa de Entrega *
                       </FormLabel>
                       <FormControl>
                         <Input
                           type="datetime-local"
-                          className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                          className="border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
                           disabled={loading}
                           {...field}
                         />
@@ -516,7 +516,7 @@ export default function NuevaOrdenTrabajoPage() {
                   name="kilometraje_ingreso"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                      <FormLabel className="text-foreground flex items-center gap-2">
                         <Gauge className="h-4 w-4" />
                         Kilometraje de Ingreso *
                       </FormLabel>
@@ -524,7 +524,7 @@ export default function NuevaOrdenTrabajoPage() {
                         <Input
                           type="number"
                           placeholder="45000"
-                          className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24]"
+                          className="border-gray-300 dark:border-border focus:border-primary focus:ring-primary"
                           disabled={loading}
                           min="1"
                           {...field}
@@ -543,14 +543,14 @@ export default function NuevaOrdenTrabajoPage() {
                 name="descripcion_trabajo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-[#202020] dark:text-gray-100 flex items-center gap-2">
+                    <FormLabel className="text-foreground flex items-center gap-2">
                       <FileText className="h-4 w-4" />
                       Descripción del Trabajo *
                     </FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Describe el trabajo a realizar..."
-                        className="border-gray-300 focus:border-[#ED1C24] focus:ring-[#ED1C24] min-h-[100px]"
+                        className="border-gray-300 dark:border-border focus:border-primary focus:ring-primary min-h-[100px]"
                         disabled={loading}
                         {...field}
                       />
@@ -573,7 +573,7 @@ export default function NuevaOrdenTrabajoPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="w-full sm:flex-1 bg-[#ED1C24] hover:bg-[#C41820]"
+                  className="w-full sm:flex-1 bg-primary hover:bg-primary/90"
                   disabled={loading}
                 >
                   {loading ? (

@@ -7,6 +7,7 @@ import type {
   AdditionalWorkAPIResponse,
   TimelineEvent,
   TimelineEventAPIResponse,
+  TimelineEvidenceAPIResponse,
   WorkActionAPIResponse,
 } from "@/lib/mis-servicios/types"
 import { apiRequest } from "./client"
@@ -98,15 +99,40 @@ function transformAdditionalWork(work: AdditionalWorkAPIResponse): AdditionalWor
 }
 
 /**
+ * Infiere el tipo de evidencia a partir de la URL del archivo
+ */
+function inferEvidenceType(url: string): "foto" | "video" | "audio" | "documento" {
+  const ext = url.split('.').pop()?.toLowerCase().split('?')[0] || ""
+  if (["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(ext)) return "foto"
+  if (["mp4", "mov", "avi", "webm"].includes(ext)) return "video"
+  if (["mp3", "wav", "ogg", "m4a"].includes(ext)) return "audio"
+  return "foto" // Default to foto for image URLs from the API
+}
+
+/**
  * Transforma un evento de timeline de la API al tipo de la UI
- * - Convierte fecha de ISO string a Date
- * - Convierte null a undefined para campos opcionales
+ * - Mapea nombre -> fase, estado -> completada/enProgreso, fechaInicio -> fecha
+ * - Mapea observaciones -> notas
+ * - Infiere tipo de evidencia a partir de la URL
  */
 function transformTimelineEvent(event: TimelineEventAPIResponse): TimelineEvent {
   return {
-    ...event,
-    fecha: new Date(event.fecha),
-    notas: event.notas ?? undefined,
+    id: event.id,
+    fase: event.nombre,
+    descripcion: event.descripcion || "",
+    fecha: event.fechaInicio ? new Date(event.fechaInicio) : new Date(),
+    completada: event.estado === "completed",
+    enProgreso: event.estado === "in_progress",
+    evidencia: event.evidencia.map((ev) => ({
+      id: ev.id,
+      tipo: inferEvidenceType(ev.url),
+      url: ev.url,
+      thumbnail: ev.url,
+      descripcion: ev.descripcion,
+      fecha: event.fechaInicio ? new Date(event.fechaInicio) : new Date(),
+    })),
+    responsable: event.responsable,
+    notas: event.observaciones ?? undefined,
   }
 }
 

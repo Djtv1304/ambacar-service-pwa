@@ -193,8 +193,8 @@ export function AddVoiceNote({ mediaType, mediaId, onSuccess }: AddVoiceNoteProp
           {/* Header */}
           <div className="flex items-center justify-between pb-2 border-b">
             <div className="flex items-center gap-2">
-              <Volume2 className="h-5 w-5 text-[#ED1C24]" />
-              <span className="font-semibold text-[#202020]">Nueva Nota de Voz</span>
+              <Volume2 className="h-5 w-5 text-primary" />
+              <span className="font-semibold text-foreground">Nueva Nota de Voz</span>
             </div>
             <Button
               variant="ghost"
@@ -204,7 +204,7 @@ export function AddVoiceNote({ mediaType, mediaId, onSuccess }: AddVoiceNoteProp
                 setIsOpen(false)
               }}
               disabled={loading || isRecording}
-              className="text-gray-600 hover:text-gray-900"
+              className="text-gray-600 hover:text-gray-900 dark:text-muted-foreground dark:hover:text-foreground"
             >
               Cancelar
             </Button>
@@ -228,7 +228,7 @@ export function AddVoiceNote({ mediaType, mediaId, onSuccess }: AddVoiceNoteProp
                   className={`h-16 w-16 rounded-full ${
                     isRecording
                       ? "bg-red-500 hover:bg-red-600 animate-pulse"
-                      : "bg-[#ED1C24] hover:bg-[#c41820]"
+                      : "bg-primary hover:bg-primary/90"
                   }`}
                   disabled={loading}
                 >
@@ -240,7 +240,7 @@ export function AddVoiceNote({ mediaType, mediaId, onSuccess }: AddVoiceNoteProp
                   </div>
                 )}
               </div>
-              <p className="text-sm text-gray-600 text-center">
+              <p className="text-sm text-gray-600 dark:text-muted-foreground text-center">
                 {isRecording ? "Grabando... Presiona para detener" : "Presiona para comenzar a grabar"}
               </p>
             </div>
@@ -249,8 +249,8 @@ export function AddVoiceNote({ mediaType, mediaId, onSuccess }: AddVoiceNoteProp
           {/* Playback Controls */}
           {audioBlob && audioURL && (
             <div className="space-y-3">
-              <Alert className="bg-blue-50 border-blue-200">
-                <AlertDescription className="text-blue-900 text-sm">
+              <Alert className="bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+                <AlertDescription className="text-blue-900 dark:text-blue-300 text-sm">
                   <strong>Grabación completada ({formatTime(recordingTime)}).</strong> Escucha antes de enviar para verificar.
                 </AlertDescription>
               </Alert>
@@ -286,7 +286,7 @@ export function AddVoiceNote({ mediaType, mediaId, onSuccess }: AddVoiceNoteProp
               <Button
                 onClick={handleSubmit}
                 disabled={loading}
-                className="w-full bg-[#ED1C24] hover:bg-[#c41820] text-white font-medium"
+                className="w-full bg-primary hover:bg-primary/90 text-white font-medium"
                 size="sm"
               >
                 {loading ? (

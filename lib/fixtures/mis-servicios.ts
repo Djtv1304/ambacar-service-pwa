@@ -225,6 +225,8 @@ export const mockAdditionalWork: AdditionalWork[] = [
     fotos: ["/placeholder.svg"],
     estado: "pendiente",
     fechaSolicitud: new Date("2025-12-10T11:45:00"),
+    tipoNovedad: "HALLAZGO",
+    requiereAprobacion: true,
   },
   {
     id: 2,
@@ -246,6 +248,8 @@ export const mockAdditionalWork: AdditionalWork[] = [
     ],
     estado: "pendiente",
     fechaSolicitud: new Date("2025-12-10T11:50:00"),
+    tipoNovedad: "RECOMENDACION",
+    requiereAprobacion: true,
   },
 ]
 
@@ -272,6 +276,8 @@ export const mockApprovedWork: AdditionalWork[] = [
     estado: "aprobado",
     fechaSolicitud: new Date("2025-12-10T12:00:00"),
     fechaRespuesta: new Date("2025-12-10T14:30:00"),
+    tipoNovedad: "RECOMENDACION",
+    requiereAprobacion: true,
   },
 ]
 
@@ -298,6 +304,8 @@ export const mockRejectedWork: AdditionalWork[] = [
     estado: "rechazado",
     fechaSolicitud: new Date("2025-12-10T12:05:00"),
     fechaRespuesta: new Date("2025-12-10T15:00:00"),
+    tipoNovedad: "OBSERVACION",
+    requiereAprobacion: true,
   },
 ]
 

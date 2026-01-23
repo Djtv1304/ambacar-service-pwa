@@ -585,7 +585,7 @@ export function ChecklistInspeccionApi({
                 Completa los {puntosInspeccion.length} puntos de inspección del vehículo
               </CardDescription>
             </div>
-            <Badge className="bg-[#ED1C24]/10 text-[#ED1C24] border-[#ED1C24]/20 text-base sm:text-lg px-3 py-1.5 sm:px-4 sm:py-2 self-start sm:shrink-0">
+            <Badge className="bg-primary/10 text-primary border-primary/20 text-base sm:text-lg px-3 py-1.5 sm:px-4 sm:py-2 self-start sm:shrink-0">
               {puntosCompletados}/{puntosInspeccion.length}
             </Badge>
           </div>
@@ -603,7 +603,7 @@ export function ChecklistInspeccionApi({
           {Object.entries(puntosAgrupados).map(([categoria, puntos]) => (
             <div key={categoria} className="space-y-3">
               <div className="flex items-center gap-2 bg-card py-2">
-                <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                <Badge className="bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800">
                   {puntos[0].categoria_display.toUpperCase()}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
@@ -635,10 +635,10 @@ export function ChecklistInspeccionApi({
                           !readOnly && "hover:bg-accent cursor-pointer",
                           readOnly && "cursor-default",
                           completado && "border-2",
-                          completado && evaluacion?.estado === "verde" && "border-green-200 bg-green-50/50",
-                          completado && evaluacion?.estado === "amarillo" && "border-yellow-200 bg-yellow-50/50",
-                          completado && evaluacion?.estado === "rojo" && "border-red-200 bg-red-50/50",
-                          completado && evaluacion?.estado === "na" && "border-gray-200 bg-gray-50/50"
+                          completado && evaluacion?.estado === "verde" && "border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/30",
+                          completado && evaluacion?.estado === "amarillo" && "border-yellow-200 bg-yellow-50/50 dark:border-yellow-800 dark:bg-yellow-950/30",
+                          completado && evaluacion?.estado === "rojo" && "border-red-200 bg-red-50/50 dark:border-red-800 dark:bg-red-950/30",
+                          completado && evaluacion?.estado === "na" && "border-gray-200 bg-gray-50/50 dark:border-gray-700 dark:bg-gray-800/30"
                         )}
                         onClick={() => handleClickPunto(punto)}
                       >
@@ -657,7 +657,7 @@ export function ChecklistInspeccionApi({
                           <div className="flex flex-col gap-1 min-w-0">
                             <h4 className="font-semibold text-base break-words whitespace-normal overflow-hidden">{punto.nombre}</h4>
                             {punto.requiere_mediciones && (
-                              <Badge variant="outline" className="self-start text-xs bg-blue-50 text-blue-700 border-blue-200">
+                              <Badge variant="outline" className="self-start text-xs bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800">
                                 <Ruler className="h-3 w-3 mr-1" />
                                 Mediciones
                               </Badge>
@@ -721,7 +721,7 @@ export function ChecklistInspeccionApi({
                                 </span>
                                 <h4 className="font-semibold text-base">{punto.nombre}</h4>
                                 {punto.requiere_mediciones && (
-                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-800">
                                     <Ruler className="h-3 w-3 mr-1" />
                                     Mediciones
                                   </Badge>
