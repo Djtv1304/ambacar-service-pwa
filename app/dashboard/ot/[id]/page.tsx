@@ -467,6 +467,7 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
           <RepuestosList
             repuestos={repuestos}
             onAddRepuesto={handleAddRepuesto}
+            sucursalOT={ot.sucursal_detalle?.nombre}
           />
         </div>
 

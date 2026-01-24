@@ -385,6 +385,158 @@ if (nuevoVehiculo && savedVehiculo) {
 }
 ```
 
+## 🏭 Ambacar ERP (Zeus) Integration
+
+### Architecture
+The PWA integrates with Ambacar's ERP system (Zeus) for fetching agencies, stock, and workshop data.
+Uses Next.js API Route proxies to avoid CORS issues and keep the ERP URL server-side only.
+
+### Base URL Configuration (Server-side only)
+```env
+AMBACAR_ERP_API_URL=https://ambysoftapitest.ambacar.ec:8443
+```
+
+### Security Pattern: Next.js API Route Proxy
+```
+Client → /api/erp/agencias        → GET /Apis/Taller/ObtenerAgencias
+Client → /api/erp/stock-repuestos  → GET /Apis/Taller/ObtenerStockRepuestos
+Client → /api/erp/talleres         → GET /Apis/Taller/ObtenerTalleres
+         (all server-side, no CORS)
+```
+
+### 1. Fetching Agencies (`app/api/erp/agencias/route.ts`)
+
+**Internal Endpoint:** `GET /api/erp/agencias`
+
+**ERP Endpoint:** `GET /Apis/Taller/ObtenerAgencias`
+
+**Authentication:** None required (public endpoint)
+
+**Response Structure:**
+```typescript
+interface Agencia {
+  idAgencia: string        // Agency code (e.g., "QC", "GR")
+  nombreAgencia: string    // Display name (e.g., "CUENCA", "GRANADOS")
+  ciudadAgencia: string    // City
+  direccion: string        // Address
+  urlComoLlegar: string | null  // Google Maps URL (nullable)
+}
+```
+
+### 2. Agency Filtering
+The ERP returns all agencies. The proxy filters to only include workshop-relevant ones:
+```typescript
+const ALLOWED_AGENCY_IDS = [
+  "CU", "FC", "FI", "GR", "IN", "MA", "MS",
+  "QA", "QC", "QL", "QN", "QP", "QS", "QT", "SR"
+]
+```
+
+### 3. Client-Side Helper (`lib/api/erp-ambacar.ts`)
+
+```typescript
+import { getAgencias, type Agencia } from "@/lib/api/erp-ambacar"
+
+const agencias = await getAgencias() // Fetches from /api/erp/agencias
+```
+
+### 4. Fetching Stock Repuestos (`app/api/erp/stock-repuestos/route.ts`)
+
+**Internal Endpoint:** `GET /api/erp/stock-repuestos?idAgencia=XX&descripcion=TEXTO&page=1&pageSize=50`
+
+**ERP Endpoint:** `GET /Apis/Taller/ObtenerStockRepuestos`
+
+**Query Parameters:**
+- `idAgencia` (required): Agency code from ObtenerAgencias
+- `descripcion` (required): Search text (automatically uppercased by proxy)
+- `page` (optional, default: 1): Page number
+- `pageSize` (optional, default: 50): Items per page
+
+**Response Structure:**
+```typescript
+interface StockResponse {
+  page: number
+  pageSize: number
+  totalPages: number
+  repuestos: RepuestoStock[]
+}
+
+interface RepuestoStock {
+  agencia: string       // Agency code
+  codigo: string        // Part code
+  descripcion: string   // Part description (UPPERCASE from API)
+  linea: string         // Brand/line (e.g., "GWM", "BYD")
+  precio: number        // Unit price
+  stockActual: number   // Current stock quantity
+}
+```
+
+**Client-Side Usage:**
+```typescript
+import { getStockRepuestos } from "@/lib/api/erp-ambacar"
+
+const result = await getStockRepuestos("QP", "FRENO", 1, 20)
+// result.repuestos, result.totalPages, result.page
+```
+
+### 5. Usage in RepuestosList
+- Shows a sucursal selector when an OT has `sucursal_detalle`
+- Default-selects the OT's sucursal by matching `nombreAgencia` with `sucursal_detalle.nombre`
+- "Agregar" button only visible when selected sucursal matches the OT's sucursal
+- If OT has no sucursal info, selector is hidden and add functionality works normally
+- Stock search section with debounced input (500ms), pagination, and animated results
+- Names displayed in Title Case (e.g., "QUICENTRO SUR" → "Quicentro Sur")
+
+**Error Handling:**
+- Errors are caught and logged but do not block component rendering
+- If agencies fail to load, the selector remains hidden
+- Stock search errors clear results without crashing
+
+### 6. Fetching Talleres (`app/api/erp/talleres/route.ts`)
+
+**Internal Endpoint:** `GET /api/erp/talleres`
+
+**ERP Endpoint:** `GET /Apis/Taller/ObtenerTalleres`
+
+**Authentication:** None required (public endpoint)
+
+**Response Structure:**
+```typescript
+interface Taller {
+  idTaller: number       // Workshop ID (e.g., 10)
+  nombreTaller: string   // Workshop name (e.g., "QUICENTRO SUR")
+  idAgencia: string      // Agency code (e.g., "QS")
+}
+```
+
+**Client-Side Usage:**
+```typescript
+import { getTalleres, type Taller } from "@/lib/api/erp-ambacar"
+
+const talleres = await getTalleres() // Fetches from /api/erp/talleres
+```
+
+### 7. Talleres in Configuration Page
+
+**File:** `app/dashboard/configuracion/page.tsx`
+
+**Current Taller Constant:**
+```typescript
+const CURRENT_TALLER_ID = 10 // Quicentro Sur
+```
+
+**UI Pattern:**
+- General tab has a segmented control toggle: "Mi Taller" | "Talleres"
+- "Mi Taller" shows current workshop info (static for now)
+- "Talleres" shows ScrollArea list of all workshops from ERP
+- Current taller is highlighted with a Badge "Actual"
+- Names displayed in Title Case (e.g., "QUICENTRO SUR" → "Quicentro Sur")
+
+**Prerequisite for Future Endpoints:**
+- `GET /Apis/Taller/ObtenerAsesoresServicio?idTaller=XX` → Operators (Asesores de Servicio)
+- `GET /Apis/Taller/ObtenerAsesoresTecnicos?idTaller=XX` → Technicians (Asesores Técnicos)
+- Both require a valid `idTaller` from ObtenerTalleres
+
 ## 📊 Pagination Best Practices
 
 ### API-Driven Pagination

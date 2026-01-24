@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Building2, Shield, Palette, Loader2, Check, User, Mail, Phone, IdCard, Calendar, UserCircle } from "lucide-react"
+import { Building2, Shield, Palette, Loader2, Check, User, Mail, Phone, IdCard, Calendar, UserCircle, MapPin, Wrench } from "lucide-react"
 import { WorkflowsPage } from "@/components/configuracion/workflows-page"
 import { UsuariosTab } from "@/components/configuracion/usuarios-tab"
 import { useTheme } from "next-themes"
@@ -22,6 +22,8 @@ import { z } from "zod"
 import { cambiarPasswordPropio } from "@/lib/api/usuarios"
 import { toast } from "sonner"
 import { useAuth } from "@/components/auth/auth-provider"
+import { getTalleres, type Taller } from "@/lib/api/erp-ambacar"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import type { UserRole } from "@/lib/types"
 
 // Zod schema para validar el formulario de cambio de contraseña
@@ -45,6 +47,17 @@ const roleLabels: Record<UserRole, string> = {
   customer: "Cliente",
 }
 
+/** Current workshop ID (Quicentro Sur) */
+const CURRENT_TALLER_ID = 10
+
+function toTitleCase(str: string): string {
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
+}
+
 export default function ConfiguracionPage() {
   const { user } = useAuth()
   const { theme, setTheme } = useTheme()
@@ -52,6 +65,9 @@ export default function ConfiguracionPage() {
   const [mounted, setMounted] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [activeTab, setActiveTab] = useState<string>("")
+  const [tallerView, setTallerView] = useState<"info" | "talleres">("info")
+  const [talleres, setTalleres] = useState<Taller[]>([])
+  const [loadingTalleres, setLoadingTalleres] = useState(false)
 
   // Form handling para cambio de contraseña
   const {
@@ -103,6 +119,25 @@ export default function ConfiguracionPage() {
       setActiveTab(defaultTab)
     }
   }, [defaultTab])
+
+  // Fetch talleres when General tab is active
+  useEffect(() => {
+    if (activeTab !== "general" || talleres.length > 0) return
+
+    const fetchTalleres = async () => {
+      setLoadingTalleres(true)
+      try {
+        const data = await getTalleres()
+        setTalleres(data)
+      } catch (error) {
+        console.error("Error loading talleres:", error)
+      } finally {
+        setLoadingTalleres(false)
+      }
+    }
+
+    fetchTalleres()
+  }, [activeTab, talleres.length])
 
   // Datos del usuario para la Tab de Perfil
   const userInitials = user ? `${user.first_name[0]}${user.last_name[0]}`.toUpperCase() : "??"
@@ -306,52 +341,153 @@ export default function ConfiguracionPage() {
         <TabsContent value="general" className="space-y-4">
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <Building2 className="h-5 w-5" />
-                <CardTitle>Información del Taller</CardTitle>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5" />
+                    <CardTitle>Información del Taller</CardTitle>
+                  </div>
+                  <CardDescription className="mt-1.5">
+                    {tallerView === "info"
+                      ? "Configura los datos básicos de tu negocio"
+                      : "Talleres disponibles en la red Ambacar"}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center rounded-lg border bg-muted/50 p-0.5">
+                  <button
+                    onClick={() => setTallerView("info")}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                      tallerView === "info"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Mi Taller
+                  </button>
+                  <button
+                    onClick={() => setTallerView("talleres")}
+                    className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                      tallerView === "talleres"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Talleres
+                    {talleres.length > 0 && (
+                      <Badge variant="secondary" className="ml-1.5 h-4 px-1 text-[10px]">
+                        {talleres.length}
+                      </Badge>
+                    )}
+                  </button>
+                </div>
               </div>
-              <CardDescription>Configura los datos básicos de tu negocio</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="nombre-taller">Nombre del Taller</Label>
-                  <Input id="nombre-taller" defaultValue="Ambacar Service Center" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ruc">RUC</Label>
-                  <Input id="ruc" defaultValue="1234567890001" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="telefono">Teléfono</Label>
-                  <Input id="telefono" defaultValue="+593 2 234 5678" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" type="email" defaultValue="contacto@ambacar.com" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="direccion">Dirección</Label>
-                <Input id="direccion" defaultValue="Av. Amazonas N24-03 y Colón, Quito, Ecuador" />
-              </div>
-              <Separator />
-              <div className="space-y-4">
-                <h3 className="font-semibold">Horario de Atención</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="horario-inicio">Hora de Apertura</Label>
-                    <Input id="horario-inicio" type="time" defaultValue="08:00" />
+              {tallerView === "info" ? (
+                <>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="nombre-taller">Nombre del Taller</Label>
+                      <Input id="nombre-taller" defaultValue="Ambacar Service Center" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ruc">RUC</Label>
+                      <Input id="ruc" defaultValue="1234567890001" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="telefono">Teléfono</Label>
+                      <Input id="telefono" defaultValue="+593 2 234 5678" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" type="email" defaultValue="contacto@ambacar.com" />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="horario-fin">Hora de Cierre</Label>
-                    <Input id="horario-fin" type="time" defaultValue="18:00" />
+                    <Label htmlFor="direccion">Dirección</Label>
+                    <Input id="direccion" defaultValue="Av. Amazonas N24-03 y Colón, Quito, Ecuador" />
                   </div>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Button>Guardar Cambios</Button>
-              </div>
+                  <Separator />
+                  <div className="space-y-4">
+                    <h3 className="font-semibold">Horario de Atención</h3>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="horario-inicio">Hora de Apertura</Label>
+                        <Input id="horario-inicio" type="time" defaultValue="08:00" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="horario-fin">Hora de Cierre</Label>
+                        <Input id="horario-fin" type="time" defaultValue="18:00" />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button>Guardar Cambios</Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {loadingTalleres ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : talleres.length > 0 ? (
+                    <ScrollArea className="h-[400px]">
+                      <div className="space-y-2">
+                        {talleres.map((taller) => {
+                          const isCurrent = taller.idTaller === CURRENT_TALLER_ID
+                          return (
+                            <div
+                              key={taller.idTaller}
+                              className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${
+                                isCurrent
+                                  ? "border-primary/40 bg-primary/5 dark:bg-primary/10"
+                                  : "border-border hover:bg-muted/50"
+                              }`}
+                            >
+                              <div className={`flex h-9 w-9 items-center justify-center rounded-lg shrink-0 ${
+                                isCurrent
+                                  ? "bg-primary/10 dark:bg-primary/20"
+                                  : "bg-muted"
+                              }`}>
+                                <Wrench className={`h-4 w-4 ${
+                                  isCurrent ? "text-primary" : "text-muted-foreground"
+                                }`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-medium truncate">
+                                    {toTitleCase(taller.nombreTaller)}
+                                  </p>
+                                  {isCurrent && (
+                                    <Badge variant="outline" className="text-[10px] h-5 px-1.5 border-primary/30 text-primary shrink-0">
+                                      Actual
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                  <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                                  <span className="text-xs text-muted-foreground">
+                                    Agencia: {taller.idAgencia}
+                                  </span>
+                                </div>
+                              </div>
+                              <span className="text-xs text-muted-foreground font-mono shrink-0">
+                                ID: {taller.idTaller}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </ScrollArea>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <Building2 className="h-8 w-8 text-muted-foreground/50 mb-2" />
+                      <p className="text-sm text-muted-foreground">No se pudieron cargar los talleres</p>
+                    </div>
+                  )}
+                </>
+              )}
             </CardContent>
           </Card>
 

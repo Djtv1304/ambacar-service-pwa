@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import {
   Brain,
@@ -113,6 +113,9 @@ function KpiCard({
 export default function InventarioPage() {
   const [selectedPartId, setSelectedPartId] = useState(smartParts[0]?.id)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isSticky, setIsSticky] = useState(false)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const headerRef = useRef<HTMLDivElement>(null)
 
   // Calculate KPIs from smart parts
   const kpis = useMemo(() => {
@@ -129,6 +132,41 @@ export default function InventarioPage() {
       partsNeedingReorder,
       criticalCount: criticalParts.length,
       totalParts: smartParts.length
+    }
+  }, [])
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel) return
+
+    let rafId: number | null = null
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsSticky(!entry.isIntersecting)
+      },
+      {
+        threshold: [0, 1],
+        rootMargin: '-1px 0px 0px 0px'
+      }
+    )
+
+    const handleScroll = () => {
+      if (rafId) return
+      rafId = requestAnimationFrame(() => {
+        const sentinelRect = sentinel.getBoundingClientRect()
+        setIsSticky(sentinelRect.bottom <= 0)
+        rafId = null
+      })
+    }
+
+    observer.observe(sentinel)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('scroll', handleScroll)
+      if (rafId) cancelAnimationFrame(rafId)
     }
   }, [])
 
@@ -152,8 +190,18 @@ export default function InventarioPage() {
 
   return (
     <div className="min-h-screen bg-gray-50/50 dark:bg-gray-900/50 -m-6">
+      {/* Sentinel for sticky detection */}
+      <div ref={sentinelRef} className="h-0" aria-hidden="true" />
+
       {/* Command Header */}
-      <div className="sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm">
+      <div
+        ref={headerRef}
+        className={cn(
+          "sticky -top-14 z-40 border-b border-gray-200 dark:border-gray-800 bg-white/95 dark:bg-gray-950/95 backdrop-blur-sm",
+          "will-change-[padding]",
+          isSticky ? "pt-10" : "pt-0"
+        )}
+      >
         <div className="px-4 sm:px-6 py-4">
           {/* Title Row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
