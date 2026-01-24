@@ -204,30 +204,72 @@ export async function reservarSlot(data: {
 }
 
 /**
- * Busca una cita por cédula y referencia
+ * Busca una cita por cédula y referencia (legacy mock)
  */
 export async function buscarCita(cedula: string, referencia: string): Promise<Cita | null> {
-  // TODO: Integrar con API real
   await new Promise((resolve) => setTimeout(resolve, 500))
-
   const cita = citas.find((c) => c.id === referencia)
   if (!cita) return null
-
-  // Verificar que la cita pertenece al cliente con esa cédula
   const cliente = clientes.find((cl) => cl.id === cita.clienteId && cl.cedula === cedula)
   if (!cliente) return null
-
   return cita
 }
 
 /**
- * Cancela una cita
+ * Cancela una cita (legacy mock)
  */
 export async function cancelarCita(citaId: string): Promise<{ success: boolean }> {
-  // TODO: Integrar con API real - liberar slot del calendario
   await new Promise((resolve) => setTimeout(resolve, 800))
-
   return { success: true }
+}
+
+// ============================================================================
+// Cancelación de Citas - API Real
+// ============================================================================
+
+export interface CitaCancelableVehiculo {
+  marca: string
+  modelo: string
+  placa: string
+}
+
+export interface CitaCancelable {
+  id: number
+  numeroCita: string
+  fechaCita: string
+  horaCita: string
+  vehiculo: CitaCancelableVehiculo
+  servicio: string
+  subtipoServicio: string
+  sucursal: string
+}
+
+export interface CitasCancelablesResponse {
+  cliente: {
+    nombre: string
+    apellido: string
+    cedula: string
+  }
+  citasCancelables: CitaCancelable[]
+}
+
+/**
+ * Obtiene las citas cancelables de un cliente por cédula.
+ * GET /api/citas/cancelables/?cedula=XXXXXXXXXX
+ */
+export async function getCitasCancelables(cedula: string): Promise<CitasCancelablesResponse> {
+  return apiRequest<CitasCancelablesResponse>(`/api/citas/cancelables/?cedula=${encodeURIComponent(cedula)}`)
+}
+
+/**
+ * Cancela una cita.
+ * POST /api/citas/cancelar/
+ */
+export async function cancelarCitaAPI(citaId: number, cedula: string): Promise<{ success: boolean; message?: string }> {
+  return apiRequest<{ success: boolean; message?: string }>("/api/citas/cancelar/", {
+    method: "POST",
+    body: JSON.stringify({ cita_id: citaId, cedula }),
+  })
 }
 
 /**
