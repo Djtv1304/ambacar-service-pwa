@@ -22,6 +22,11 @@ export interface Empleado {
   nombreEmpleado: string
 }
 
+export interface AsignarRepuestoResponse {
+  success: boolean
+  mensaje: string
+}
+
 export interface RepuestoStock {
   agencia: string
   codigo: string
@@ -130,6 +135,34 @@ export async function getAsesoresTecnicos(idTaller: number): Promise<Empleado[]>
 
   if (!response.ok) {
     throw new Error(`Error fetching asesores tecnicos: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Assigns a repuesto to an OT via the ERP.
+ * PATCH /api/erp/asignar-repuesto?IdAgencia=XX&codigoRepuesto=XX&cantidad=N
+ */
+export async function asignarRepuesto(
+  idAgencia: string,
+  codigoRepuesto: string,
+  cantidad: number
+): Promise<AsignarRepuestoResponse> {
+  const params = new URLSearchParams({
+    IdAgencia: idAgencia,
+    codigoRepuesto,
+    cantidad: cantidad.toString(),
+  })
+
+  const response = await fetch(`/api/erp/asignar-repuesto?${params}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null)
+    throw new Error(errorData?.error || `Error asignando repuesto: ${response.status}`)
   }
 
   return response.json()

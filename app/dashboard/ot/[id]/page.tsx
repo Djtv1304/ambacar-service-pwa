@@ -198,11 +198,9 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
   }
 
   const handleAddRepuesto = async (repuesto: Omit<Repuesto, "id">) => {
-    // TODO: API call to add part
-    await new Promise(resolve => setTimeout(resolve, 500))
-
+    // API call is handled in RepuestosList component
+    // This just updates local state after successful assignment
     setRepuestos(prev => [...prev, { ...repuesto, id: `r-${Date.now()}` }])
-    toast.success("Repuesto agregado")
   }
 
   // Crear inspección y redirigir al detalle
