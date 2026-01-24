@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Search, Plus, ClipboardList, Clock, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,12 +37,65 @@ const getEstadoColorClass = (codigo: string): string => {
 const ESTADOS_COMPLETADOS = ["Entregada", "Completada", "Facturada"]
 
 export default function OrdenesTrabajoPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const highlightId = searchParams.get("highlight")
+  const highlightHandled = useRef(false)
   const [ordenesData, setOrdenesData] = useState<OrdenTrabajoAPI[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [filterEstado, setFilterEstado] = useState<string>("todas")
   const [filterTipo, setFilterTipo] = useState<string>("todas")
   const { getToken } = useAuthToken()
+
+  // Smooth scroll with easeInOutCubic
+  const smoothScrollTo = useCallback((container: HTMLElement, target: number, duration: number): Promise<void> => {
+    return new Promise((resolve) => {
+      const start = container.scrollTop
+      const distance = target - start
+      if (Math.abs(distance) < 1) { resolve(); return }
+      const startTime = performance.now()
+      const easeInOutCubic = (t: number) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+      const step = (currentTime: number) => {
+        const elapsed = currentTime - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        container.scrollTop = start + distance * easeInOutCubic(progress)
+        if (progress < 1) requestAnimationFrame(step)
+        else resolve()
+      }
+      requestAnimationFrame(step)
+    })
+  }, [])
+
+  // Handle highlight scroll after data loads
+  useEffect(() => {
+    if (!highlightId || loading || highlightHandled.current) return
+    highlightHandled.current = true
+
+    const timer = setTimeout(async () => {
+      const cardEl = document.getElementById(`ot-${highlightId}`)
+      if (!cardEl) return
+
+      const mainContainer = document.querySelector("main.overflow-y-auto") as HTMLElement
+      if (!mainContainer) return
+
+      const containerRect = mainContainer.getBoundingClientRect()
+      const cardRect = cardEl.getBoundingClientRect()
+      const scrollOffset = cardRect.top - containerRect.top + mainContainer.scrollTop - containerRect.height / 3
+
+      await smoothScrollTo(mainContainer, scrollOffset, 800)
+
+      cardEl.classList.add("card-ripple-highlight")
+      cardEl.addEventListener("animationend", () => {
+        cardEl.classList.remove("card-ripple-highlight")
+      }, { once: true })
+
+      router.replace("/dashboard/ot", { scroll: false })
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [highlightId, loading, smoothScrollTo, router])
 
   // Fetch ordenes de trabajo
   useEffect(() => {
@@ -208,7 +262,7 @@ export default function OrdenesTrabajoPage() {
           ) : (
             <div className="grid gap-4">
               {otsPorEstado.activas.map((ot) => (
-                <Card key={`ot-activa-${ot.id}`} className="transition-colors hover:bg-accent/50">
+                <Card key={`ot-activa-${ot.id}`} id={`ot-${ot.id}`} className="transition-colors hover:bg-accent/50">
                   <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div className="flex-1 space-y-3">
@@ -306,7 +360,7 @@ export default function OrdenesTrabajoPage() {
           ) : (
             <div className="grid gap-4">
               {otsPorEstado.completadas.map((ot) => (
-                <Card key={`ot-completada-${ot.id}`} className="transition-colors hover:bg-accent/50">
+                <Card key={`ot-completada-${ot.id}`} id={`ot-${ot.id}`} className="transition-colors hover:bg-accent/50">
                   <CardContent className="p-4 sm:p-6">
                     <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                       <div className="flex-1 space-y-2">

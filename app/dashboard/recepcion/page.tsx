@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Search, ClipboardCheck, Clock, Car, AlertTriangle, Calendar, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -103,7 +103,10 @@ function CitaCard({ cita, onIniciarRecepcion }: CitaCardProps) {
   const isExpired = cita.status === "expired"
 
   return (
-    <Card className={`transition-colors hover:bg-accent/50 ${isDelayed ? "border-amber-500/50" : ""} ${isExpired ? "border-red-500/30 opacity-75" : ""}`}>
+    <Card
+      id={`cita-${cita.id}`}
+      className={`transition-colors hover:bg-accent/50 ${isDelayed ? "border-amber-500/50" : ""} ${isExpired ? "border-red-500/30 opacity-75" : ""}`}
+    >
       <CardContent className="p-4 lg:p-6">
         {isDelayed && (
           <Alert variant="destructive" className="mb-4 border-amber-500 bg-amber-500/10">
@@ -195,6 +198,9 @@ function CitaCard({ cita, onIniciarRecepcion }: CitaCardProps) {
 
 export default function RecepcionPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const highlightId = searchParams.get("highlight")
+  const highlightHandled = useRef(false)
   const [citas, setCitas] = useState<CitaConfirmada[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -204,6 +210,60 @@ export default function RecepcionPage() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [selectedCita, setSelectedCita] = useState<CitaConEstado | null>(null)
   const { toast } = useToast()
+
+  // Smooth scroll with easeInOutCubic
+  const smoothScrollTo = useCallback((container: HTMLElement, target: number, duration: number): Promise<void> => {
+    return new Promise((resolve) => {
+      const start = container.scrollTop
+      const distance = target - start
+      if (Math.abs(distance) < 1) { resolve(); return }
+      const startTime = performance.now()
+      const easeInOutCubic = (t: number) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+      const step = (currentTime: number) => {
+        const elapsed = currentTime - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        container.scrollTop = start + distance * easeInOutCubic(progress)
+        if (progress < 1) requestAnimationFrame(step)
+        else resolve()
+      }
+      requestAnimationFrame(step)
+    })
+  }, [])
+
+  // Handle highlight scroll after data loads
+  useEffect(() => {
+    if (!highlightId || isLoading || highlightHandled.current) return
+    highlightHandled.current = true
+
+    // Small delay to ensure DOM has rendered
+    const timer = setTimeout(async () => {
+      const cardEl = document.getElementById(`cita-${highlightId}`)
+      if (!cardEl) return
+
+      // Find the main scrollable container
+      const mainContainer = document.querySelector("main.overflow-y-auto") as HTMLElement
+      if (!mainContainer) return
+
+      // Calculate scroll position (center the card in viewport)
+      const containerRect = mainContainer.getBoundingClientRect()
+      const cardRect = cardEl.getBoundingClientRect()
+      const scrollOffset = cardRect.top - containerRect.top + mainContainer.scrollTop - containerRect.height / 3
+
+      await smoothScrollTo(mainContainer, scrollOffset, 800)
+
+      // Apply ripple animation
+      cardEl.classList.add("card-ripple-highlight")
+      cardEl.addEventListener("animationend", () => {
+        cardEl.classList.remove("card-ripple-highlight")
+      }, { once: true })
+
+      // Clean the URL param
+      router.replace("/dashboard/recepcion", { scroll: false })
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [highlightId, isLoading, smoothScrollTo, router])
 
   const fetchCitas = async () => {
     setIsLoading(true)

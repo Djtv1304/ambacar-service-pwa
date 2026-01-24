@@ -189,3 +189,23 @@
   display: none;  /* Chrome, Safari and Opera */
 }
 
+/* Ripple highlight animation - water drop effect */
+.card-ripple-highlight {
+  animation: card-ripple 1.2s cubic-bezier(0, 0, 0.2, 1) 2;
+}
+
+@keyframes card-ripple {
+  0% {
+    box-shadow:
+      0 0 0 0 oklch(0.627 0.257 27.4 / 0.45),
+      0 0 0 0 oklch(0.627 0.257 27.4 / 0.3),
+      0 0 0 0 oklch(0.627 0.257 27.4 / 0.15);
+  }
+  100% {
+    box-shadow:
+      0 0 0 6px oklch(0.627 0.257 27.4 / 0),
+      0 0 0 14px oklch(0.627 0.257 27.4 / 0),
+      0 0 0 22px oklch(0.627 0.257 27.4 / 0);
+  }
+}
+

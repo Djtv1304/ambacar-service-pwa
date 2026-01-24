@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { Calendar, ClipboardList, Wrench, ClipboardCheck, Clock, AlertCircle, Car } from "lucide-react"
 import { StatCard } from "@/components/dashboard/stat-card"
@@ -8,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { useAuth } from "@/components/auth/auth-provider"
 import { useAuthToken } from "@/hooks/use-auth-token"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -35,6 +37,7 @@ export default function DashboardPage() {
   const { user } = useAuth()
   const { getToken } = useAuthToken()
   const isMobile = useIsMobile()
+  const router = useRouter()
   const [data, setData] = useState<DashboardData | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -170,41 +173,44 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {!data?.citasHoy.length ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <Calendar className="h-12 w-12 text-muted-foreground/50 mb-3" />
-                  <p className="text-sm text-muted-foreground">No hay citas programadas para hoy</p>
-                </div>
-              ) : (
-                data.citasHoy.map((cita) => (
-                  <div
-                    key={cita.id}
-                    className="flex items-start gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-accent/50"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                      <Clock className="h-5 w-5 text-primary" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center justify-between">
-                        <p className="font-medium">
-                          {cita.cliente.nombre} {cita.cliente.apellido}
-                        </p>
-                        <Badge variant="outline" className={estadoColors[cita.estado] || estadoColors.creada}>
-                          {cita.estado}
-                        </Badge>
+            {!data?.citasHoy.length ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <Calendar className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground">No hay citas programadas para hoy</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[320px]">
+                <div className="space-y-4 pr-3">
+                  {data.citasHoy.map((cita) => (
+                    <div
+                      key={cita.id}
+                      onClick={() => router.push(`/dashboard/recepcion?highlight=${cita.id}`)}
+                      className="flex items-start gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-accent/50 cursor-pointer"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                        <Clock className="h-5 w-5 text-primary" />
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {cita.vehiculo.marca} {cita.vehiculo.modelo} - {cita.vehiculo.placa}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {cita.hora} • {cita.servicioSolicitado}
-                      </p>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium">
+                            {cita.cliente.nombre} {cita.cliente.apellido}
+                          </p>
+                          <Badge variant="outline" className={estadoColors[cita.estado] || estadoColors.creada}>
+                            {cita.estado}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {cita.vehiculo.marca} {cita.vehiculo.modelo} - {cita.vehiculo.placa}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {cita.hora} • {cita.servicioSolicitado}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
           </CardContent>
         </Card>
 
@@ -222,54 +228,26 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {!data?.otActivas.length ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <ClipboardList className="h-12 w-12 text-muted-foreground/50 mb-3" />
-                  <p className="text-sm text-muted-foreground">No hay órdenes de trabajo activas</p>
-                </div>
-              ) : (
-                data.otActivas.slice(0, 4).map((ot) =>
-                  isMobile ? (
-                    <div
-                      key={ot.id}
-                      className="rounded-lg border border-border p-4 transition-colors hover:bg-accent/50"
-                    >
-                      <div className="flex items-center justify-between gap-3 mb-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                          <Car className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline" className={prioridadColors[ot.prioridad] || prioridadColors.media}>
-                            {ot.prioridad}
-                          </Badge>
-                          <Badge variant="outline" className={estadoColors[ot.estado] || estadoColors.creada}>
-                            {ot.estado.replace("_", " ")}
-                          </Badge>
-                        </div>
-                      </div>
-                      <p className="font-medium text-lg mb-2">{ot.numero}</p>
-                      <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                          {ot.cliente.nombre} {ot.cliente.apellido}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {ot.vehiculo.marca} {ot.vehiculo.modelo} - {ot.vehiculo.placa}
-                        </p>
-                      </div>
-                    </div>
-                  ) : (
-                    <div
-                      key={ot.id}
-                      className="flex items-start gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-accent/50"
-                    >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                        <Car className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium">{ot.numero}</p>
-                          <div className="flex gap-2">
+            {!data?.otActivas.length ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <ClipboardList className="h-12 w-12 text-muted-foreground/50 mb-3" />
+                <p className="text-sm text-muted-foreground">No hay órdenes de trabajo activas</p>
+              </div>
+            ) : (
+              <ScrollArea className="h-[320px]">
+                <div className="space-y-4 pr-3">
+                  {data.otActivas.map((ot) =>
+                    isMobile ? (
+                      <div
+                        key={ot.id}
+                        onClick={() => router.push(`/dashboard/ot?highlight=${ot.id}`)}
+                        className="rounded-lg border border-border p-4 transition-colors hover:bg-accent/50 cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between gap-3 mb-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                            <Car className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="flex flex-wrap gap-2">
                             <Badge variant="outline" className={prioridadColors[ot.prioridad] || prioridadColors.media}>
                               {ot.prioridad}
                             </Badge>
@@ -278,18 +256,50 @@ export default function DashboardPage() {
                             </Badge>
                           </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          {ot.cliente.nombre} {ot.cliente.apellido}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {ot.vehiculo.marca} {ot.vehiculo.modelo} - {ot.vehiculo.placa}
-                        </p>
+                        <p className="font-medium text-lg mb-2">{ot.numero}</p>
+                        <div className="space-y-1">
+                          <p className="text-sm text-muted-foreground">
+                            {ot.cliente.nombre} {ot.cliente.apellido}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {ot.vehiculo.marca} {ot.vehiculo.modelo} - {ot.vehiculo.placa}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  )
-                )
-              )}
-            </div>
+                    ) : (
+                      <div
+                        key={ot.id}
+                        onClick={() => router.push(`/dashboard/ot?highlight=${ot.id}`)}
+                        className="flex items-start gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-accent/50 cursor-pointer"
+                      >
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                          <Car className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex-1 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium">{ot.numero}</p>
+                            <div className="flex gap-2">
+                              <Badge variant="outline" className={prioridadColors[ot.prioridad] || prioridadColors.media}>
+                                {ot.prioridad}
+                              </Badge>
+                              <Badge variant="outline" className={estadoColors[ot.estado] || estadoColors.creada}>
+                                {ot.estado.replace("_", " ")}
+                              </Badge>
+                            </div>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {ot.cliente.nombre} {ot.cliente.apellido}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {ot.vehiculo.marca} {ot.vehiculo.modelo} - {ot.vehiculo.placa}
+                          </p>
+                        </div>
+                      </div>
+                    )
+                  )}
+                </div>
+              </ScrollArea>
+            )}
           </CardContent>
         </Card>
       </div>
