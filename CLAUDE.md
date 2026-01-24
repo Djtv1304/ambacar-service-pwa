@@ -398,9 +398,11 @@ AMBACAR_ERP_API_URL=https://ambysoftapitest.ambacar.ec:8443
 
 ### Security Pattern: Next.js API Route Proxy
 ```
-Client → /api/erp/agencias        → GET /Apis/Taller/ObtenerAgencias
-Client → /api/erp/stock-repuestos  → GET /Apis/Taller/ObtenerStockRepuestos
-Client → /api/erp/talleres         → GET /Apis/Taller/ObtenerTalleres
+Client → /api/erp/agencias           → GET /Apis/Taller/ObtenerAgencias
+Client → /api/erp/stock-repuestos     → GET /Apis/Taller/ObtenerStockRepuestos
+Client → /api/erp/talleres            → GET /Apis/Taller/ObtenerTalleres
+Client → /api/erp/asesores-servicio   → GET /Apis/Taller/ObtenerAsesoresServicio
+Client → /api/erp/asesores-tecnicos   → GET /Apis/Taller/ObtenerAsesoresTecnico
          (all server-side, no CORS)
 ```
 
@@ -532,10 +534,61 @@ const CURRENT_TALLER_ID = 10 // Quicentro Sur
 - Current taller is highlighted with a Badge "Actual"
 - Names displayed in Title Case (e.g., "QUICENTRO SUR" → "Quicentro Sur")
 
-**Prerequisite for Future Endpoints:**
-- `GET /Apis/Taller/ObtenerAsesoresServicio?idTaller=XX` → Operators (Asesores de Servicio)
-- `GET /Apis/Taller/ObtenerAsesoresTecnicos?idTaller=XX` → Technicians (Asesores Técnicos)
-- Both require a valid `idTaller` from ObtenerTalleres
+### 8. Fetching Asesores de Servicio (`app/api/erp/asesores-servicio/route.ts`)
+
+**Internal Endpoint:** `GET /api/erp/asesores-servicio?idTaller=XX`
+
+**ERP Endpoint:** `GET /Apis/Taller/ObtenerAsesoresServicio?idTaller=XX`
+
+**Response Structure:**
+```typescript
+interface Empleado {
+  idEmpleado: number       // Employee ID
+  nombreEmpleado: string   // Full name (UPPERCASE from API)
+}
+```
+
+### 9. Fetching Asesores Técnicos (`app/api/erp/asesores-tecnicos/route.ts`)
+
+**Internal Endpoint:** `GET /api/erp/asesores-tecnicos?idTaller=XX`
+
+**ERP Endpoint:** `GET /Apis/Taller/ObtenerAsesoresTecnico?idTaller=XX`
+
+**Response:** Same `Empleado[]` structure as asesores de servicio.
+
+**Client-Side Usage:**
+```typescript
+import { getAsesoresServicio, getAsesoresTecnicos, type Empleado } from "@/lib/api/erp-ambacar"
+import { CURRENT_TALLER_ID } from "@/lib/constants/taller"
+
+const asesores = await getAsesoresServicio(CURRENT_TALLER_ID)
+const tecnicos = await getAsesoresTecnicos(CURRENT_TALLER_ID)
+```
+
+### 10. Centralized Taller Constants (`lib/constants/taller.ts`)
+
+```typescript
+export const CURRENT_TALLER_ID = 10       // Quicentro Sur
+export const CURRENT_TALLER_NOMBRE = "Quicentro Sur"
+```
+
+Used by: `configuracion/page.tsx`, `kanban-board.tsx`
+
+### 11. Staff Assignment in Kanban Board
+
+**Pattern:** Visual-only assignment (no POST endpoint yet)
+
+- **Citas column:** Assign Asesor de Servicio to appointments
+- **Diagnóstico/Reparación columns:** Assign Técnico to work orders
+- Staff lists fetched from ERP via `getAsesoresServicio` / `getAsesoresTecnicos`
+- Assignment updates local state and shows toast confirmation
+- Searchable Popover with employee list (names in Title Case)
+- POST for persisting assignments will be implemented later
+
+**Perspective Dialog:**
+- Clicking a Kanban card shows a dialog with two options:
+  - "Vista Técnico" → `/dashboard/taller/${ordenId}` (phase execution view)
+  - "Vista Taller (OT)" → `/dashboard/ot/${ordenId}` (costs/repuestos/management view)
 
 ## 📊 Pagination Best Practices
 

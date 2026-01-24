@@ -296,9 +296,60 @@ export const mockTechnicianOrder: TechnicianOrder = {
   diagnosticoInicial: "Se requiere cambio de pastillas de freno y mantenimiento estándar según kilometraje.",
 }
 
+// Kanban Cita card for admin view
+export interface KanbanCitaCardFixture {
+  id: string
+  citaId: string
+  clienteNombre: string
+  vehiculoPlaca: string
+  vehiculoMarca: string
+  vehiculoModelo: string
+  hora: string
+  servicio: string
+  asesorAsignado: { id: string; nombre: string } | null
+  observaciones?: string
+}
+
 // ============================================
 // MOCK DATA: Kanban Board for Admin View
 // ============================================
+
+export const mockKanbanCitas: KanbanCitaCardFixture[] = [
+  {
+    id: "cita-1",
+    citaId: "ct-001",
+    clienteNombre: "María Fernanda López",
+    vehiculoPlaca: "PCU-4521",
+    vehiculoMarca: "GWM",
+    vehiculoModelo: "Haval H6",
+    hora: "08:30",
+    servicio: "Mantenimiento 10,000 km",
+    asesorAsignado: null,
+    observaciones: "Cliente solicita revisión de frenos adicional",
+  },
+  {
+    id: "cita-2",
+    citaId: "ct-002",
+    clienteNombre: "Roberto Sánchez",
+    vehiculoPlaca: "PBX-7890",
+    vehiculoMarca: "BYD",
+    vehiculoModelo: "Song Plus",
+    hora: "09:00",
+    servicio: "Diagnóstico General",
+    asesorAsignado: { id: "274", nombre: "Alex Hidrobo" },
+  },
+  {
+    id: "cita-3",
+    citaId: "ct-003",
+    clienteNombre: "Ana García Méndez",
+    vehiculoPlaca: "ABC-1234",
+    vehiculoMarca: "GWM",
+    vehiculoModelo: "Poer",
+    hora: "10:30",
+    servicio: "Garantía - Ruido en suspensión",
+    asesorAsignado: null,
+  },
+]
 
 export const mockKanbanBoard: KanbanBoard = {
   totalOrdenes: 12,

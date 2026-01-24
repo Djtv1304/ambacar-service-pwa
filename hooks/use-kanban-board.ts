@@ -30,6 +30,10 @@ export function useKanbanBoard(): UseKanbanBoardReturn {
       }
 
       const data = await getKanbanBoard(token)
+      // Ensure citas column exists (API may not return it yet)
+      if (!data.columnas.citas) {
+        data.columnas.citas = []
+      }
       setBoard(data)
     } catch (err) {
       // Only log non-500 errors or first occurrence

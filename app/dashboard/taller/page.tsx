@@ -21,7 +21,8 @@ import { useKanbanBoard } from "@/hooks/use-kanban-board"
 import { useOrdenesTaller } from "@/hooks/use-ordenes-taller"
 import { RefreshCw, Search, User, Flag, Filter, X } from "lucide-react"
 import { cn } from "@/lib/utils"
-import type { KanbanBoardAPI, KanbanCardAPI } from "@/lib/api/taller"
+import type { KanbanBoardAPI, KanbanCardAPI, KanbanCitaCard } from "@/lib/api/taller"
+import { mockKanbanCitas } from "@/lib/fixtures/technical-progress"
 
 export default function TallerPage() {
   const { user, isLoading } = useAuth()
@@ -85,13 +86,19 @@ function KanbanBoardContent() {
     })
   }, [searchPlaca, filterTecnico, filterPrioridad])
 
-  // Aplicar filtros a las columnas
+  // Aplicar filtros a las columnas (citas no se filtran por placa/tecnico/prioridad)
   const filteredBoard = useMemo((): KanbanBoardAPI | null => {
     if (!board) return null
+
+    // Use mock citas if API doesn't provide them yet
+    const citas: KanbanCitaCard[] = board.columnas.citas?.length > 0
+      ? board.columnas.citas
+      : mockKanbanCitas
 
     return {
       totalOrdenes: board.totalOrdenes,
       columnas: {
+        citas,
         recepcion: filterCards(board.columnas.recepcion),
         diagnostico: filterCards(board.columnas.diagnostico),
         reparacion: filterCards(board.columnas.reparacion),
@@ -266,10 +273,11 @@ function getTecnicosList(board: KanbanBoardAPI | null): Array<{ id: string; nomb
 }
 
 /**
- * Cuenta el total de tarjetas filtradas
+ * Cuenta el total de tarjetas OT filtradas (excluye citas)
  */
 function getTotalFilteredCards(board: KanbanBoardAPI): number {
-  return Object.values(board.columnas).reduce(
+  const { citas, ...otColumnas } = board.columnas
+  return Object.values(otColumnas).reduce(
     (total, columna) => total + columna.length,
     0
   )

@@ -1,6 +1,22 @@
 import { apiRequest } from "./client"
 
 /**
+ * Estructura de una tarjeta de Cita en el Kanban
+ */
+export interface KanbanCitaCard {
+  id: string
+  citaId: string
+  clienteNombre: string
+  vehiculoPlaca: string
+  vehiculoMarca: string
+  vehiculoModelo: string
+  hora: string
+  servicio: string
+  asesorAsignado: { id: string; nombre: string } | null
+  observaciones?: string
+}
+
+/**
  * Estructura de una tarjeta Kanban
  */
 export interface KanbanCardAPI {
@@ -26,6 +42,7 @@ export interface KanbanCardAPI {
 export interface KanbanBoardAPI {
   totalOrdenes: number
   columnas: {
+    citas: KanbanCitaCard[]
     recepcion: KanbanCardAPI[]
     diagnostico: KanbanCardAPI[]
     reparacion: KanbanCardAPI[]

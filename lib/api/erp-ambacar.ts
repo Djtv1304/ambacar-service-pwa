@@ -17,6 +17,11 @@ export interface Taller {
   idAgencia: string
 }
 
+export interface Empleado {
+  idEmpleado: number
+  nombreEmpleado: string
+}
+
 export interface RepuestoStock {
   agencia: string
   codigo: string
@@ -91,6 +96,40 @@ export async function getTalleres(): Promise<Taller[]> {
 
   if (!response.ok) {
     throw new Error(`Error fetching talleres: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Fetches asesores de servicio (operators) for a given taller.
+ * GET /api/erp/asesores-servicio?idTaller=XX
+ */
+export async function getAsesoresServicio(idTaller: number): Promise<Empleado[]> {
+  const response = await fetch(`/api/erp/asesores-servicio?idTaller=${idTaller}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Error fetching asesores de servicio: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Fetches asesores tecnicos (technicians) for a given taller.
+ * GET /api/erp/asesores-tecnicos?idTaller=XX
+ */
+export async function getAsesoresTecnicos(idTaller: number): Promise<Empleado[]> {
+  const response = await fetch(`/api/erp/asesores-tecnicos?idTaller=${idTaller}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Error fetching asesores tecnicos: ${response.status}`)
   }
 
   return response.json()

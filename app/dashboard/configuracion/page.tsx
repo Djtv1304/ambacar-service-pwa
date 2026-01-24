@@ -24,6 +24,7 @@ import { toast } from "sonner"
 import { useAuth } from "@/components/auth/auth-provider"
 import { getTalleres, type Taller } from "@/lib/api/erp-ambacar"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { CURRENT_TALLER_ID } from "@/lib/constants/taller"
 import type { UserRole } from "@/lib/types"
 
 // Zod schema para validar el formulario de cambio de contraseña
@@ -46,9 +47,6 @@ const roleLabels: Record<UserRole, string> = {
   manager: "Jefe de Taller",
   customer: "Cliente",
 }
-
-/** Current workshop ID (Quicentro Sur) */
-const CURRENT_TALLER_ID = 10
 
 function toTitleCase(str: string): string {
   return str
