@@ -6,7 +6,6 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-  Calendar,
   ClipboardList,
   Package,
   Wrench,
@@ -49,12 +48,6 @@ const navItems: NavItem[] = [
     href: "/dashboard/mis-servicios",
     icon: CarFront,
     roles: ["customer", "admin", "manager", "operator"],
-  },
-  {
-    title: "Citas",
-    href: "/dashboard/citas",
-    icon: Calendar,
-    roles: [],
   },
   {
     title: "Recepción",

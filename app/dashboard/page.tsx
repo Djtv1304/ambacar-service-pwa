@@ -1,19 +1,20 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Calendar, ClipboardList, Wrench, ClipboardCheck, Clock, AlertCircle, Car } from "lucide-react"
 import { StatCard } from "@/components/dashboard/stat-card"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { mockCitas } from "@/lib/fixtures/ordenes-trabajo"
-import { mockOrdenesTrabajoData } from "@/lib/fixtures/ordenes-trabajo"
-import { mockClientes, mockVehiculos } from "@/lib/fixtures/clientes"
+import { Spinner } from "@/components/ui/spinner"
 import { useAuth } from "@/components/auth/auth-provider"
+import { useAuthToken } from "@/hooks/use-auth-token"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { getDashboard, type DashboardData } from "@/lib/api/dashboard"
 import Link from "next/link"
 
-const estadoColors = {
+const estadoColors: Record<string, string> = {
   pendiente: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
   confirmada: "bg-blue-500/10 text-blue-500 border-blue-500/20",
   en_proceso: "bg-purple-500/10 text-purple-500 border-purple-500/20",
@@ -23,7 +24,7 @@ const estadoColors = {
   en_diagnostico: "bg-orange-500/10 text-orange-500 border-orange-500/20",
 }
 
-const prioridadColors = {
+const prioridadColors: Record<string, string> = {
   baja: "bg-gray-500/10 text-gray-500 border-gray-500/20",
   media: "bg-blue-500/10 text-blue-500 border-blue-500/20",
   alta: "bg-orange-500/10 text-orange-500 border-orange-500/20",
@@ -32,23 +33,27 @@ const prioridadColors = {
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const { getToken } = useAuthToken()
   const isMobile = useIsMobile()
+  const [data, setData] = useState<DashboardData | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  // Calculate stats
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const token = await getToken()
+        if (!token) return
+        const result = await getDashboard(token)
+        setData(result)
+      } catch (error) {
+        console.error("Error fetching dashboard:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const citasHoy = mockCitas.filter((c) => {
-    const citaDate = new Date(c.fecha)
-    citaDate.setHours(0, 0, 0, 0)
-    return citaDate.getTime() === today.getTime()
-  })
-
-  const otAbiertas = mockOrdenesTrabajoData.filter((ot) => !["completada", "entregada"].includes(ot.estado))
-
-  const vehiculosEnTaller = mockOrdenesTrabajoData.filter((ot) =>
-    ["en_proceso", "en_diagnostico", "en_prueba"].includes(ot.estado),
-  )
+    fetchDashboard()
+  }, [getToken])
 
   const container = {
     hidden: { opacity: 0 },
@@ -65,6 +70,14 @@ export default function DashboardPage() {
     show: { opacity: 1, y: 0 },
   }
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Spinner className="h-8 w-8" />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
 
@@ -74,7 +87,7 @@ export default function DashboardPage() {
         <p className="text-muted-foreground mt-1">Resumen de actividades del taller</p>
       </div>
 
-        {/* Alerts Section - Moved to top for priority */}
+        {/* Alerts Section */}
         {user?.rol !== "cliente" && (
             <Card className="border-orange-500/20 bg-orange-500/5">
                 <CardHeader>
@@ -108,27 +121,25 @@ export default function DashboardPage() {
         <motion.div variants={item}>
           <StatCard
             title="Citas del Día"
-            value={citasHoy.length}
-            description={`${citasHoy.filter((c) => c.estado === "confirmada").length} confirmadas`}
+            value={data?.stats.citasHoy ?? 0}
+            description={`${data?.stats.citasConfirmadas ?? 0} confirmadas`}
             icon={Calendar}
-            trend={{ value: 12, isPositive: true }}
           />
         </motion.div>
 
         <motion.div variants={item}>
           <StatCard
             title="OTs Abiertas"
-            value={otAbiertas.length}
+            value={data?.stats.otAbiertas ?? 0}
             description="Requieren atención"
             icon={ClipboardList}
-            trend={{ value: 8, isPositive: false }}
           />
         </motion.div>
 
         <motion.div variants={item}>
           <StatCard
             title="Vehículos en Taller"
-            value={vehiculosEnTaller.length}
+            value={data?.stats.vehiculosEnTaller ?? 0}
             description="En proceso actualmente"
             icon={Wrench}
           />
@@ -137,7 +148,7 @@ export default function DashboardPage() {
         <motion.div variants={item}>
           <StatCard
             title="Inspecciones Completadas"
-            value={mockOrdenesTrabajoData.filter((ot) => ot.estado === "completada").length}
+            value={data?.stats.inspeccionesCompletadas ?? 0}
             description="Este mes"
             icon={ClipboardCheck}
           />
@@ -145,58 +156,53 @@ export default function DashboardPage() {
       </motion.div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Citas Próximas */}
+        {/* Citas de Hoy */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Citas de Hoy</CardTitle>
-                <CardDescription>{citasHoy.length} citas programadas</CardDescription>
+                <CardDescription>{data?.citasHoy.length ?? 0} citas programadas</CardDescription>
               </div>
               <Button asChild size="sm">
-                <Link href="/dashboard/citas">Ver todas</Link>
+                <Link href="/dashboard/recepcion">Ver todas</Link>
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {citasHoy.length === 0 ? (
+              {!data?.citasHoy.length ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <Calendar className="h-12 w-12 text-muted-foreground/50 mb-3" />
                   <p className="text-sm text-muted-foreground">No hay citas programadas para hoy</p>
                 </div>
               ) : (
-                citasHoy.map((cita) => {
-                  const cliente = mockClientes.find((c) => c.id === cita.clienteId)
-                  const vehiculo = mockVehiculos.find((v) => v.id === cita.vehiculoId)
-
-                  return (
-                    <div
-                      key={cita.id}
-                      className="flex items-start gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-accent/50"
-                    >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                        <Clock className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium">
-                            {cliente?.nombre} {cliente?.apellido}
-                          </p>
-                          <Badge variant="outline" className={estadoColors[cita.estado]}>
-                            {cita.estado}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {vehiculo?.marca} {vehiculo?.modelo} - {vehiculo?.placa}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {cita.hora} • {cita.servicioSolicitado}
-                        </p>
-                      </div>
+                data.citasHoy.map((cita) => (
+                  <div
+                    key={cita.id}
+                    className="flex items-start gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-accent/50"
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <Clock className="h-5 w-5 text-primary" />
                     </div>
-                  )
-                })
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <p className="font-medium">
+                          {cita.cliente.nombre} {cita.cliente.apellido}
+                        </p>
+                        <Badge variant="outline" className={estadoColors[cita.estado] || estadoColors.creada}>
+                          {cita.estado}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {cita.vehiculo.marca} {cita.vehiculo.modelo} - {cita.vehiculo.placa}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {cita.hora} • {cita.servicioSolicitado}
+                      </p>
+                    </div>
+                  </div>
+                ))
               )}
             </div>
           </CardContent>
@@ -208,7 +214,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Órdenes de Trabajo</CardTitle>
-                <CardDescription>{otAbiertas.length} órdenes activas</CardDescription>
+                <CardDescription>{data?.otActivas.length ?? 0} órdenes activas</CardDescription>
               </div>
               <Button asChild size="sm">
                 <Link href="/dashboard/ot">Ver todas</Link>
@@ -217,52 +223,42 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {otAbiertas.length === 0 ? (
+              {!data?.otActivas.length ? (
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <ClipboardList className="h-12 w-12 text-muted-foreground/50 mb-3" />
                   <p className="text-sm text-muted-foreground">No hay órdenes de trabajo activas</p>
                 </div>
               ) : (
-                otAbiertas.slice(0, 4).map((ot) => {
-                  const cliente = mockClientes.find((c) => c.id === ot.clienteId)
-                  const vehiculo = mockVehiculos.find((v) => v.id === ot.vehiculoId)
-
-                  return isMobile ? (
-                    // Mobile Layout: 3 rows
+                data.otActivas.slice(0, 4).map((ot) =>
+                  isMobile ? (
                     <div
                       key={ot.id}
                       className="rounded-lg border border-border p-4 transition-colors hover:bg-accent/50"
                     >
-                      {/* Row 1: Icon and Badges */}
                       <div className="flex items-center justify-between gap-3 mb-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                           <Car className="h-5 w-5 text-primary" />
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline" className={prioridadColors[ot.prioridad]}>
+                          <Badge variant="outline" className={prioridadColors[ot.prioridad] || prioridadColors.media}>
                             {ot.prioridad}
                           </Badge>
-                          <Badge variant="outline" className={estadoColors[ot.estado]}>
+                          <Badge variant="outline" className={estadoColors[ot.estado] || estadoColors.creada}>
                             {ot.estado.replace("_", " ")}
                           </Badge>
                         </div>
                       </div>
-
-                      {/* Row 2: OT Number */}
                       <p className="font-medium text-lg mb-2">{ot.numero}</p>
-
-                      {/* Row 3: Client and Vehicle Info */}
                       <div className="space-y-1">
                         <p className="text-sm text-muted-foreground">
-                          {cliente?.nombre} {cliente?.apellido}
+                          {ot.cliente.nombre} {ot.cliente.apellido}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {vehiculo?.marca} {vehiculo?.modelo} - {vehiculo?.placa}
+                          {ot.vehiculo.marca} {ot.vehiculo.modelo} - {ot.vehiculo.placa}
                         </p>
                       </div>
                     </div>
                   ) : (
-                    // Desktop Layout: Horizontal
                     <div
                       key={ot.id}
                       className="flex items-start gap-4 rounded-lg border border-border p-4 transition-colors hover:bg-accent/50"
@@ -274,24 +270,24 @@ export default function DashboardPage() {
                         <div className="flex items-center justify-between">
                           <p className="font-medium">{ot.numero}</p>
                           <div className="flex gap-2">
-                            <Badge variant="outline" className={prioridadColors[ot.prioridad]}>
+                            <Badge variant="outline" className={prioridadColors[ot.prioridad] || prioridadColors.media}>
                               {ot.prioridad}
                             </Badge>
-                            <Badge variant="outline" className={estadoColors[ot.estado]}>
+                            <Badge variant="outline" className={estadoColors[ot.estado] || estadoColors.creada}>
                               {ot.estado.replace("_", " ")}
                             </Badge>
                           </div>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {cliente?.nombre} {cliente?.apellido}
+                          {ot.cliente.nombre} {ot.cliente.apellido}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {vehiculo?.marca} {vehiculo?.modelo} - {vehiculo?.placa}
+                          {ot.vehiculo.marca} {ot.vehiculo.modelo} - {ot.vehiculo.placa}
                         </p>
                       </div>
                     </div>
                   )
-                })
+                )
               )}
             </div>
           </CardContent>
