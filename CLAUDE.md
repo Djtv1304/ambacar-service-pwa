@@ -617,3 +617,138 @@ const getVisiblePages = () => {
   // Show current page ± 2, always show first and last
 }
 ```
+
+## 🧪 Testing Guidelines
+
+### Testing Stack
+- **Unit/Integration:** Vitest with jsdom environment
+- **E2E:** Playwright with Chromium
+- **Coverage:** v8 provider with HTML + LCOV reporters
+
+### File Naming Conventions
+```
+component-name.test.tsx    # Unit tests for components
+hook-name.test.ts          # Unit tests for hooks
+api-module.test.ts         # Integration tests for API modules
+flow-name.e2e.ts           # E2E tests for user flows
+```
+
+### Test Structure Pattern
+```typescript
+describe("ComponentName", () => {
+  describe("rendering", () => {
+    it("renders correctly with default props", () => {})
+    it("renders loading state", () => {})
+    it("renders error state", () => {})
+  })
+
+  describe("interactions", () => {
+    it("handles click events", () => {})
+    it("validates form inputs", () => {})
+  })
+
+  describe("edge cases", () => {
+    it("handles empty data", () => {})
+    it("handles API errors", () => {})
+  })
+})
+```
+
+### Mocking Strategy
+- **API Calls:** Mock at the fetch level using `vi.mock` or MSW
+- **Contexts:** Wrap components with mock providers
+- **Hooks:** Use `renderHook` from `@testing-library/react`
+- **Fixtures:** Use `/lib/fixtures` data for consistent test data
+
+### Critical Paths to Test (Priority Order)
+1. **Authentication Flow:** Login, register, token refresh, logout
+2. **Agendamiento:** Complete booking flow (vehicle → service → date → confirm)
+3. **OT Lifecycle:** Creation → diagnosis → repair → quality → delivery
+4. **Kanban Operations:** Card movement, staff assignment
+5. **Inspections:** Point evaluation, measurements, photo capture
+
+### E2E Test Scenarios
+
+**Flujo Cliente:**
+```typescript
+test("cliente puede agendar cita completa", async ({ page }) => {
+  await page.goto("/agendamiento/nueva")
+  // Select vehicle
+  // Choose service
+  // Pick date/time
+  // Confirm booking
+  await expect(page.locator("[data-testid=confirmation]")).toBeVisible()
+})
+```
+
+**Flujo Operador:**
+```typescript
+test("operador puede hacer check-in de vehículo", async ({ page }) => {
+  await loginAs(page, "operador")
+  await page.goto("/dashboard/recepcion")
+  // Find appointment
+  // Start check-in
+  // Fill form
+  // Create OT
+  await expect(page.locator("[data-testid=ot-created]")).toBeVisible()
+})
+```
+
+### Accessibility Testing
+- Use `axe-playwright` for automated a11y checks
+- Test keyboard navigation for all interactive elements
+- Verify ARIA labels on complex components (Kanban, dialogs)
+
+### Performance Testing Thresholds
+```typescript
+// playwright.config.ts
+expect.extend({
+  async toHaveFCP(page, maxMs) {
+    const fcp = await page.evaluate(() =>
+      performance.getEntriesByName("first-contentful-paint")[0]?.startTime
+    )
+    return { pass: fcp < maxMs }
+  }
+})
+```
+
+### Test Data Management
+- Use `/lib/fixtures` for predictable test data
+- Never hardcode IDs that depend on database state
+- Reset test state between E2E runs
+
+### CI/CD Integration
+```yaml
+# Recommended test stages
+- lint: pnpm lint
+- unit: pnpm test --coverage
+- e2e: pnpm test:e2e
+- quality-gate: coverage > 70%, no critical bugs
+```
+
+## 📋 Testing Quadrants Reference
+
+### Q1 - Unit Tests (Technology-facing, Team Support)
+- Component rendering
+- Hook behavior
+- Utility functions
+- Zod schema validation
+- API client error handling
+
+### Q2 - Functional Tests (Business-facing, Team Support)
+- User story acceptance tests
+- Form validation flows
+- CRUD operations
+- Role-based access verification
+
+### Q3 - Exploratory Tests (Business-facing, Product Critique)
+- Usability sessions
+- Edge case discovery
+- Mobile experience validation
+- Dark mode consistency
+
+### Q4 - Non-functional Tests (Technology-facing, Product Critique)
+- Performance (Core Web Vitals)
+- Security (Auth, CORS, input sanitization)
+- Load testing (concurrent users)
+- Browser compatibility
