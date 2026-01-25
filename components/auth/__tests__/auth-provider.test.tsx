@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { waitFor } from '@testing-library/react'
 import { renderHook, act } from '@testing-library/react'
 import { AuthProvider, useAuth } from '../auth-provider'
-import { getCurrentUser } from '@/lib/auth/actions'
+import { getMeApi } from '@/lib/auth/api'
 import type { User } from '@/lib/types'
 
 // Mock de las acciones de autenticación
@@ -11,6 +11,17 @@ vi.mock('@/lib/auth/actions', () => ({
   loginAction: vi.fn(),
   logoutAction: vi.fn(),
   registerAction: vi.fn(),
+  getClientAccessToken: vi.fn().mockResolvedValue('mock-access-token'),
+}))
+
+// Mock de getMeApi
+vi.mock('@/lib/auth/api', () => ({
+  getMeApi: vi.fn(),
+}))
+
+// Mock del hook de actividad
+vi.mock('@/hooks/use-auth-token', () => ({
+  useActivityDetection: vi.fn(),
 }))
 
 describe('AuthProvider Integration Tests', () => {
@@ -34,7 +45,7 @@ describe('AuthProvider Integration Tests', () => {
       updated_at: new Date().toISOString(),
     }
 
-    vi.mocked(getCurrentUser).mockResolvedValue(mockUser)
+    vi.mocked(getMeApi).mockResolvedValue(mockUser)
 
     const { result } = renderHook(() => useAuth(), {
       wrapper: ({ children }) => <AuthProvider>{children}</AuthProvider>,
@@ -70,7 +81,7 @@ describe('AuthProvider Integration Tests', () => {
       updated_at: new Date().toISOString(),
     }
 
-    vi.mocked(getCurrentUser).mockResolvedValueOnce(mockUser)
+    vi.mocked(getMeApi).mockResolvedValueOnce(mockUser)
 
     const { result } = renderHook(() => useAuth(), {
       wrapper: ({ children }) => <AuthProvider>{children}</AuthProvider>,
@@ -80,8 +91,9 @@ describe('AuthProvider Integration Tests', () => {
       expect(result.current.user).toBeDefined()
     })
 
-    // Simular logout cambiando el mock a null
-    vi.mocked(getCurrentUser).mockResolvedValueOnce(null)
+    // Simular logout - getClientAccessToken retorna null
+    const { getClientAccessToken } = await import('@/lib/auth/actions')
+    vi.mocked(getClientAccessToken).mockResolvedValueOnce(null)
 
     await act(async () => {
       await result.current.refreshUser()
@@ -108,7 +120,7 @@ describe('AuthProvider Integration Tests', () => {
       updated_at: new Date().toISOString(),
     }
 
-    vi.mocked(getCurrentUser).mockResolvedValue(mockCustomer)
+    vi.mocked(getMeApi).mockResolvedValue(mockCustomer)
 
     const { result } = renderHook(() => useAuth(), {
       wrapper: ({ children }) => <AuthProvider>{children}</AuthProvider>,
@@ -125,7 +137,7 @@ describe('AuthProvider Integration Tests', () => {
   })
 
   it('debe manejar errores de autenticación', async () => {
-    vi.mocked(getCurrentUser).mockRejectedValue(new Error('Unauthorized'))
+    vi.mocked(getMeApi).mockRejectedValue(new Error('Unauthorized'))
 
     const { result } = renderHook(() => useAuth(), {
       wrapper: ({ children }) => <AuthProvider>{children}</AuthProvider>,
@@ -161,7 +173,7 @@ describe('AuthProvider Integration Tests', () => {
       first_name: 'Updated',
     }
 
-    vi.mocked(getCurrentUser).mockResolvedValueOnce(initialUser)
+    vi.mocked(getMeApi).mockResolvedValueOnce(initialUser)
 
     const { result } = renderHook(() => useAuth(), {
       wrapper: ({ children }) => <AuthProvider>{children}</AuthProvider>,
@@ -171,7 +183,7 @@ describe('AuthProvider Integration Tests', () => {
       expect(result.current.user?.first_name).toBe('Initial')
     })
 
-    vi.mocked(getCurrentUser).mockResolvedValueOnce(updatedUser)
+    vi.mocked(getMeApi).mockResolvedValueOnce(updatedUser)
 
     await act(async () => {
       await result.current.refreshUser()
