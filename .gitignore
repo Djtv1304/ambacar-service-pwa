@@ -26,6 +26,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Test Data
+test-data.ts
+
 # JetBrains IDE
 /.idea/workspace.xml
 /.idea/shelf/
