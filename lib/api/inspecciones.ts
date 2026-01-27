@@ -193,15 +193,15 @@ export interface SugerenciaInteligente {
   success: boolean
   tiene_sugerencias: boolean
   sugerencias: {
-    observaciones: string[]
-    recomendaciones: string[]
-    puntos_atencion: string[]
+    observacion: string
+    recomendacion: string
+    punto_atencion: string
     estado_general: string
   }
   contexto: {
     tipo: string
     fase: string
-    punto_inspeccion: string
+    tipo_foto: string
     vehiculo: string
   }
 }

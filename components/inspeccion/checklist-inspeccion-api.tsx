@@ -197,9 +197,9 @@ function FotoModal({ foto, open, onClose }: FotoModalProps) {
   const contexto = suggestion?.contexto
 
   const hasSuggestions = suggestion?.tiene_sugerencias && sugerencias && (
-    (sugerencias.observaciones?.length ?? 0) > 0 ||
-    (sugerencias.recomendaciones?.length ?? 0) > 0 ||
-    (sugerencias.puntos_atencion?.length ?? 0) > 0
+    !!sugerencias.observacion ||
+    !!sugerencias.recomendacion ||
+    !!sugerencias.punto_atencion
   )
 
   const estadoConfig = getEstadoConfig(sugerencias?.estado_general)
@@ -345,12 +345,12 @@ function FotoModal({ foto, open, onClose }: FotoModalProps) {
                   )}
 
                   {/* Context info */}
-                  {contexto && (contexto.punto_inspeccion || contexto.vehiculo) && (
+                  {contexto && (contexto.tipo_foto || contexto.vehiculo) && (
                     <motion.div variants={sectionVariants} className="text-xs text-muted-foreground dark:text-gray-500 bg-muted/30 dark:bg-gray-900/30 px-3 py-2 rounded-lg">
-                      {contexto.punto_inspeccion && (
-                        <span className="font-medium">{contexto.punto_inspeccion}</span>
+                      {contexto.tipo_foto && (
+                        <span className="font-medium">{contexto.tipo_foto}</span>
                       )}
-                      {contexto.punto_inspeccion && contexto.vehiculo && <span> • </span>}
+                      {contexto.tipo_foto && contexto.vehiculo && <span> • </span>}
                       {contexto.vehiculo && <span>{contexto.vehiculo}</span>}
                     </motion.div>
                   )}
@@ -369,72 +369,57 @@ function FotoModal({ foto, open, onClose }: FotoModalProps) {
                     </motion.div>
                   )}
 
-                  {/* Observaciones */}
-                  {sugerencias?.observaciones && sugerencias.observaciones.length > 0 && (
+                  {/* Observación */}
+                  {sugerencias?.observacion && (
                     <motion.div variants={sectionVariants} className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                         <span className="text-xs font-semibold uppercase tracking-wider text-blue-700 dark:text-blue-300">
-                          Observaciones ({sugerencias.observaciones.length})
+                          Observación
                         </span>
                       </div>
-                      <motion.ul className="space-y-2 pl-6">
-                        {sugerencias.observaciones.map((obs, idx) => (
-                          <motion.li
-                            key={idx}
-                            variants={itemVariants}
-                            className="text-sm text-gray-700 dark:text-gray-300 list-disc marker:text-blue-500 dark:marker:text-blue-400"
-                          >
-                            {obs}
-                          </motion.li>
-                        ))}
-                      </motion.ul>
+                      <motion.p
+                        variants={itemVariants}
+                        className="text-sm text-gray-700 dark:text-gray-300 pl-6"
+                      >
+                        {sugerencias.observacion}
+                      </motion.p>
                     </motion.div>
                   )}
 
-                  {/* Recomendaciones */}
-                  {sugerencias?.recomendaciones && sugerencias.recomendaciones.length > 0 && (
+                  {/* Recomendación */}
+                  {sugerencias?.recomendacion && (
                     <motion.div variants={sectionVariants} className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Lightbulb className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                         <span className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
-                          Recomendaciones ({sugerencias.recomendaciones.length})
+                          Recomendación
                         </span>
                       </div>
-                      <motion.ul className="space-y-2 pl-6">
-                        {sugerencias.recomendaciones.map((rec, idx) => (
-                          <motion.li
-                            key={idx}
-                            variants={itemVariants}
-                            className="text-sm text-gray-700 dark:text-gray-300 list-disc marker:text-amber-500 dark:marker:text-amber-400"
-                          >
-                            {rec}
-                          </motion.li>
-                        ))}
-                      </motion.ul>
+                      <motion.p
+                        variants={itemVariants}
+                        className="text-sm text-gray-700 dark:text-gray-300 pl-6"
+                      >
+                        {sugerencias.recomendacion}
+                      </motion.p>
                     </motion.div>
                   )}
 
-                  {/* Puntos de Atención */}
-                  {sugerencias?.puntos_atencion && sugerencias.puntos_atencion.length > 0 && (
+                  {/* Punto de Atención */}
+                  {sugerencias?.punto_atencion && (
                     <motion.div variants={sectionVariants} className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Target className="h-4 w-4 text-red-600 dark:text-red-400" />
                         <span className="text-xs font-semibold uppercase tracking-wider text-red-700 dark:text-red-300">
-                          Puntos de Atención ({sugerencias.puntos_atencion.length})
+                          Punto de Atención
                         </span>
                       </div>
-                      <motion.ul className="space-y-2 pl-6">
-                        {sugerencias.puntos_atencion.map((punto, idx) => (
-                          <motion.li
-                            key={idx}
-                            variants={itemVariants}
-                            className="text-sm text-gray-700 dark:text-gray-300 list-disc marker:text-red-500 dark:marker:text-red-400"
-                          >
-                            {punto}
-                          </motion.li>
-                        ))}
-                      </motion.ul>
+                      <motion.p
+                        variants={itemVariants}
+                        className="text-sm text-gray-700 dark:text-gray-300 pl-6"
+                      >
+                        {sugerencias.punto_atencion}
+                      </motion.p>
                     </motion.div>
                   )}
 
