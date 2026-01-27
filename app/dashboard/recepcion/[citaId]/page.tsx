@@ -52,7 +52,6 @@ export default function RecepcionDetailPage() {
     const [loadError, setLoadError] = useState<string | null>(null)
     const [cita, setCita] = useState<any>(null)
     const [recepcion, setRecepcion] = useState<any>(null)
-    const [kmIngreso, setKmIngreso] = useState(0)
     const [fotosCapturadas, setFotosCapturadas] = useState<FotoCapturada[]>([])
     const [isUploadingPhotos, setIsUploadingPhotos] = useState(false)
     const [recepcionCompletada, setRecepcionCompletada] = useState<RecepcionCompletadaResponse | null>(null)
@@ -73,7 +72,6 @@ export default function RecepcionDetailPage() {
                 // citaId is the numero_referencia (e.g., CIT-202601-0002)
                 const citaData = await buscarCita(citaId as string)
                 setCita(citaData)
-                setKmIngreso(citaData.vehiculo.kilometraje_actual)
                 toast({
                     title: "Cita cargada",
                     description: `Cita ${citaData.cita.numero_cita} encontrada correctamente.`,
@@ -92,10 +90,6 @@ export default function RecepcionDetailPage() {
 
         loadCita()
     }, [citaId, router, toast])
-
-    const handleKmEdited = (km: number) => {
-        setKmIngreso(km)
-    }
 
     const handleRecepcionInitiated = (recepcionData: any) => {
         setRecepcion(recepcionData)
@@ -241,12 +235,12 @@ export default function RecepcionDetailPage() {
 
             {/* Contenido */}
             <motion.div key={step} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
-                {step === 0 && cita && <CitaResumen cita={cita} onKmEdited={handleKmEdited} onProceed={() => setStep(1)} />}
+                {step === 0 && cita && <CitaResumen cita={cita} onProceed={() => setStep(1)} />}
 
                 {step === 1 && cita && recepcion === null && (
                     <Card>
                         <CardContent>
-                            <IniciarRecepcionForm cita={cita} kmIngreso={kmIngreso} onRecepcionInitiated={handleRecepcionInitiated} />
+                            <IniciarRecepcionForm cita={cita} kmIngreso={cita.vehiculo.kilometraje_actual} onRecepcionInitiated={handleRecepcionInitiated} />
                         </CardContent>
                     </Card>
                 )}

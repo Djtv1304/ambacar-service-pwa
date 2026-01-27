@@ -11,9 +11,80 @@ export interface KanbanCitaCard {
   vehiculoMarca: string
   vehiculoModelo: string
   hora: string
+  fecha: string
   servicio: string
+  subtipoServicio: string
   asesorAsignado: { id: string; nombre: string } | null
   observaciones?: string
+}
+
+/**
+ * Respuesta del endpoint de citas confirmadas
+ * GET /api/recepciones/citas-confirmadas/?sucursal=X
+ */
+export interface CitaConfirmadaAPI {
+  id: string
+  numero_referencia: string
+  fecha: string
+  hora: string
+  cliente: {
+    id: string
+    nombre: string
+    email: string
+    cedula: string
+    telefono: string
+  }
+  vehiculo: {
+    id: string
+    placa: string
+    marca: string
+    modelo: string
+    color: string
+    year: number
+    kilometraje: number
+  }
+  tipoServicio: string
+  subtipoServicio: string
+  sucursal: string
+  observaciones: string | null
+  asesor_id: number | null
+}
+
+/**
+ * Obtiene las citas confirmadas para una sucursal
+ * @param sucursalId - ID de la sucursal
+ * @param token - JWT token para autenticación
+ * @returns Array de citas confirmadas
+ */
+export async function getCitasConfirmadas(
+  sucursalId: number,
+  token: string
+): Promise<CitaConfirmadaAPI[]> {
+  return apiRequest<CitaConfirmadaAPI[]>(`/api/recepciones/citas-confirmadas/?sucursal=${sucursalId}`, {
+    method: "GET",
+    token,
+  })
+}
+
+/**
+ * Asigna un asesor a una cita
+ * PATCH /api/citas/{idCita}/asignar-operator/
+ * @param citaId - ID de la cita
+ * @param asesorId - ID del asesor (idEmpleado del ERP)
+ * @param token - JWT token para autenticación
+ * @returns true si la asignación fue exitosa
+ */
+export async function asignarAsesorCita(
+  citaId: string,
+  asesorId: number,
+  token: string
+): Promise<boolean> {
+  await apiRequest(`/api/citas/${citaId}/asignar-operator/`, {
+    method: "PATCH",
+    token,
+    body: JSON.stringify({ asesor_id: asesorId }),
+  })
+  return true
 }
 
 /**
@@ -100,6 +171,15 @@ export interface OrdenTallerDetalleAPI {
     nombre: string
     especialidad: string
   }
+  sucursal?: {
+    id: number
+    codigo: string
+    nombre: string
+    direccion: string
+    telefono: string
+    email: string
+    ciudad: string
+  } | null
   fases: {
     id: string
     fase: "recepcion" | "diagnostico" | "reparacion" | "calidad" | "entrega"
@@ -195,4 +275,65 @@ export async function getOrdenesTaller(token: string): Promise<OrdenTallerListaA
     method: "GET",
     token,
   })
+}
+
+/**
+ * Datos para completar una etapa de orden de trabajo
+ */
+export interface CompletarEtapaData {
+  observaciones: string
+  evidencia: File[]
+  responsable_id: number
+}
+
+/**
+ * Respuesta del endpoint de completar etapa
+ */
+export interface CompletarEtapaResponse {
+  id: string
+  fase: string
+  estado: string
+  fechaFin: string
+  observaciones: string
+  evidencia: any[]
+}
+
+/**
+ * Completa una etapa de orden de trabajo
+ * POST /api/etapas-orden-trabajo/{etapaId}/completar/
+ * @param etapaId - ID de la etapa a completar
+ * @param data - Datos de la completación (observaciones, evidencia, responsable_id)
+ * @param token - JWT token para autenticación
+ * @returns Etapa actualizada
+ */
+export async function completarEtapaOrdenTrabajo(
+  etapaId: string,
+  data: CompletarEtapaData,
+  token: string
+): Promise<CompletarEtapaResponse> {
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+
+  const formData = new FormData()
+  formData.append("observaciones", data.observaciones)
+  formData.append("responsable_id", data.responsable_id.toString())
+
+  // Append multiple evidence files
+  data.evidencia.forEach((file) => {
+    formData.append("evidencia", file)
+  })
+
+  const response = await fetch(`${API_BASE_URL}/api/etapas-orden-trabajo/${etapaId}/completar/`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => null)
+    throw new Error(errorData?.detail || `Error al completar etapa: ${response.status}`)
+  }
+
+  return response.json()
 }

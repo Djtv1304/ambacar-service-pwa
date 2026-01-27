@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { OTInfoCard } from "@/components/ot/ot-info-card"
-import { OTPhasesStepper, type Phase } from "@/components/ot/ot-phases-stepper"
+import { OTPhasesStepper, type EtapaAPI, type ImagenOTAPI } from "@/components/ot/ot-phases-stepper"
 import { RepuestosList, type Repuesto } from "@/components/ot/ot-repuestos-list"
 import { OTStatusSelector } from "@/components/ot/ot-status-selector"
 import { getOrdenTrabajoDetalle, cambiarEstadoOrdenTrabajo } from "@/lib/api/ordenes-trabajo"
@@ -49,26 +49,6 @@ const getEstadoColorClass = (codigo: string): string => {
   return estadoColors[codigoLower] || estadoColors.creada
 }
 
-// Mock phases for demonstration (will be replaced with real data)
-const getMockPhases = (estado: string): Phase[] => {
-  const phases: Phase[] = [
-    { id: "p1", nombre: "Recepción", estado: "completed", duracionMinutos: 30, observaciones: "Vehículo recibido sin daños" },
-    { id: "p2", nombre: "Diagnóstico", estado: "completed", duracionMinutos: 120 },
-    { id: "p3", nombre: "Reparación", estado: "in_progress", duracionMinutos: 180 },
-    { id: "p4", nombre: "Control de Calidad", estado: "pending" },
-    { id: "p5", nombre: "Entrega", estado: "pending" },
-  ]
-
-  // Adjust based on current state
-  if (estado === "CTRL-CAL") {
-    phases[2].estado = "completed"
-    phases[3].estado = "in_progress"
-  } else if (estado === "COMPLETA" || estado === "CERRADA") {
-    phases.forEach(p => p.estado = "completed")
-  }
-
-  return phases
-}
 
 export default function OTDetailPage({ params }: { params: Promise<{ id: string }> }) {
   // Unwrap params using React.use()
@@ -81,7 +61,8 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
   const [currentEstado, setCurrentEstado] = useState<string>("")
   const [hallazgoDialogOpen, setHallazgoDialogOpen] = useState(false)
   const [showProformaSheet, setShowProformaSheet] = useState(false)
-  const [phases, setPhases] = useState<Phase[]>([])
+  const [etapas, setEtapas] = useState<EtapaAPI[]>([])
+  const [imagenes, setImagenes] = useState<ImagenOTAPI[]>([])
   const [repuestos, setRepuestos] = useState<Repuesto[]>([])
   const { getToken } = useAuthToken()
 
@@ -113,7 +94,14 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
         if (isMounted) {
           setOt(data)
           setCurrentEstado(data.estado_detalle.codigo)
-          setPhases(getMockPhases(data.estado_detalle.codigo))
+
+          // Use real etapas and imagenes from API
+          if (data.etapas && data.etapas.length > 0) {
+            setEtapas(data.etapas)
+          }
+          if (data.imagenes && data.imagenes.length > 0) {
+            setImagenes(data.imagenes)
+          }
 
           // Check if there's an existing inspection for this OT
           const inspeccionParaOT = inspecciones.find(
@@ -169,7 +157,11 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
         estado_detalle: nuevoEstado,
       }))
       setCurrentEstado(nuevoEstado.codigo)
-      setPhases(getMockPhases(nuevoEstado.codigo))
+
+      // Update etapas from response if available
+      if (response.orden?.etapas) {
+        setEtapas(response.orden.etapas)
+      }
 
       // Mostrar mensaje de éxito de la API
       toast.success(response.message)
@@ -182,13 +174,26 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
     // TODO: API call to complete phase
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    setPhases(prev => {
+    // Update local etapas state
+    setEtapas(prev => {
       const updated = [...prev]
-      const idx = updated.findIndex(p => p.id === phaseId)
+      const idx = updated.findIndex(e => e.id.toString() === phaseId)
       if (idx !== -1) {
-        updated[idx] = { ...updated[idx], estado: "completed", observaciones: data.observaciones }
+        updated[idx] = {
+          ...updated[idx],
+          estado: "COMPLETADA",
+          estado_display: "Completada",
+          observaciones: data.observaciones,
+          fecha_fin: new Date().toISOString(),
+        }
+        // Start next phase if exists
         if (idx + 1 < updated.length) {
-          updated[idx + 1] = { ...updated[idx + 1], estado: "in_progress" }
+          updated[idx + 1] = {
+            ...updated[idx + 1],
+            estado: "EN_PROCESO",
+            estado_display: "En Proceso",
+            fecha_inicio: new Date().toISOString(),
+          }
         }
       }
       return updated
@@ -455,9 +460,10 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
             </Tabs>
           </Card>
 
-          {/* NEW: Phases Stepper (replaces old Tareas) */}
+          {/* Phases Stepper - uses real API etapas and imagenes */}
           <OTPhasesStepper
-            phases={phases}
+            etapas={etapas}
+            imagenes={imagenes}
             onCompletePhase={handleCompletePhase}
           />
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { motion } from "framer-motion"
 import {
   Check,
@@ -9,7 +9,8 @@ import {
   Camera,
   Mic,
   ChevronDown,
-  Loader2
+  Loader2,
+  ImageIcon,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -27,6 +28,45 @@ import { cn } from "@/lib/utils"
 // Phase types
 export type PhaseStatus = "completed" | "in_progress" | "pending"
 
+// API Etapa structure
+export interface EtapaAPI {
+  id: number
+  orden_trabajo: number
+  etapa_detalle: {
+    id: number
+    codigo: string
+    nombre: string
+    descripcion: string
+    orden: number
+  }
+  estado: "COMPLETADA" | "EN_PROCESO" | "PENDIENTE"
+  estado_display: string
+  fecha_inicio: string | null
+  fecha_fin: string | null
+  observaciones: string | null
+  duracion_minutos: number | null
+}
+
+// API Imagen structure
+export interface ImagenOTAPI {
+  id: number
+  imagen_url: string
+  fase_ot: string | null // "RECEPCION", "DIAGNOSTICO", "REPARACION", "CTRL-CAL", "ENTREGA"
+  tipo_foto: string
+  descripcion?: string
+  fecha_captura: string
+}
+
+// Map API fase_ot codes to etapa codes
+const FASE_TO_ETAPA_CODE: Record<string, string> = {
+  "RECEPCION": "RECEPCION",
+  "DIAGNOSTICO": "DIAGNOSTICO",
+  "REPARACION": "REPARACION",
+  "CTRL-CAL": "CTRL-CAL",
+  "CONTROL-CALIDAD": "CTRL-CAL",
+  "ENTREGA": "ENTREGA",
+}
+
 export interface Phase {
   id: string
   nombre: string
@@ -43,9 +83,49 @@ export interface Phase {
 }
 
 interface OTPhasesStepperProps {
-  phases: Phase[]
+  /** Legacy phases prop for mock data compatibility */
+  phases?: Phase[]
+  /** Real API etapas data */
+  etapas?: EtapaAPI[]
+  /** Real API imagenes data */
+  imagenes?: ImagenOTAPI[]
   onCompletePhase?: (phaseId: string, data: { observaciones: string; evidencia: File[] }) => Promise<void>
   readOnly?: boolean
+}
+
+/**
+ * Convert API etapas and imagenes to Phase[] format
+ */
+function mapEtapasToPhases(etapas: EtapaAPI[], imagenes: ImagenOTAPI[]): Phase[] {
+  return etapas.map((etapa) => {
+    // Map API estado to PhaseStatus
+    let estado: PhaseStatus = "pending"
+    if (etapa.estado === "COMPLETADA") estado = "completed"
+    else if (etapa.estado === "EN_PROCESO") estado = "in_progress"
+
+    // Find images for this phase
+    const etapaCode = etapa.etapa_detalle.codigo.toUpperCase()
+    const phaseImages = imagenes.filter((img) => {
+      if (!img.fase_ot) return false
+      const mappedCode = FASE_TO_ETAPA_CODE[img.fase_ot.toUpperCase()]
+      return mappedCode === etapaCode || img.fase_ot.toUpperCase() === etapaCode
+    })
+
+    return {
+      id: etapa.id.toString(),
+      nombre: etapa.etapa_detalle.nombre,
+      estado,
+      fechaInicio: etapa.fecha_inicio || undefined,
+      fechaFin: etapa.fecha_fin || undefined,
+      duracionMinutos: etapa.duracion_minutos || undefined,
+      observaciones: etapa.observaciones || undefined,
+      evidencia: phaseImages.map((img) => ({
+        id: img.id.toString(),
+        url: img.imagen_url,
+        descripcion: img.descripcion || img.tipo_foto,
+      })),
+    }
+  })
 }
 
 function formatDuration(minutes: number): string {
@@ -60,7 +140,13 @@ function formatDuration(minutes: number): string {
   return `${hours}h ${mins}min`
 }
 
-export function OTPhasesStepper({ phases, onCompletePhase, readOnly = false }: OTPhasesStepperProps) {
+export function OTPhasesStepper({
+  phases: legacyPhases,
+  etapas,
+  imagenes = [],
+  onCompletePhase,
+  readOnly = false
+}: OTPhasesStepperProps) {
   const [selectedPhase, setSelectedPhase] = useState<Phase | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -68,6 +154,14 @@ export function OTPhasesStepper({ phases, onCompletePhase, readOnly = false }: O
   const [evidencia, setEvidencia] = useState<File[]>([])
   const [isRecording, setIsRecording] = useState(false)
   const [expandedPhases, setExpandedPhases] = useState<Set<string>>(new Set())
+
+  // Use API etapas if provided, otherwise fall back to legacy phases
+  const phases = useMemo(() => {
+    if (etapas && etapas.length > 0) {
+      return mapEtapasToPhases(etapas, imagenes)
+    }
+    return legacyPhases || []
+  }, [etapas, imagenes, legacyPhases])
 
   const handleOpenComplete = (phase: Phase) => {
     setSelectedPhase(phase)

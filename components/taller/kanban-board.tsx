@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import {
   Clock, AlertTriangle, Car, Calendar, UserPlus, Wrench, Building2,
-  Search, Check, User,
+  Search, Check, User, RefreshCw, Loader2,
 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -27,11 +27,16 @@ import {
 } from "@/components/ui/popover"
 import type { WorkOrderPhase } from "@/lib/fixtures/technical-progress"
 import type { KanbanBoardAPI as KanbanBoard, KanbanCardAPI as KanbanCard, KanbanCitaCard } from "@/lib/api/taller"
+import { getCitasConfirmadas, asignarAsesorCita, type CitaConfirmadaAPI } from "@/lib/api/taller"
 import { PHASE_CONFIG, formatDuration } from "@/lib/fixtures/technical-progress"
 import { getAsesoresServicio, getAsesoresTecnicos, type Empleado } from "@/lib/api/erp-ambacar"
 import { CURRENT_TALLER_ID } from "@/lib/constants/taller"
+import { useAuthToken } from "@/hooks/use-auth-token"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+
+// Sucursal ID for fetching citas (static for now)
+const CURRENT_SUCURSAL_ID = 1
 
 interface KanbanBoardViewProps {
   board: KanbanBoard
@@ -50,6 +55,48 @@ const BRAND_COLORS: Record<string, string> = {
   GWM: "bg-red-600",
   BYD: "bg-green-600",
   HAVAL: "bg-red-600",
+  "GREAT-WALL": "bg-red-600",
+}
+
+/**
+ * Maps API cita response to KanbanCitaCard format
+ * @param cita - Cita from API
+ * @param asesoresMap - Map of asesor ID to name for lookup
+ */
+function mapCitaToCard(
+  cita: CitaConfirmadaAPI,
+  asesoresMap: Map<number, string>
+): KanbanCitaCard {
+  // Look up asesor name from the map
+  const asesorNombre = cita.asesor_id ? asesoresMap.get(cita.asesor_id) : null
+
+  return {
+    id: cita.id,
+    citaId: cita.numero_referencia,
+    clienteNombre: cita.cliente.nombre,
+    vehiculoPlaca: cita.vehiculo.placa,
+    vehiculoMarca: cita.vehiculo.marca,
+    vehiculoModelo: cita.vehiculo.modelo,
+    hora: cita.hora.slice(0, 5), // "09:50:00" → "09:50"
+    fecha: cita.fecha,
+    servicio: cita.tipoServicio,
+    subtipoServicio: cita.subtipoServicio,
+    asesorAsignado: cita.asesor_id
+      ? { id: cita.asesor_id.toString(), nombre: asesorNombre || `Asesor #${cita.asesor_id}` }
+      : null,
+    observaciones: cita.observaciones || undefined,
+  }
+}
+
+/**
+ * Formats date string to readable format
+ * "2026-01-30" → "30 Ene"
+ */
+function formatFechaCita(fecha: string): string {
+  const date = new Date(fecha + "T00:00:00")
+  const day = date.getDate()
+  const months = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+  return `${day} ${months[date.getMonth()]}`
 }
 
 function toTitleCase(str: string): string {
@@ -138,9 +185,10 @@ interface StaffAssignPopoverProps {
   type: "asesor" | "tecnico"
   onAssign: (empleado: Empleado) => void
   children: React.ReactNode
+  cachedEmpleados?: Empleado[]  // Optional cached list to avoid refetching
 }
 
-function StaffAssignPopover({ type, onAssign, children }: StaffAssignPopoverProps) {
+function StaffAssignPopover({ type, onAssign, children, cachedEmpleados }: StaffAssignPopoverProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
   const [empleados, setEmpleados] = useState<Empleado[]>([])
@@ -148,6 +196,12 @@ function StaffAssignPopover({ type, onAssign, children }: StaffAssignPopoverProp
 
   useEffect(() => {
     if (!open) return
+
+    // Use cached list if available (for asesores)
+    if (cachedEmpleados && cachedEmpleados.length > 0) {
+      setEmpleados(cachedEmpleados)
+      return
+    }
 
     const fetchEmpleados = async () => {
       setLoading(true)
@@ -165,7 +219,7 @@ function StaffAssignPopover({ type, onAssign, children }: StaffAssignPopoverProp
     }
 
     fetchEmpleados()
-  }, [open, type])
+  }, [open, type, cachedEmpleados])
 
   const filtered = useMemo(() => {
     if (!search.trim()) return empleados
@@ -341,10 +395,15 @@ function KanbanCardItem({ card, onCardClick, onAssignTecnico }: KanbanCardItemPr
 interface CitaCardItemProps {
   cita: KanbanCitaCard
   onAssignAsesor: (cita: KanbanCitaCard, empleado: Empleado) => void
+  isAssigning?: boolean
+  cachedAsesores?: Empleado[]
 }
 
-function CitaCardItem({ cita, onAssignAsesor }: CitaCardItemProps) {
+function CitaCardItem({ cita, onAssignAsesor, isAssigning, cachedAsesores }: CitaCardItemProps) {
   const brandColor = BRAND_COLORS[cita.vehiculoMarca] || "bg-gray-500"
+
+  // Check if cita is for today
+  const isToday = cita.fecha === new Date().toISOString().split("T")[0]
 
   return (
     <motion.div
@@ -354,11 +413,18 @@ function CitaCardItem({ cita, onAssignAsesor }: CitaCardItemProps) {
     >
       <Card className="border-l-4 border-l-blue-400 dark:border-l-blue-500">
         <CardContent className="p-3">
-          {/* Header - Time + Plate */}
+          {/* Header - Date/Time + Plate */}
           <div className="flex items-center justify-between mb-2">
-            <Badge variant="outline" className="h-5 text-[10px] font-mono border-blue-300 text-blue-700 dark:text-blue-400 dark:border-blue-600">
-              {cita.hora}
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              <Badge variant="outline" className="h-5 text-[10px] font-mono border-blue-300 text-blue-700 dark:text-blue-400 dark:border-blue-600">
+                {cita.hora}
+              </Badge>
+              {!isToday && (
+                <Badge variant="secondary" className="h-5 text-[10px]">
+                  {formatFechaCita(cita.fecha)}
+                </Badge>
+              )}
+            </div>
             <div className="flex items-center gap-1.5">
               <div className={cn("h-5 w-5 rounded flex items-center justify-center", brandColor)}>
                 <Car className="h-3 w-3 text-white" />
@@ -375,31 +441,51 @@ function CitaCardItem({ cita, onAssignAsesor }: CitaCardItemProps) {
             {cita.vehiculoMarca} {cita.vehiculoModelo}
           </p>
 
-          {/* Service type */}
-          <p className="text-xs line-clamp-2 mb-2">
-            {cita.servicio}
+          {/* Service type - highlighted subtipo */}
+          <p className="text-xs font-medium text-blue-600 dark:text-blue-400 mb-2">
+            {cita.subtipoServicio || cita.servicio}
           </p>
+
+          {/* Observations if any */}
+          {cita.observaciones && (
+            <p className="text-xs text-muted-foreground line-clamp-2 mb-2 italic">
+              "{cita.observaciones}"
+            </p>
+          )}
 
           {/* Assigned advisor or assign button */}
           <div className="pt-2 border-t" onClick={(e) => e.stopPropagation()}>
-            {cita.asesorAsignado ? (
-              <div className="flex items-center gap-1.5">
-                <Check className="h-3 w-3 text-green-600" />
-                <span className="text-xs text-green-700 dark:text-green-400 truncate">
-                  {toTitleCase(cita.asesorAsignado.nombre)}
-                </span>
+            {cita.asesorAsignado?.nombre ? (
+              <div className="flex items-center gap-2 bg-green-50 dark:bg-green-950/30 rounded-md px-2 py-1.5">
+                <div className="flex items-center justify-center h-5 w-5 rounded-full bg-green-100 dark:bg-green-900/50">
+                  <Check className="h-3 w-3 text-green-600 dark:text-green-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">
+                    Asesor asignado
+                  </p>
+                  <p className="text-xs font-medium text-green-700 dark:text-green-300 truncate">
+                    {toTitleCase(cita.asesorAsignado.nombre)}
+                  </p>
+                </div>
               </div>
             ) : (
               <StaffAssignPopover
                 type="asesor"
                 onAssign={(empleado) => onAssignAsesor(cita, empleado)}
+                cachedEmpleados={cachedAsesores}
               >
                 <Button
                   variant="ghost"
                   size="sm"
                   className="w-full h-7 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                  disabled={isAssigning}
                 >
-                  <UserPlus className="h-3 w-3 mr-1.5" />
+                  {isAssigning ? (
+                    <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                  ) : (
+                    <UserPlus className="h-3 w-3 mr-1.5" />
+                  )}
                   Asignar Asesor
                 </Button>
               </StaffAssignPopover>
@@ -418,10 +504,14 @@ function CitaCardItem({ cita, onAssignAsesor }: CitaCardItemProps) {
 interface CitasColumnProps {
   citas: KanbanCitaCard[]
   onAssignAsesor: (cita: KanbanCitaCard, empleado: Empleado) => void
+  onRefresh: () => void
+  isLoading?: boolean
+  assigningCitaId?: string | null
+  cachedAsesores?: Empleado[]
 }
 
-function CitasColumn({ citas, onAssignAsesor }: CitasColumnProps) {
-  const unassignedCount = citas.filter(c => !c.asesorAsignado).length
+function CitasColumn({ citas, onAssignAsesor, onRefresh, isLoading, assigningCitaId, cachedAsesores }: CitasColumnProps) {
+  const unassignedCount = citas.filter(c => !c.asesorAsignado?.nombre).length
 
   return (
     <div className="flex-shrink-0 w-72 flex flex-col h-full">
@@ -429,9 +519,18 @@ function CitasColumn({ citas, onAssignAsesor }: CitasColumnProps) {
       <div className="flex items-center justify-between px-3 py-2 bg-blue-50 dark:bg-blue-950/30 rounded-t-lg border border-b-0 border-blue-200 dark:border-blue-800">
         <div className="flex items-center gap-1.5">
           <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <h3 className="font-semibold text-sm text-blue-900 dark:text-blue-100">Citas Hoy</h3>
+          <h3 className="font-semibold text-sm text-blue-900 dark:text-blue-100">Citas</h3>
         </div>
         <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-blue-600 hover:text-blue-700"
+            onClick={onRefresh}
+            disabled={isLoading}
+          >
+            <RefreshCw className={cn("h-3.5 w-3.5", isLoading && "animate-spin")} />
+          </Button>
           <Badge variant="secondary" className="h-5 text-xs font-normal">
             {citas.length}
           </Badge>
@@ -446,9 +545,14 @@ function CitasColumn({ citas, onAssignAsesor }: CitasColumnProps) {
       {/* Cards container */}
       <div className="flex-1 border rounded-b-lg border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10 p-3 overflow-y-auto">
         <div className="space-y-3">
-          {citas.length === 0 ? (
+          {isLoading && citas.length === 0 ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-5 w-5 animate-spin mx-auto text-blue-500" />
+              <p className="text-sm text-muted-foreground mt-2">Cargando citas...</p>
+            </div>
+          ) : citas.length === 0 ? (
             <div className="text-center py-8 text-sm text-muted-foreground">
-              Sin citas para hoy
+              Sin citas confirmadas
             </div>
           ) : (
             citas.map((cita) => (
@@ -456,6 +560,8 @@ function CitasColumn({ citas, onAssignAsesor }: CitasColumnProps) {
                 key={cita.id}
                 cita={cita}
                 onAssignAsesor={onAssignAsesor}
+                isAssigning={assigningCitaId === cita.id}
+                cachedAsesores={cachedAsesores}
               />
             ))
           )}
@@ -531,15 +637,74 @@ function KanbanColumn({ phase, cards, onCardClick, onAssignTecnico }: KanbanColu
 export function KanbanBoardView({ board }: KanbanBoardViewProps) {
   const phases: WorkOrderPhase[] = ["recepcion", "diagnostico", "reparacion", "calidad", "entrega"]
 
-  // Local state for assignments (visual only, no POST yet)
-  const [citasState, setCitasState] = useState<KanbanCitaCard[]>(board.columnas.citas || [])
+  const { getToken } = useAuthToken()
+
+  // Citas state - fetched from API
+  const [citasState, setCitasState] = useState<KanbanCitaCard[]>([])
+  const [citasLoading, setCitasLoading] = useState(true)
+  const [assigningCitaId, setAssigningCitaId] = useState<string | null>(null)
+
+  // Asesores cache - both list and map for different uses
+  const [asesoresList, setAsesoresList] = useState<Empleado[]>([])
+  const [asesoresMap, setAsesoresMap] = useState<Map<number, string>>(new Map())
+
+  // Dialog state
   const [selectedCard, setSelectedCard] = useState<KanbanCard | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  // Sync citas state when board updates
+  // Fetch asesores list and build lookup map
+  const fetchAsesores = useCallback(async () => {
+    try {
+      const asesores = await getAsesoresServicio(CURRENT_TALLER_ID)
+      // Store the list for the dropdown cache
+      setAsesoresList(asesores)
+      // Build the map for name lookups
+      const map = new Map<number, string>()
+      asesores.forEach((asesor) => {
+        map.set(asesor.idEmpleado, asesor.nombreEmpleado)
+      })
+      setAsesoresMap(map)
+      return { list: asesores, map }
+    } catch (error) {
+      console.error("Error fetching asesores:", error)
+      return { list: [] as Empleado[], map: new Map<number, string>() }
+    }
+  }, [])
+
+  // Fetch citas from API
+  const fetchCitas = useCallback(async () => {
+    setCitasLoading(true)
+    try {
+      const token = await getToken()
+      if (!token) {
+        console.error("No auth token available")
+        return
+      }
+
+      // Fetch asesores first to build the lookup map (if not cached)
+      let currentAsesoresMap = asesoresMap
+      if (asesoresMap.size === 0) {
+        const result = await fetchAsesores()
+        currentAsesoresMap = result.map
+      }
+
+      const citasAPI = await getCitasConfirmadas(CURRENT_SUCURSAL_ID, token)
+      const mappedCitas = citasAPI.map((cita) => mapCitaToCard(cita, currentAsesoresMap))
+      setCitasState(mappedCitas)
+    } catch (error) {
+      console.error("Error fetching citas:", error)
+      toast.error("Error al cargar citas", {
+        description: "No se pudieron cargar las citas confirmadas"
+      })
+    } finally {
+      setCitasLoading(false)
+    }
+  }, [getToken, asesoresMap, fetchAsesores])
+
+  // Fetch citas on mount
   useEffect(() => {
-    setCitasState(board.columnas.citas || [])
-  }, [board.columnas.citas])
+    fetchCitas()
+  }, [fetchCitas])
 
   const totalDelayed = phases
     .flatMap((phase) => board.columnas[phase] || [])
@@ -550,17 +715,39 @@ export function KanbanBoardView({ board }: KanbanBoardViewProps) {
     setDialogOpen(true)
   }
 
-  const handleAssignAsesor = (cita: KanbanCitaCard, empleado: Empleado) => {
-    setCitasState((prev) =>
-      prev.map((c) =>
-        c.id === cita.id
-          ? { ...c, asesorAsignado: { id: empleado.idEmpleado.toString(), nombre: empleado.nombreEmpleado } }
-          : c
+  const handleAssignAsesor = async (cita: KanbanCitaCard, empleado: Empleado) => {
+    setAssigningCitaId(cita.id)
+    try {
+      const token = await getToken()
+      if (!token) {
+        throw new Error("No se pudo obtener el token de autenticación")
+      }
+
+      // Call API to assign asesor
+      await asignarAsesorCita(cita.id, empleado.idEmpleado, token)
+
+      // Update local state optimistically
+      setCitasState((prev) =>
+        prev.map((c) =>
+          c.id === cita.id
+            ? { ...c, asesorAsignado: { id: empleado.idEmpleado.toString(), nombre: empleado.nombreEmpleado } }
+            : c
+        )
       )
-    )
-    toast.success("Asesor asignado", {
-      description: `${toTitleCase(empleado.nombreEmpleado)} asignado a cita de ${cita.clienteNombre}`,
-    })
+
+      toast.success("Asesor asignado", {
+        description: `${toTitleCase(empleado.nombreEmpleado)} asignado a cita de ${cita.clienteNombre}`,
+      })
+    } catch (error) {
+      console.error("Error assigning asesor:", error)
+      toast.error("Error al asignar asesor", {
+        description: error instanceof Error ? error.message : "No se pudo asignar el asesor"
+      })
+      // Refresh citas to reset state
+      fetchCitas()
+    } finally {
+      setAssigningCitaId(null)
+    }
   }
 
   const handleAssignTecnico = (card: KanbanCard, empleado: Empleado) => {
@@ -594,6 +781,10 @@ export function KanbanBoardView({ board }: KanbanBoardViewProps) {
           <CitasColumn
             citas={citasState}
             onAssignAsesor={handleAssignAsesor}
+            onRefresh={fetchCitas}
+            isLoading={citasLoading}
+            assigningCitaId={assigningCitaId}
+            cachedAsesores={asesoresList}
           />
 
           {/* Phase Columns */}

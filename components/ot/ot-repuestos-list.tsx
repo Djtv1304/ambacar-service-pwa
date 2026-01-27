@@ -96,8 +96,10 @@ export function RepuestosList({ repuestos, onAddRepuesto, readOnly = false, sucu
   const stockViewportRef = useRef<HTMLDivElement>(null)
   const prevResultsLengthRef = useRef(0)
 
+  // Siempre cargar agencias cuando se puede agregar repuestos
   useEffect(() => {
-    if (!sucursalOT) return
+    // Si no hay función onAddRepuesto, no necesitamos las agencias
+    if (!onAddRepuesto) return
 
     const fetchAgencias = async () => {
       setLoadingAgencias(true)
@@ -105,11 +107,17 @@ export function RepuestosList({ repuestos, onAddRepuesto, readOnly = false, sucu
         const data = await getAgencias()
         setAgencias(data)
 
-        const match = data.find(
-          (a) => a.nombreAgencia.toLowerCase().trim() === sucursalOT.toLowerCase().trim()
-        )
-        if (match) {
-          setSelectedAgencia(match.idAgencia)
+        // Si tenemos sucursalOT, pre-seleccionar esa sucursal
+        if (sucursalOT) {
+          const match = data.find(
+            (a) => a.nombreAgencia.toLowerCase().trim() === sucursalOT.toLowerCase().trim()
+          )
+          if (match) {
+            setSelectedAgencia(match.idAgencia)
+          }
+        } else if (data.length > 0) {
+          // Si no hay sucursalOT, seleccionar la primera agencia por defecto
+          setSelectedAgencia(data[0].idAgencia)
         }
       } catch (error) {
         console.error("Error loading agencias:", error)
@@ -119,7 +127,7 @@ export function RepuestosList({ repuestos, onAddRepuesto, readOnly = false, sucu
     }
 
     fetchAgencias()
-  }, [sucursalOT])
+  }, [sucursalOT, onAddRepuesto])
 
   // Reset stock when agency changes
   useEffect(() => {
@@ -355,7 +363,8 @@ export function RepuestosList({ repuestos, onAddRepuesto, readOnly = false, sucu
               </Badge>
             </div>
             <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-              {sucursalOT && agencias.length > 0 && (
+              {/* Mostrar selector cuando hay agencias y se puede agregar */}
+              {!readOnly && onAddRepuesto && agencias.length > 0 && (
                 <Select value={selectedAgencia} onValueChange={setSelectedAgencia}>
                   <SelectTrigger className="w-full sm:w-[180px] h-8 text-xs">
                     <Building2 className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />

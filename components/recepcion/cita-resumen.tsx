@@ -1,29 +1,17 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Calendar, Car, AlertCircle, Pen } from "lucide-react"
+import { Calendar, Car, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { useState } from "react"
 
 interface CitaResumenProps {
   cita: any
-  onKmEdited?: (km: number) => void
   onProceed?: () => void
 }
 
-export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
-  const [km, setKm] = useState(cita.vehiculo.kilometraje_actual)
-  const [openDialog, setOpenDialog] = useState(false)
-
-  const handleGuardarKm = () => {
-    onKmEdited?.(km)
-    setOpenDialog(false)
-  }
-
+export function CitaResumen({ cita, onProceed }: CitaResumenProps) {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -96,37 +84,8 @@ export function CitaResumen({ cita, onKmEdited, onProceed }: CitaResumenProps) {
 
             {/* Kilometraje */}
             <div className="pt-2 border-t">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">Kilometraje</p>
-                  <p className="font-medium text-base">{km.toLocaleString()} km</p>
-                </div>
-                <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <Pen className="h-3 w-3 mr-1" />
-                      Editar
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Editar Kilometraje</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <Input
-                        type="number"
-                        value={km}
-                        onChange={(e) => setKm(Number(e.target.value))}
-                        placeholder="Ingresa el kilometraje actual"
-                        className="text-base"
-                      />
-                      <Button onClick={handleGuardarKm} className="w-full bg-primary hover:bg-primary/90">
-                        Guardar
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
+              <p className="text-xs text-muted-foreground">Kilometraje</p>
+              <p className="font-medium text-base">{cita.vehiculo.kilometraje_actual.toLocaleString()} km</p>
             </div>
           </CardContent>
         </Card>

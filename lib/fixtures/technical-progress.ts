@@ -104,6 +104,15 @@ export interface TechnicianOrder {
     nombre: string
     especialidad: string
   } | null
+  sucursal?: {
+    id: number
+    codigo: string
+    nombre: string
+    direccion: string
+    telefono: string
+    email: string
+    ciudad: string
+  } | null
   fases: PhaseTimelineItem[]
   trabajosAdicionales: AdditionalWorkItem[]
   repuestosUtilizados: PartUsed[]

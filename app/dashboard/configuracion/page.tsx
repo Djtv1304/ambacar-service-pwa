@@ -23,8 +23,10 @@ import { cambiarPasswordPropio } from "@/lib/api/usuarios"
 import { toast } from "sonner"
 import { useAuth } from "@/components/auth/auth-provider"
 import { getTalleres, type Taller } from "@/lib/api/erp-ambacar"
+import { getSucursales, updateSucursal, type Sucursal, type UpdateSucursalData } from "@/lib/api/sucursales"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { CURRENT_TALLER_ID } from "@/lib/constants/taller"
+import { useAuthToken } from "@/hooks/use-auth-token"
 import type { UserRole } from "@/lib/types"
 
 // Zod schema para validar el formulario de cambio de contraseña
@@ -56,8 +58,21 @@ function toTitleCase(str: string): string {
     .join(" ")
 }
 
+// Interfaz para los campos editables del formulario de sucursal
+interface SucursalFormData {
+  nombre: string
+  email: string
+  direccion: string
+  ciudad: string
+  ruc: string
+  telefono: string
+  hora_apertura: string
+  hora_cierre: string
+}
+
 export default function ConfiguracionPage() {
   const { user } = useAuth()
+  const { getToken } = useAuthToken()
   const { theme, setTheme } = useTheme()
   const searchParams = useSearchParams()
   const [mounted, setMounted] = useState(false)
@@ -66,6 +81,35 @@ export default function ConfiguracionPage() {
   const [tallerView, setTallerView] = useState<"info" | "talleres">("info")
   const [talleres, setTalleres] = useState<Taller[]>([])
   const [loadingTalleres, setLoadingTalleres] = useState(false)
+
+  // Estado para la sucursal del taller
+  const [sucursal, setSucursal] = useState<Sucursal | null>(null)
+  const [loadingSucursal, setLoadingSucursal] = useState(false)
+  const [savingSucursal, setSavingSucursal] = useState(false)
+
+  // Estado para el formulario editable
+  const [formData, setFormData] = useState<SucursalFormData>({
+    nombre: "",
+    email: "",
+    direccion: "",
+    ciudad: "",
+    ruc: "",
+    telefono: "",
+    hora_apertura: "",
+    hora_cierre: "",
+  })
+
+  // Estado inicial para detectar cambios
+  const [initialFormData, setInitialFormData] = useState<SucursalFormData>({
+    nombre: "",
+    email: "",
+    direccion: "",
+    ciudad: "",
+    ruc: "",
+    telefono: "",
+    hora_apertura: "",
+    hora_cierre: "",
+  })
 
   // Form handling para cambio de contraseña
   const {
@@ -136,6 +180,122 @@ export default function ConfiguracionPage() {
 
     fetchTalleres()
   }, [activeTab, talleres.length])
+
+  // Fetch sucursal data when General tab is active
+  useEffect(() => {
+    if (activeTab !== "general" || sucursal !== null) return
+
+    const fetchSucursal = async () => {
+      setLoadingSucursal(true)
+      try {
+        const token = await getToken()
+        if (!token) return
+
+        const sucursales = await getSucursales(token)
+        if (sucursales.length > 0) {
+          const suc = sucursales[0] // Tomamos la primera (y única) sucursal
+          setSucursal(suc)
+
+          // Inicializar el formulario con los datos de la sucursal
+          const initialData: SucursalFormData = {
+            nombre: suc.nombre || "",
+            email: suc.email || "",
+            direccion: suc.direccion || "",
+            ciudad: suc.ciudad || "",
+            ruc: suc.ruc || "",
+            telefono: suc.telefono || "",
+            hora_apertura: suc.hora_apertura?.slice(0, 5) || "", // "09:30:00" -> "09:30"
+            hora_cierre: suc.hora_cierre?.slice(0, 5) || "",
+          }
+          setFormData(initialData)
+          setInitialFormData(initialData)
+        }
+      } catch (error) {
+        console.error("Error loading sucursal:", error)
+        toast.error("Error al cargar la información del taller")
+      } finally {
+        setLoadingSucursal(false)
+      }
+    }
+
+    fetchSucursal()
+  }, [activeTab, sucursal, getToken])
+
+  // Detectar si hay cambios en el formulario
+  const hasFormChanges = useMemo(() => {
+    return (
+      formData.nombre !== initialFormData.nombre ||
+      formData.email !== initialFormData.email ||
+      formData.direccion !== initialFormData.direccion ||
+      formData.ciudad !== initialFormData.ciudad ||
+      formData.ruc !== initialFormData.ruc ||
+      formData.telefono !== initialFormData.telefono ||
+      formData.hora_apertura !== initialFormData.hora_apertura ||
+      formData.hora_cierre !== initialFormData.hora_cierre
+    )
+  }, [formData, initialFormData])
+
+  // Verificar si el usuario puede editar (admin o manager)
+  const canEditSucursal = user?.role === "admin" || user?.role === "manager"
+
+  // Handler para guardar cambios de la sucursal
+  const handleSaveSucursal = async () => {
+    if (!sucursal || !hasFormChanges || !canEditSucursal) return
+
+    setSavingSucursal(true)
+    try {
+      const token = await getToken()
+      if (!token) {
+        toast.error("Error de autenticación")
+        return
+      }
+
+      // Preparar datos para el PATCH (convertir hora a formato HH:MM:SS)
+      const updateData: UpdateSucursalData = {
+        nombre: formData.nombre,
+        email: formData.email,
+        direccion: formData.direccion,
+        ciudad: formData.ciudad,
+        ruc: formData.ruc,
+        telefono: formData.telefono,
+        hora_apertura: formData.hora_apertura ? `${formData.hora_apertura}:00` : undefined,
+        hora_cierre: formData.hora_cierre ? `${formData.hora_cierre}:00` : undefined,
+      }
+
+      const updatedSucursal = await updateSucursal(sucursal.id, updateData, token)
+      setSucursal(updatedSucursal)
+
+      // Actualizar el estado inicial para reflejar los nuevos valores guardados
+      const newInitialData: SucursalFormData = {
+        nombre: updatedSucursal.nombre || "",
+        email: updatedSucursal.email || "",
+        direccion: updatedSucursal.direccion || "",
+        ciudad: updatedSucursal.ciudad || "",
+        ruc: updatedSucursal.ruc || "",
+        telefono: updatedSucursal.telefono || "",
+        hora_apertura: updatedSucursal.hora_apertura?.slice(0, 5) || "",
+        hora_cierre: updatedSucursal.hora_cierre?.slice(0, 5) || "",
+      }
+      setFormData(newInitialData)
+      setInitialFormData(newInitialData)
+
+      toast.success("Cambios guardados", {
+        description: "La información del taller ha sido actualizada exitosamente",
+      })
+    } catch (error: any) {
+      console.error("Error saving sucursal:", error)
+      toast.error("Error al guardar cambios", {
+        description: error.message || "No se pudo actualizar la información del taller",
+      })
+    } finally {
+      setSavingSucursal(false)
+    }
+  }
+
+  // Handler para actualizar campos del formulario
+  const handleFormChange = (field: keyof SucursalFormData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
 
   // Datos del usuario para la Tab de Perfil
   const userInitials = user ? `${user.first_name[0]}${user.last_name[0]}`.toUpperCase() : "??"
@@ -383,45 +543,132 @@ export default function ConfiguracionPage() {
             <CardContent className="space-y-4">
               {tallerView === "info" ? (
                 <>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="nombre-taller">Nombre del Taller</Label>
-                      <Input id="nombre-taller" defaultValue="Ambacar Service Center" />
+                  {loadingSucursal ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="ruc">RUC</Label>
-                      <Input id="ruc" defaultValue="1234567890001" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="telefono">Teléfono</Label>
-                      <Input id="telefono" defaultValue="+593 2 234 5678" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input id="email" type="email" defaultValue="contacto@ambacar.com" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="direccion">Dirección</Label>
-                    <Input id="direccion" defaultValue="Av. Amazonas N24-03 y Colón, Quito, Ecuador" />
-                  </div>
-                  <Separator />
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Horario de Atención</h3>
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="horario-inicio">Hora de Apertura</Label>
-                        <Input id="horario-inicio" type="time" defaultValue="08:00" />
+                  ) : sucursal ? (
+                    <>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="nombre-taller">Nombre del Taller</Label>
+                          <Input
+                            id="nombre-taller"
+                            value={formData.nombre}
+                            onChange={(e) => handleFormChange("nombre", e.target.value)}
+                            disabled={!canEditSucursal || savingSucursal}
+                            className={!canEditSucursal ? "bg-muted" : ""}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="ruc">RUC</Label>
+                          <Input
+                            id="ruc"
+                            value={formData.ruc}
+                            onChange={(e) => handleFormChange("ruc", e.target.value)}
+                            disabled={!canEditSucursal || savingSucursal}
+                            className={!canEditSucursal ? "bg-muted" : ""}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="telefono">Teléfono</Label>
+                          <Input
+                            id="telefono"
+                            value={formData.telefono}
+                            onChange={(e) => handleFormChange("telefono", e.target.value)}
+                            disabled={!canEditSucursal || savingSucursal}
+                            className={!canEditSucursal ? "bg-muted" : ""}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="email">Email</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={formData.email}
+                            onChange={(e) => handleFormChange("email", e.target.value)}
+                            disabled={!canEditSucursal || savingSucursal}
+                            className={!canEditSucursal ? "bg-muted" : ""}
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="horario-fin">Hora de Cierre</Label>
-                        <Input id="horario-fin" type="time" defaultValue="18:00" />
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="space-y-2">
+                          <Label htmlFor="direccion">Dirección</Label>
+                          <Input
+                            id="direccion"
+                            value={formData.direccion}
+                            onChange={(e) => handleFormChange("direccion", e.target.value)}
+                            disabled={!canEditSucursal || savingSucursal}
+                            className={!canEditSucursal ? "bg-muted" : ""}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="ciudad">Ciudad</Label>
+                          <Input
+                            id="ciudad"
+                            value={formData.ciudad}
+                            onChange={(e) => handleFormChange("ciudad", e.target.value)}
+                            disabled={!canEditSucursal || savingSucursal}
+                            className={!canEditSucursal ? "bg-muted" : ""}
+                          />
+                        </div>
                       </div>
+                      <Separator />
+                      <div className="space-y-4">
+                        <h3 className="font-semibold">Horario de Atención</h3>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label htmlFor="horario-inicio">Hora de Apertura</Label>
+                            <Input
+                              id="horario-inicio"
+                              type="time"
+                              value={formData.hora_apertura}
+                              onChange={(e) => handleFormChange("hora_apertura", e.target.value)}
+                              disabled={!canEditSucursal || savingSucursal}
+                              className={!canEditSucursal ? "bg-muted" : ""}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="horario-fin">Hora de Cierre</Label>
+                            <Input
+                              id="horario-fin"
+                              type="time"
+                              value={formData.hora_cierre}
+                              onChange={(e) => handleFormChange("hora_cierre", e.target.value)}
+                              disabled={!canEditSucursal || savingSucursal}
+                              className={!canEditSucursal ? "bg-muted" : ""}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      {canEditSucursal && (
+                        <div className="flex justify-end">
+                          <Button
+                            onClick={handleSaveSucursal}
+                            disabled={!hasFormChanges || savingSucursal}
+                          >
+                            {savingSucursal ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Guardando...
+                              </>
+                            ) : (
+                              <>
+                                <Check className="h-4 w-4 mr-2" />
+                                Guardar Cambios
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <Building2 className="h-8 w-8 text-muted-foreground/50 mb-2" />
+                      <p className="text-sm text-muted-foreground">No se pudo cargar la información del taller</p>
                     </div>
-                  </div>
-                  <div className="flex justify-end">
-                    <Button>Guardar Cambios</Button>
-                  </div>
+                  )}
                 </>
               ) : (
                 <>

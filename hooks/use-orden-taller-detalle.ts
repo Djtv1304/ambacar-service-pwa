@@ -34,6 +34,8 @@ export function useOrdenTallerDetalle(ordenId: string): UseOrdenTallerDetalleRet
       vehiculo: apiData.vehiculo,
       asesor: apiData.asesor,
       tecnicoAsignado: apiData.tecnicoAsignado,
+      // Incluir sucursal si existe
+      sucursal: apiData.sucursal || null,
       // Transformar fases con conversión de fechas
       fases: apiData.fases.map((fase): PhaseTimelineItem => ({
         id: fase.id,
