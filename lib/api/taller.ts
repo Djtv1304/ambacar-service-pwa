@@ -182,6 +182,7 @@ export interface OrdenTallerDetalleAPI {
   } | null
   fases: {
     id: string
+    etapaOrdenTrabajoId: number  // ID de la etapa para completar fase via API
     fase: "recepcion" | "diagnostico" | "reparacion" | "calidad" | "entrega"
     estado: "completed" | "in_progress" | "pending"
     fechaInicio?: string  // ISO string

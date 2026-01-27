@@ -39,6 +39,7 @@ export interface PhaseEvidence {
 // Phase timeline item
 export interface PhaseTimelineItem {
   id: string
+  etapaOrdenTrabajoId?: number  // ID de la etapa para completar fase via API
   fase: WorkOrderPhase
   estado: PhaseStatus
   fechaInicio?: Date

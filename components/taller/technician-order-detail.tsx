@@ -42,7 +42,7 @@ export function TechnicianOrderDetail({ order: initialOrder }: TechnicianOrderDe
   }, [])
 
   // Handle phase completion
-  const handleCompletePhase = useCallback(async (phaseId: string, data: PhaseCompletionData) => {
+  const handleCompletePhase = useCallback(async (etapaOrdenTrabajoId: number, phaseId: string, data: PhaseCompletionData) => {
     try {
       // Get auth token
       const token = await getToken()
@@ -50,8 +50,8 @@ export function TechnicianOrderDetail({ order: initialOrder }: TechnicianOrderDe
         throw new Error("No se pudo obtener el token de autenticación")
       }
 
-      // Call API to complete phase
-      await completarEtapaOrdenTrabajo(phaseId, {
+      // Call API to complete phase using etapaOrdenTrabajoId
+      await completarEtapaOrdenTrabajo(etapaOrdenTrabajoId.toString(), {
         observaciones: data.observaciones,
         evidencia: data.evidencia,
         responsable_id: data.responsable_id,

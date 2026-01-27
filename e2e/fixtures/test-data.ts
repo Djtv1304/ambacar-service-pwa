@@ -1,27 +1,28 @@
 /**
  * Datos de prueba para E2E tests
  * Fixtures compartidos entre todos los tests de Playwright
+ * CREDENCIALES REALES - NO COMMITEAR A REPOSITORIO PÚBLICO
  */
 
 export const testUsers = {
   admin: {
-    email: 'admin@ambacar.ec',
-    password: 'AdminTest123',
+    email: 'diegosebastian_t@hotmail.com',
+    password: 'MiPassword123!',
     role: 'admin',
   },
   technician: {
-    email: 'tecnico@ambacar.ec',
-    password: 'TecnicoTest123',
+    email: 'diegosebastia94@gmail.com',
+    password: 'MiPassword123!',
     role: 'technician',
   },
   operator: {
-    email: 'operador@ambacar.ec',
-    password: 'OperadorTest123',
+    email: 'andresfesvip@gmail.com',
+    password: 'Andres.1*',
     role: 'operator',
   },
   customer: {
-    email: 'cliente@test.com',
-    password: 'ClienteTest123',
+    email: 'aetf2006@hotmail.com',
+    password: 'MiPassword123!',
     role: 'customer',
   },
 }
@@ -37,7 +38,7 @@ export const testVehicle = {
 }
 
 export const testAppointment = {
-  fecha: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0], // 3 días en el futuro
+  fecha: new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0],
   hora: '09:00',
   servicio: 'Cambio de aceite y revisión general',
   sucursal: 'Quicentro Sur',

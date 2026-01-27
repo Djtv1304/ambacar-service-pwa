@@ -39,6 +39,7 @@ export function useOrdenTallerDetalle(ordenId: string): UseOrdenTallerDetalleRet
       // Transformar fases con conversión de fechas
       fases: apiData.fases.map((fase): PhaseTimelineItem => ({
         id: fase.id,
+        etapaOrdenTrabajoId: fase.etapaOrdenTrabajoId,  // ID para completar fase via API
         fase: fase.fase as any,  // Cast necesario
         estado: fase.estado,
         fechaInicio: fase.fechaInicio ? new Date(fase.fechaInicio) : undefined,

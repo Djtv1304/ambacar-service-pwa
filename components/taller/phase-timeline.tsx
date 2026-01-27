@@ -46,7 +46,7 @@ import { toast } from "sonner"
 
 interface PhaseTimelineProps {
   phases: PhaseTimelineItem[]
-  onCompletePhase: (phaseId: string, data: PhaseCompletionData) => Promise<void>
+  onCompletePhase: (etapaOrdenTrabajoId: number, phaseId: string, data: PhaseCompletionData) => Promise<void>
   currentTecnicoId?: string
   currentTecnicoNombre?: string
 }
@@ -500,7 +500,10 @@ export function PhaseTimeline({
 
     setIsSubmitting(true)
     try {
-      await onCompletePhase(selectedPhase.id, {
+      if (!selectedPhase.etapaOrdenTrabajoId) {
+        throw new Error("No se encontró el ID de la etapa para completar")
+      }
+      await onCompletePhase(selectedPhase.etapaOrdenTrabajoId, selectedPhase.id, {
         observaciones,
         evidencia: evidencia.map((e) => e.file),
         responsable_id: selectedTecnico.idEmpleado,
