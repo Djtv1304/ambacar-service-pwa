@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, LogOut, User, Sun, Moon, Palette } from "lucide-react"
+import { LogOut, User, Sun, Moon } from "lucide-react"
 import { useTransition, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -17,6 +17,7 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { logoutAction } from "@/lib/auth/actions"
 import { useToast } from "@/hooks/use-toast"
 import { useTheme } from "next-themes"
+import { NotificationPopover } from "@/components/notifications/notification-popover"
 import type { UserRole } from "@/lib/types"
 
 const roleLabels: Record<UserRole, string> = {
@@ -98,11 +99,7 @@ export function Topbar() {
 
       <div className="flex items-center gap-3">
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary" />
-          <span className="sr-only">Notificaciones</span>
-        </Button>
+        <NotificationPopover />
 
         {/* Theme Toggle */}
         {mounted && (

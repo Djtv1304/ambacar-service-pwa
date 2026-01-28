@@ -8,6 +8,7 @@ import { SidebarProvider, useSidebar } from "@/components/dashboard/sidebar-cont
 import { Topbar } from "@/components/dashboard/topbar"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { InstallPrompt } from "@/components/pwa/install-prompt"
+import { NotificationListener } from "@/components/notifications/notification-listener"
 import { useAuth } from "@/components/auth/auth-provider"
 import { Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
@@ -78,6 +79,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex h-screen overflow-hidden">
+      <NotificationListener />
       <Sidebar />
       <MobileMenuToggle />
       <motion.div

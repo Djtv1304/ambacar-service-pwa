@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import {
   Mail,
@@ -14,6 +15,7 @@ import {
   Phone,
   Edit2,
   FileText,
+  RefreshCw,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -34,22 +36,30 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+import { useAuth } from "@/components/auth/auth-provider"
+import { useCustomerNotifications } from "@/hooks/use-customer-notifications"
 import {
-  mockCustomerContact,
-  mockVehicles,
-  getCustomerDashboardSummary,
-  calculateServiceProgress,
-  type CustomerContactInfo,
-  type Vehicle,
-  type CustomerDashboardSummary,
-} from "@/lib/fixtures/notifications-data"
+  type VehicleNotificationsAPI,
+  type CustomerNotificationsAPI,
+  formatKilometers,
+  getInitials,
+  getYearFromDate,
+  calculateKmProgress,
+  getKmProgressColor,
+} from "@/lib/api/customer-notifications"
 
 interface CustomerDashboardViewProps {
   isReadOnly?: boolean
 }
 
 // Alert Banner Component - Top Priority
-function AlertBanner({ overdueCount, onViewDetails }: { overdueCount: number; onViewDetails: () => void }) {
+function AlertBanner({
+  overdueCount,
+  onViewDetails,
+}: {
+  overdueCount: number
+  onViewDetails: () => void
+}) {
   if (overdueCount === 0) return null
 
   return (
@@ -66,7 +76,8 @@ function AlertBanner({ overdueCount, onViewDetails }: { overdueCount: number; on
             </div>
             <div>
               <h3 className="font-semibold text-red-800 dark:text-red-300">
-                {overdueCount} Recordatorio{overdueCount > 1 ? "s" : ""} Vencido{overdueCount > 1 ? "s" : ""}
+                {overdueCount} Recordatorio{overdueCount > 1 ? "s" : ""} Vencido
+                {overdueCount > 1 ? "s" : ""}
               </h3>
               <p className="text-sm text-red-700 dark:text-red-400">
                 Tus vehículos requieren atención. Agenda una cita pronto.
@@ -89,17 +100,22 @@ function AlertBanner({ overdueCount, onViewDetails }: { overdueCount: number; on
 
 // Profile Card with Metrics
 function ProfileCard({
-  contact,
-  summary,
+  customer,
+  vehiclesCount,
+  remindersCount,
+  activeChannelsCount,
   onEdit,
   isReadOnly,
 }: {
-  contact: CustomerContactInfo
-  summary: CustomerDashboardSummary
+  customer: CustomerNotificationsAPI
+  vehiclesCount: number
+  remindersCount: number
+  activeChannelsCount: number
   onEdit: () => void
   isReadOnly?: boolean
 }) {
-  const initials = `${contact.firstName[0]}${contact.lastName[0]}`
+  const initials = getInitials(customer.first_name, customer.last_name)
+  const clientSince = getYearFromDate(customer.created_at)
 
   return (
     <Card className="dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm">
@@ -114,13 +130,20 @@ function ProfileCard({
             </Avatar>
             <div>
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                {contact.firstName} {contact.lastName}
+                {customer.full_name}
               </h3>
-              <p className="text-xs text-muted-foreground">Cliente desde 2023</p>
+              <p className="text-xs text-muted-foreground">
+                Cliente desde {clientSince}
+              </p>
             </div>
           </div>
           {!isReadOnly && (
-            <Button variant="ghost" size="icon" onClick={onEdit} className="h-8 w-8">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onEdit}
+              className="h-8 w-8"
+            >
               <Edit2 className="h-4 w-4" />
             </Button>
           )}
@@ -130,11 +153,15 @@ function ProfileCard({
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-sm">
             <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="text-gray-700 dark:text-gray-300 truncate">{contact.phone}</span>
+            <span className="text-gray-700 dark:text-gray-300 truncate">
+              {customer.phone || "No registrado"}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="text-gray-700 dark:text-gray-300 truncate">{contact.email}</span>
+            <span className="text-gray-700 dark:text-gray-300 truncate">
+              {customer.email || "No registrado"}
+            </span>
           </div>
         </div>
 
@@ -143,15 +170,21 @@ function ProfileCard({
         {/* Compact Metrics */}
         <div className="grid grid-cols-3 gap-2">
           <div className="text-center p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
-            <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{summary.vehiclesCount}</p>
+            <p className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              {vehiclesCount}
+            </p>
             <p className="text-xs text-muted-foreground">Vehículos</p>
           </div>
           <div className="text-center p-2 rounded-lg bg-green-50 dark:bg-green-900/20">
-            <p className="text-xl font-bold text-green-600 dark:text-green-400">{summary.activeRemindersCount}</p>
+            <p className="text-xl font-bold text-green-600 dark:text-green-400">
+              {remindersCount}
+            </p>
             <p className="text-xs text-muted-foreground">Recordatorios</p>
           </div>
           <div className="text-center p-2 rounded-lg bg-amber-50 dark:bg-amber-900/20">
-            <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{summary.activeChannelsCount}</p>
+            <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+              {activeChannelsCount}
+            </p>
             <p className="text-xs text-muted-foreground">Canales</p>
           </div>
         </div>
@@ -165,7 +198,9 @@ function QuickActionsCard() {
   return (
     <Card className="dark:bg-gray-900 border-gray-200 dark:border-gray-800 shadow-sm">
       <CardContent className="p-4 space-y-3">
-        <h3 className="text-sm font-medium text-muted-foreground">Acciones Rápidas</h3>
+        <h3 className="text-sm font-medium text-muted-foreground">
+          Acciones Rápidas
+        </h3>
 
         <Link href="/dashboard/notificaciones/preferencias" className="block">
           <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750 hover:border-red-200 dark:hover:border-red-800 transition-all cursor-pointer group">
@@ -233,7 +268,10 @@ function BudgetNotificationCard({
             </div>
           </div>
           {isReadOnly ? (
-            <Badge variant={enabled ? "default" : "secondary"} className="shrink-0">
+            <Badge
+              variant={enabled ? "default" : "secondary"}
+              className="shrink-0"
+            >
               {enabled ? "Activo" : "Inactivo"}
             </Badge>
           ) : (
@@ -250,8 +288,28 @@ function BudgetNotificationCard({
 }
 
 // Vehicle Card Component
-function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
-  const { progress, remainingKm, status } = calculateServiceProgress(vehicle)
+function VehicleCard({ vehicle }: { vehicle: VehicleNotificationsAPI }) {
+  const progress = calculateKmProgress(
+    vehicle.current_kilometers,
+    vehicle.next_service_kilometers
+  )
+  const remainingKm = vehicle.remaining_km ?? 0
+  const progressColor = getKmProgressColor(
+    vehicle.remaining_km,
+    vehicle.next_service_kilometers
+  )
+
+  // Determinar status basado en km restantes
+  const getStatus = (): "ok" | "warning" | "urgent" => {
+    if (!vehicle.next_service_kilometers || !vehicle.remaining_km) return "ok"
+    const percentRemaining =
+      (vehicle.remaining_km / vehicle.next_service_kilometers) * 100
+    if (percentRemaining > 20) return "ok"
+    if (percentRemaining > 10) return "warning"
+    return "urgent"
+  }
+
+  const status = getStatus()
 
   const statusColors = {
     ok: "text-green-600 dark:text-green-400",
@@ -293,8 +351,15 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
                   <span>{vehicle.year}</span>
                 </div>
               </div>
-              <Badge variant="outline" className={`${bgColors[status]} ${statusColors[status]} border-0 text-xs`}>
-                {status === "urgent" ? "Urgente" : status === "warning" ? "Próximo" : "OK"}
+              <Badge
+                variant="outline"
+                className={`${bgColors[status]} ${statusColors[status]} border-0 text-xs`}
+              >
+                {status === "urgent"
+                  ? "Urgente"
+                  : status === "warning"
+                    ? "Próximo"
+                    : "OK"}
               </Badge>
             </div>
 
@@ -303,10 +368,12 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
               <div className="flex items-center justify-between text-xs">
                 <span className="text-muted-foreground flex items-center gap-1">
                   <Gauge className="h-3.5 w-3.5" />
-                  {vehicle.currentKilometers.toLocaleString()} km
+                  {formatKilometers(vehicle.current_kilometers)} km
                 </span>
                 <span className={statusColors[status]}>
-                  {remainingKm > 0 ? `${remainingKm.toLocaleString()} km restantes` : "Servicio requerido"}
+                  {remainingKm > 0
+                    ? `${formatKilometers(remainingKm)} km restantes`
+                    : "Servicio requerido"}
                 </span>
               </div>
               <div className="relative h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -315,9 +382,11 @@ function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Próximo: {vehicle.nextServiceKilometers.toLocaleString()} km
-              </p>
+              {vehicle.next_service_kilometers && (
+                <p className="text-xs text-muted-foreground">
+                  Próximo: {formatKilometers(vehicle.next_service_kilometers)} km
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -346,63 +415,102 @@ function LoadingSkeleton() {
   )
 }
 
+// Error State
+function ErrorState({
+  error,
+  onRetry,
+}: {
+  error: string
+  onRetry: () => void
+}) {
+  return (
+    <Card className="dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+      <CardContent className="p-8 text-center">
+        <AlertTriangle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+        <h3 className="font-semibold text-lg mb-2">Error al cargar datos</h3>
+        <p className="text-muted-foreground mb-4">{error}</p>
+        <Button onClick={onRetry} variant="outline">
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Reintentar
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
 // Main Component
-export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardViewProps) {
-  const [isLoading, setIsLoading] = React.useState(true)
-  const [contact, setContact] = React.useState<CustomerContactInfo | null>(null)
-  const [vehicles, setVehicles] = React.useState<Vehicle[]>([])
-  const [summary, setSummary] = React.useState<CustomerDashboardSummary | null>(null)
+export function CustomerDashboardView({
+  isReadOnly = false,
+}: CustomerDashboardViewProps) {
+  const router = useRouter()
+  const { user } = useAuth()
+  const customerId = user?.id?.toString()
+
+  const {
+    customer,
+    vehicles,
+    reminders,
+    overdueReminders,
+    isLoading,
+    error,
+    refresh,
+    updateCustomerInfo,
+    isUpdating,
+  } = useCustomerNotifications(customerId)
+
   const [isEditingContact, setIsEditingContact] = React.useState(false)
   const [editForm, setEditForm] = React.useState({ email: "", phone: "" })
   const [budgetNotifications, setBudgetNotifications] = React.useState(true)
 
-  // Simular carga de datos
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setContact(mockCustomerContact)
-      setVehicles(mockVehicles)
-      setSummary(getCustomerDashboardSummary("customer-001"))
-      setIsLoading(false)
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [])
+  // Calcular métricas
+  const vehiclesCount = vehicles.length
+  const remindersCount = reminders.length
+  const activeChannelsCount =
+    customer?.channel_preferences?.filter((p) => p.enabled).length ?? 0
 
   const handleEditContact = () => {
-    if (contact) {
+    if (customer) {
       setEditForm({
-        email: contact.email,
-        phone: contact.phone,
+        email: customer.email || "",
+        phone: customer.phone || "",
       })
       setIsEditingContact(true)
     }
   }
 
-  const handleSaveContact = () => {
-    if (contact) {
-      setContact({
-        ...contact,
-        ...editForm,
-      })
+  const handleSaveContact = async () => {
+    const success = await updateCustomerInfo({
+      email: editForm.email || undefined,
+      phone: editForm.phone || undefined,
+    })
+
+    if (success) {
       setIsEditingContact(false)
       toast.success("Datos actualizados", {
-        description: "Tu información de contacto se ha actualizado correctamente.",
+        description:
+          "Tu información de contacto se ha actualizado correctamente.",
+      })
+    } else {
+      toast.error("Error al actualizar", {
+        description: "No se pudo actualizar la información. Intenta de nuevo.",
       })
     }
   }
 
   const handleBudgetToggle = (enabled: boolean) => {
     setBudgetNotifications(enabled)
-    toast.success(enabled ? "Notificaciones activadas" : "Notificaciones desactivadas", {
-      description: enabled
-        ? "Recibirás alertas de cambios en presupuestos."
-        : "Ya no recibirás alertas de presupuestos.",
-    })
+    toast.success(
+      enabled ? "Notificaciones activadas" : "Notificaciones desactivadas",
+      {
+        description: enabled
+          ? "Recibirás alertas de cambios en presupuestos."
+          : "Ya no recibirás alertas de presupuestos.",
+      }
+    )
   }
 
   const handleViewOverdueDetails = () => {
-    toast.info("Navegando a recordatorios", {
-      description: "Redirigiendo al planificador de recordatorios...",
-    })
+    router.push("/dashboard/notificaciones/recordatorios")
   }
 
   if (isLoading) {
@@ -421,7 +529,23 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
     )
   }
 
-  if (!contact || !summary) return null
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+            Mi Centro de Notificaciones
+          </h1>
+          <p className="text-muted-foreground">
+            Gestiona tus preferencias de comunicación y recordatorios
+          </p>
+        </div>
+        <ErrorState error={error} onRetry={refresh} />
+      </div>
+    )
+  }
+
+  if (!customer) return null
 
   return (
     <div className="space-y-6">
@@ -436,7 +560,10 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
             : "Gestiona tus preferencias de comunicación y recordatorios"}
         </p>
         {isReadOnly && (
-          <Badge variant="secondary" className="mt-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+          <Badge
+            variant="secondary"
+            className="mt-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+          >
             <AlertTriangle className="mr-1 h-3 w-3" />
             Modo Solo Lectura
           </Badge>
@@ -445,7 +572,7 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
 
       {/* Alert Banner - TOP PRIORITY */}
       <AlertBanner
-        overdueCount={summary.overdueReminders.length}
+        overdueCount={overdueReminders.length}
         onViewDetails={handleViewOverdueDetails}
       />
 
@@ -455,8 +582,10 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
         <div className="lg:col-span-4 space-y-4">
           {/* Profile Card with Metrics */}
           <ProfileCard
-            contact={contact}
-            summary={summary}
+            customer={customer}
+            vehiclesCount={vehiclesCount}
+            remindersCount={remindersCount}
+            activeChannelsCount={activeChannelsCount}
             onEdit={handleEditContact}
             isReadOnly={isReadOnly}
           />
@@ -465,6 +594,7 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
           <QuickActionsCard />
 
           {/* Budget Notification Toggle - Only for customers */}
+          {/* TODO: Habilitar cuando el backend soporte esta funcionalidad
           {!isReadOnly && (
             <BudgetNotificationCard
               enabled={budgetNotifications}
@@ -472,27 +602,45 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
               isReadOnly={isReadOnly}
             />
           )}
+          */}
         </div>
 
         {/* Right Column - Vehicles */}
         <div className="lg:col-span-8 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Mis Vehículos</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Mis Vehículos
+            </h2>
             <Badge variant="outline">{vehicles.length} registrados</Badge>
           </div>
 
-          <div className="space-y-3">
-            {vehicles.map((vehicle, index) => (
-              <motion.div
-                key={vehicle.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <VehicleCard vehicle={vehicle} />
-              </motion.div>
-            ))}
-          </div>
+          {vehicles.length === 0 ? (
+            <Card className="dark:bg-gray-900 border-gray-200 dark:border-gray-800">
+              <CardContent className="p-8 text-center">
+                <Car className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold text-lg mb-2">
+                  No tienes vehículos registrados
+                </h3>
+                <p className="text-muted-foreground">
+                  Tus vehículos aparecerán aquí una vez que sean registrados en
+                  el sistema.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {vehicles.map((vehicle, index) => (
+                <motion.div
+                  key={vehicle.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <VehicleCard vehicle={vehicle} />
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -512,7 +660,9 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
                 id="edit-email"
                 type="email"
                 value={editForm.email}
-                onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, email: e.target.value })
+                }
                 className="dark:bg-gray-800"
               />
             </div>
@@ -522,16 +672,21 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
                 id="edit-phone"
                 type="tel"
                 value={editForm.phone}
-                onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, phone: e.target.value })
+                }
                 className="dark:bg-gray-800"
               />
             </div>
             <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={() => setIsEditingContact(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditingContact(false)}
+              >
                 Cancelar
               </Button>
-              <Button onClick={handleSaveContact}>
-                Guardar Cambios
+              <Button onClick={handleSaveContact} disabled={isUpdating}>
+                {isUpdating ? "Guardando..." : "Guardar Cambios"}
               </Button>
             </div>
           </div>
@@ -540,4 +695,3 @@ export function CustomerDashboardView({ isReadOnly = false }: CustomerDashboardV
     </div>
   )
 }
-

@@ -20,10 +20,17 @@ import {
   Clock,
   Trash2,
   Edit2,
+  RefreshCw,
 } from "lucide-react"
 import { toast } from "sonner"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -56,50 +63,72 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+import { useAuth } from "@/components/auth/auth-provider"
+import { useReminders } from "@/hooks/use-reminders"
 import {
-  mockVehicles,
-  mockReminders,
-  calculateServiceProgress,
-  type Vehicle,
-  type MaintenanceReminder,
+  type VehicleNotificationsAPI,
+  type MaintenanceReminderAPI,
   type NotificationChannel,
-} from "@/lib/fixtures/notifications-data"
+  type ReminderType,
+  formatKilometers,
+  calculateKmProgress,
+  getKmProgressColor,
+  buildVehicleLabel,
+} from "@/lib/api/customer-notifications"
 
-// Form Schema
+// Form Schema - using preprocess to handle NaN from valueAsNumber
 const reminderSchema = z.object({
   vehicleId: z.string().min(1, "Selecciona un vehículo"),
   type: z.enum(["kilometers", "date", "both"]),
   description: z.string().min(3, "La descripción es requerida"),
-  targetKilometers: z.number().optional(),
-  targetDate: z.string().optional(),
-  notifyVia: z.array(z.enum(["push", "email", "whatsapp"])).min(1, "Selecciona al menos un canal"),
-  notifyBeforeDays: z.number().optional(),
-  notifyBeforeKm: z.number().optional(),
+  targetKilometers: z.preprocess(
+    (val) => (val === "" || Number.isNaN(val) ? null : val),
+    z.number().nullable().optional()
+  ),
+  targetDate: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.string().nullable().optional()
+  ),
+  notifyVia: z
+    .array(z.enum(["push", "email", "whatsapp"]))
+    .min(1, "Selecciona al menos un canal"),
+  notifyBeforeDays: z.preprocess(
+    (val) => (val === "" || Number.isNaN(val) ? null : val),
+    z.number().nullable().optional()
+  ),
+  notifyBeforeKm: z.preprocess(
+    (val) => (val === "" || Number.isNaN(val) ? null : val),
+    z.number().nullable().optional()
+  ),
 })
 
 type ReminderFormData = z.infer<typeof reminderSchema>
 
 // Status Badge Component
-function StatusBadge({ status }: { status: MaintenanceReminder["status"] }) {
+function StatusBadge({ status }: { status: MaintenanceReminderAPI["status"] }) {
   const statusConfig = {
     pending: {
       label: "Pendiente",
-      className: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+      className:
+        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
       icon: Clock,
     },
     notified: {
       label: "Notificado",
-      className: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+      className:
+        "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
       icon: Bell,
     },
     completed: {
       label: "Completado",
-      className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+      className:
+        "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
       icon: CheckCircle2,
     },
     overdue: {
       label: "Vencido",
-      className: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+      className:
+        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
       icon: AlertTriangle,
     },
   }
@@ -130,18 +159,26 @@ function VehicleReminderCard({
   onEditReminder,
   onDeleteReminder,
 }: {
-  vehicle: Vehicle
-  reminders: MaintenanceReminder[]
+  vehicle: VehicleNotificationsAPI
+  reminders: MaintenanceReminderAPI[]
   onAddReminder: (vehicleId: string) => void
-  onEditReminder: (reminder: MaintenanceReminder) => void
+  onEditReminder: (reminder: MaintenanceReminderAPI) => void
   onDeleteReminder: (reminderId: string) => void
 }) {
-  const { progress, remainingKm, status } = calculateServiceProgress(vehicle)
+  const progress = calculateKmProgress(
+    vehicle.current_kilometers,
+    vehicle.next_service_kilometers
+  )
+  const remainingKm = vehicle.remaining_km ?? 0
+  const progressColor = getKmProgressColor(
+    vehicle.remaining_km,
+    vehicle.next_service_kilometers
+  )
 
   const statusColors = {
-    ok: "text-green-600 dark:text-green-400",
-    warning: "text-amber-600 dark:text-amber-400",
-    urgent: "text-red-600 dark:text-red-400",
+    green: "text-green-600 dark:text-green-400",
+    yellow: "text-amber-600 dark:text-amber-400",
+    red: "text-red-600 dark:text-red-400",
   }
 
   return (
@@ -179,14 +216,21 @@ function VehicleReminderCard({
               Kilometraje actual
             </span>
             <span className="font-medium text-gray-900 dark:text-gray-100">
-              {vehicle.currentKilometers.toLocaleString()} km
+              {formatKilometers(vehicle.current_kilometers)} km
             </span>
           </div>
           <Progress value={progress} className="h-2" />
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Próximo servicio: {vehicle.nextServiceKilometers.toLocaleString()} km</span>
-            <span className={statusColors[status]}>
-              {remainingKm > 0 ? `${remainingKm.toLocaleString()} km restantes` : "¡Servicio requerido!"}
+            <span>
+              Próximo servicio:{" "}
+              {vehicle.next_service_kilometers
+                ? `${formatKilometers(vehicle.next_service_kilometers)} km`
+                : "No definido"}
+            </span>
+            <span className={statusColors[progressColor]}>
+              {remainingKm > 0
+                ? `${formatKilometers(remainingKm)} km restantes`
+                : "¡Servicio requerido!"}
             </span>
           </div>
         </div>
@@ -213,20 +257,22 @@ function VehicleReminderCard({
                       <StatusBadge status={reminder.status} />
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground flex-wrap">
-                      {reminder.targetKilometers && (
+                      {reminder.target_kilometers && (
                         <span className="flex items-center gap-1">
                           <Gauge className="h-3 w-3" />
-                          {reminder.targetKilometers.toLocaleString()} km
+                          {formatKilometers(reminder.target_kilometers)} km
                         </span>
                       )}
-                      {reminder.targetDate && (
+                      {reminder.target_date && (
                         <span className="flex items-center gap-1">
                           <Calendar className="h-3 w-3" />
-                          {new Date(reminder.targetDate).toLocaleDateString("es-EC")}
+                          {new Date(reminder.target_date).toLocaleDateString(
+                            "es-EC"
+                          )}
                         </span>
                       )}
                       <span className="flex items-center gap-1">
-                        {reminder.notifyVia.map((channel) => (
+                        {reminder.notify_via.map((channel) => (
                           <span key={channel} className="text-muted-foreground">
                             {channelIcons[channel]}
                           </span>
@@ -283,13 +329,15 @@ function ReminderFormModal({
   reminder,
   defaultVehicleId,
   onSave,
+  isSaving,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
-  vehicles: Vehicle[]
-  reminder?: MaintenanceReminder
+  vehicles: VehicleNotificationsAPI[]
+  reminder?: MaintenanceReminderAPI
   defaultVehicleId?: string
-  onSave: (data: ReminderFormData) => void
+  onSave: (data: ReminderFormData) => Promise<void>
+  isSaving: boolean
 }) {
   const {
     register,
@@ -301,14 +349,14 @@ function ReminderFormModal({
   } = useForm<ReminderFormData>({
     resolver: zodResolver(reminderSchema),
     defaultValues: {
-      vehicleId: reminder?.vehicleId || defaultVehicleId || "",
+      vehicleId: reminder?.vehicle || defaultVehicleId || "",
       type: reminder?.type || "kilometers",
       description: reminder?.description || "",
-      targetKilometers: reminder?.targetKilometers,
-      targetDate: reminder?.targetDate,
-      notifyVia: reminder?.notifyVia || ["whatsapp"],
-      notifyBeforeDays: reminder?.notifyBeforeDays || 7,
-      notifyBeforeKm: reminder?.notifyBeforeKm || 500,
+      targetKilometers: reminder?.target_kilometers,
+      targetDate: reminder?.target_date,
+      notifyVia: reminder?.notify_via || ["whatsapp"],
+      notifyBeforeDays: reminder?.notify_before_days || 7,
+      notifyBeforeKm: reminder?.notify_before_km || 500,
     },
   })
 
@@ -318,21 +366,20 @@ function ReminderFormModal({
   React.useEffect(() => {
     if (open) {
       reset({
-        vehicleId: reminder?.vehicleId || defaultVehicleId || "",
+        vehicleId: reminder?.vehicle || defaultVehicleId || "",
         type: reminder?.type || "kilometers",
         description: reminder?.description || "",
-        targetKilometers: reminder?.targetKilometers,
-        targetDate: reminder?.targetDate,
-        notifyVia: reminder?.notifyVia || ["whatsapp"],
-        notifyBeforeDays: reminder?.notifyBeforeDays || 7,
-        notifyBeforeKm: reminder?.notifyBeforeKm || 500,
+        targetKilometers: reminder?.target_kilometers,
+        targetDate: reminder?.target_date,
+        notifyVia: reminder?.notify_via || ["whatsapp"],
+        notifyBeforeDays: reminder?.notify_before_days || 7,
+        notifyBeforeKm: reminder?.notify_before_km || 500,
       })
     }
   }, [open, reminder, defaultVehicleId, reset])
 
-  const onSubmit = (data: ReminderFormData) => {
-    onSave(data)
-    onOpenChange(false)
+  const onSubmit = async (data: ReminderFormData) => {
+    await onSave(data)
   }
 
   const toggleChannel = (channel: NotificationChannel) => {
@@ -366,7 +413,9 @@ function ReminderFormModal({
             <Label htmlFor="vehicleId">Vehículo</Label>
             <Select
               value={watch("vehicleId")}
-              onValueChange={(v) => setValue("vehicleId", v, { shouldValidate: true })}
+              onValueChange={(v) =>
+                setValue("vehicleId", v, { shouldValidate: true })
+              }
             >
               <SelectTrigger className="dark:bg-gray-800">
                 <SelectValue placeholder="Selecciona un vehículo" />
@@ -374,7 +423,7 @@ function ReminderFormModal({
               <SelectContent>
                 {vehicles.map((v) => (
                   <SelectItem key={v.id} value={v.id}>
-                    {v.brand} {v.model} - {v.plate}
+                    {buildVehicleLabel(v)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -399,7 +448,7 @@ function ReminderFormModal({
                   variant={type === option.value ? "default" : "outline"}
                   size="sm"
                   onClick={() =>
-                    setValue("type", option.value as "kilometers" | "date" | "both")
+                    setValue("type", option.value as ReminderType)
                   }
                   className="w-full"
                 >
@@ -419,7 +468,9 @@ function ReminderFormModal({
               className="dark:bg-gray-800"
             />
             {errors.description && (
-              <p className="text-xs text-red-500">{errors.description.message}</p>
+              <p className="text-xs text-red-500">
+                {errors.description.message}
+              </p>
             )}
           </div>
 
@@ -457,7 +508,11 @@ function ReminderFormModal({
               {[
                 { id: "push" as const, label: "Push", icon: Bell },
                 { id: "email" as const, label: "Email", icon: Mail },
-                { id: "whatsapp" as const, label: "WhatsApp", icon: MessageCircle },
+                {
+                  id: "whatsapp" as const,
+                  label: "WhatsApp",
+                  icon: MessageCircle,
+                },
               ].map(({ id, label, icon: Icon }) => (
                 <Button
                   key={id}
@@ -510,13 +565,38 @@ function ReminderFormModal({
             )}
           </div>
 
+          {/* General Errors Display */}
+          {Object.keys(errors).length > 0 && (
+            <div className="rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-3">
+              <p className="text-sm font-medium text-red-700 dark:text-red-400">
+                Por favor corrige los siguientes errores:
+              </p>
+              <ul className="mt-1 text-xs text-red-600 dark:text-red-400 list-disc list-inside">
+                {Object.entries(errors).map(([field, error]) => (
+                  <li key={field}>
+                    {field}: {error?.message || "Campo inválido"}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSaving}
+            >
               Cancelar
             </Button>
-            <Button type="submit">
-              {reminder ? "Guardar Cambios" : "Crear Recordatorio"}
+            <Button type="submit" disabled={isSaving}>
+              {isSaving
+                ? "Guardando..."
+                : reminder
+                  ? "Guardar Cambios"
+                  : "Crear Recordatorio"}
             </Button>
           </div>
         </form>
@@ -536,25 +616,85 @@ function LoadingSkeleton() {
   )
 }
 
+// Error State
+function ErrorState({
+  error,
+  onRetry,
+}: {
+  error: string
+  onRetry: () => void
+}) {
+  return (
+    <Card className="border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30">
+      <CardContent className="p-6">
+        <div className="flex flex-col items-center gap-4 text-center">
+          <AlertTriangle className="h-10 w-10 text-red-600 dark:text-red-400" />
+          <div>
+            <h3 className="font-semibold text-red-700 dark:text-red-300">
+              Error al cargar recordatorios
+            </h3>
+            <p className="text-sm text-red-600 dark:text-red-400 mt-1">
+              {error}
+            </p>
+          </div>
+          <Button variant="outline" onClick={onRetry}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Reintentar
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Empty State
+function EmptyState() {
+  return (
+    <Card className="dark:bg-gray-900">
+      <CardContent className="p-12 text-center">
+        <Car className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+          No tienes vehículos registrados
+        </h3>
+        <p className="text-muted-foreground mb-4">
+          Agenda tu primera cita de servicio para registrar tu vehículo
+        </p>
+        <Link href="/agendamiento/nueva">
+          <Button>Agendar Cita</Button>
+        </Link>
+      </CardContent>
+    </Card>
+  )
+}
+
 // Main Component
 export function RemindersView() {
-  const [isLoading, setIsLoading] = React.useState(true)
-  const [vehicles, setVehicles] = React.useState<Vehicle[]>([])
-  const [reminders, setReminders] = React.useState<MaintenanceReminder[]>([])
-  const [isFormOpen, setIsFormOpen] = React.useState(false)
-  const [editingReminder, setEditingReminder] = React.useState<MaintenanceReminder | undefined>()
-  const [defaultVehicleId, setDefaultVehicleId] = React.useState<string | undefined>()
-  const [deletingReminderId, setDeletingReminderId] = React.useState<string | null>(null)
+  const { user } = useAuth()
+  const customerId = user?.id?.toString()
 
-  // Simular carga de datos
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setVehicles(mockVehicles)
-      setReminders(mockReminders)
-      setIsLoading(false)
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [])
+  const {
+    vehicles,
+    reminders,
+    isLoading,
+    isSaving,
+    error,
+    refresh,
+    addReminder,
+    editReminder,
+    removeReminder,
+    getVehicleReminders,
+  } = useReminders(customerId)
+
+  const [isFormOpen, setIsFormOpen] = React.useState(false)
+  const [editingReminder, setEditingReminder] = React.useState<
+    MaintenanceReminderAPI | undefined
+  >()
+  const [defaultVehicleId, setDefaultVehicleId] = React.useState<
+    string | undefined
+  >()
+  const [deletingReminderId, setDeletingReminderId] = React.useState<
+    string | null
+  >(null)
 
   const handleAddReminder = (vehicleId: string) => {
     setDefaultVehicleId(vehicleId)
@@ -562,50 +702,88 @@ export function RemindersView() {
     setIsFormOpen(true)
   }
 
-  const handleEditReminder = (reminder: MaintenanceReminder) => {
+  const handleEditReminder = (reminder: MaintenanceReminderAPI) => {
     setDefaultVehicleId(undefined)
     setEditingReminder(reminder)
     setIsFormOpen(true)
   }
 
-  const handleSaveReminder = (data: ReminderFormData) => {
+  const handleSaveReminder = async (data: ReminderFormData) => {
+    if (!customerId) {
+      toast.error("Error de sesión", {
+        description: "No se pudo identificar el cliente. Intenta recargar la página.",
+      })
+      return
+    }
+
     if (editingReminder) {
       // Update existing
-      setReminders((prev) =>
-        prev.map((r) =>
-          r.id === editingReminder.id
-            ? {
-                ...r,
-                ...data,
-              }
-            : r
-        )
-      )
-      toast.success("Recordatorio actualizado", {
-        description: "Los cambios se han guardado correctamente.",
+      const result = await editReminder(editingReminder.id, {
+        vehicle: data.vehicleId,
+        type: data.type,
+        description: data.description,
+        target_kilometers:
+          data.type === "date" ? null : data.targetKilometers || null,
+        target_date: data.type === "kilometers" ? null : data.targetDate || null,
+        notify_via: data.notifyVia,
+        notify_before_days:
+          data.type === "kilometers" ? null : data.notifyBeforeDays || null,
+        notify_before_km:
+          data.type === "date" ? null : data.notifyBeforeKm || null,
       })
+
+      if (result) {
+        toast.success("Recordatorio actualizado", {
+          description: "Los cambios se han guardado correctamente.",
+        })
+        setIsFormOpen(false)
+      } else {
+        toast.error("Error al actualizar", {
+          description: "No se pudo actualizar el recordatorio.",
+        })
+      }
     } else {
       // Create new
-      const newReminder: MaintenanceReminder = {
-        id: `reminder-${Date.now()}`,
-        customerId: "customer-001",
-        status: "pending",
-        createdAt: new Date().toISOString(),
-        ...data,
-      }
-      setReminders((prev) => [...prev, newReminder])
-      toast.success("Recordatorio creado", {
-        description: "El recordatorio se ha creado correctamente.",
+      const result = await addReminder({
+        vehicle: data.vehicleId,
+        customer_id: customerId,
+        type: data.type,
+        description: data.description,
+        target_kilometers:
+          data.type === "date" ? null : data.targetKilometers || null,
+        target_date: data.type === "kilometers" ? null : data.targetDate || null,
+        notify_via: data.notifyVia,
+        notify_before_days:
+          data.type === "kilometers" ? null : data.notifyBeforeDays || null,
+        notify_before_km:
+          data.type === "date" ? null : data.notifyBeforeKm || null,
       })
+
+      if (result) {
+        toast.success("Recordatorio creado", {
+          description: "El recordatorio se ha creado correctamente.",
+        })
+        setIsFormOpen(false)
+      } else {
+        toast.error("Error al crear", {
+          description: "No se pudo crear el recordatorio.",
+        })
+      }
     }
   }
 
-  const handleDeleteReminder = () => {
+  const handleDeleteReminder = async () => {
     if (deletingReminderId) {
-      setReminders((prev) => prev.filter((r) => r.id !== deletingReminderId))
-      toast.success("Recordatorio eliminado", {
-        description: "El recordatorio se ha eliminado correctamente.",
-      })
+      const success = await removeReminder(deletingReminderId)
+      if (success) {
+        toast.success("Recordatorio eliminado", {
+          description: "El recordatorio se ha eliminado correctamente.",
+        })
+      } else {
+        toast.error("Error al eliminar", {
+          description: "No se pudo eliminar el recordatorio.",
+        })
+      }
       setDeletingReminderId(null)
     }
   }
@@ -623,10 +801,35 @@ export function RemindersView() {
             <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
               Planificador de Recordatorios
             </h1>
-            <p className="text-muted-foreground">Programa avisos de mantenimiento</p>
+            <p className="text-muted-foreground">
+              Programa avisos de mantenimiento
+            </p>
           </div>
         </div>
         <LoadingSkeleton />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Link href="/dashboard/notificaciones">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+              Planificador de Recordatorios
+            </h1>
+            <p className="text-muted-foreground">
+              Programa avisos de mantenimiento
+            </p>
+          </div>
+        </div>
+        <ErrorState error={error} onRetry={refresh} />
       </div>
     )
   }
@@ -651,27 +854,31 @@ export function RemindersView() {
       </div>
 
       {/* Vehicles with Reminders */}
-      <div className="space-y-6">
-        {vehicles.map((vehicle, index) => {
-          const vehicleReminders = reminders.filter((r) => r.vehicleId === vehicle.id)
-          return (
-            <motion.div
-              key={vehicle.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <VehicleReminderCard
-                vehicle={vehicle}
-                reminders={vehicleReminders}
-                onAddReminder={handleAddReminder}
-                onEditReminder={handleEditReminder}
-                onDeleteReminder={(id) => setDeletingReminderId(id)}
-              />
-            </motion.div>
-          )
-        })}
-      </div>
+      {vehicles.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <div className="space-y-6">
+          {vehicles.map((vehicle, index) => {
+            const vehicleReminders = getVehicleReminders(vehicle.id)
+            return (
+              <motion.div
+                key={vehicle.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <VehicleReminderCard
+                  vehicle={vehicle}
+                  reminders={vehicleReminders}
+                  onAddReminder={handleAddReminder}
+                  onEditReminder={handleEditReminder}
+                  onDeleteReminder={(id) => setDeletingReminderId(id)}
+                />
+              </motion.div>
+            )
+          })}
+        </div>
+      )}
 
       {/* Form Modal */}
       <ReminderFormModal
@@ -681,24 +888,30 @@ export function RemindersView() {
         reminder={editingReminder}
         defaultVehicleId={defaultVehicleId}
         onSave={handleSaveReminder}
+        isSaving={isSaving}
       />
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingReminderId} onOpenChange={() => setDeletingReminderId(null)}>
+      <AlertDialog
+        open={!!deletingReminderId}
+        onOpenChange={() => setDeletingReminderId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>¿Eliminar recordatorio?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. El recordatorio será eliminado permanentemente.
+              Esta acción no se puede deshacer. El recordatorio será eliminado
+              permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSaving}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteReminder}
               className="bg-red-600 hover:bg-red-700"
+              disabled={isSaving}
             >
-              Eliminar
+              {isSaving ? "Eliminando..." : "Eliminar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -706,4 +919,3 @@ export function RemindersView() {
     </div>
   )
 }
-

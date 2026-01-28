@@ -1,7 +1,20 @@
 // Service Worker para Ambacar PWA
 // Enfocado en Web Push Notifications
 
-const SW_VERSION = '1.0.0'
+const SW_VERSION = '1.2.0'
+
+// Storage key for notifications
+const NOTIFICATIONS_STORAGE_KEY = 'ambacar_notifications'
+const MAX_NOTIFICATIONS = 50
+
+// Default notification config
+const DEFAULT_NOTIFICATION = {
+  title: 'Ambacar',
+  body: 'Tienes una nueva notificación',
+  icon: '/icon-192.png',
+  badge: '/icon-192.png',
+  defaultUrl: '/dashboard/notificaciones'
+}
 
 // Instalar Service Worker
 self.addEventListener('install', (event) => {
@@ -21,68 +34,87 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('push', (event) => {
   console.log('[SW] Push notification received')
 
-  if (!event.data) {
-    console.log('[SW] Push event but no data')
-    return
-  }
+  let data = { ...DEFAULT_NOTIFICATION }
 
-  let data
-  try {
-    data = event.data.json()
-  } catch (e) {
-    // Si no es JSON, usar como texto plano
-    data = {
-      title: 'Ambacar',
-      body: event.data.text(),
+  if (event.data) {
+    try {
+      const pushData = event.data.json()
+      data = { ...data, ...pushData }
+    } catch (e) {
+      // Si no es JSON, usar como texto plano
+      data.body = event.data.text()
     }
   }
 
+  const notificationData = {
+    url: data.url || DEFAULT_NOTIFICATION.defaultUrl,
+    timestamp: Date.now(),
+    notificationId: data.id || null,
+    ...data.data,
+  }
+
   const options = {
-    body: data.body || data.message || 'Nueva notificación',
-    icon: data.icon || '/icon-192.png',
-    badge: '/icon-192.png',
-    vibrate: [100, 50, 100],
+    body: data.body || DEFAULT_NOTIFICATION.body,
+    icon: data.icon || DEFAULT_NOTIFICATION.icon,
+    badge: data.badge || DEFAULT_NOTIFICATION.badge,
+    vibrate: data.vibrate || [100, 50, 100],
     tag: data.tag || 'ambacar-notification',
     renotify: true,
     requireInteraction: data.requireInteraction || false,
-    data: {
-      url: data.url || '/',
-      timestamp: Date.now(),
-      ...data.data,
-    },
+    data: notificationData,
     actions: data.actions || [],
   }
 
+  // Store notification for inbox display
+  const notificationToStore = {
+    id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    title: data.title || DEFAULT_NOTIFICATION.title,
+    body: data.body || DEFAULT_NOTIFICATION.body,
+    url: notificationData.url,
+    timestamp: notificationData.timestamp,
+    read: false,
+    icon: data.icon || DEFAULT_NOTIFICATION.icon,
+    data: data.data || {},
+  }
+
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Ambacar', options)
+    Promise.all([
+      // Show the notification
+      self.registration.showNotification(data.title || DEFAULT_NOTIFICATION.title, options),
+      // Send to all clients to store in localStorage
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        clientList.forEach((client) => {
+          client.postMessage({
+            type: 'PUSH_NOTIFICATION_RECEIVED',
+            notification: notificationToStore,
+          })
+        })
+      }),
+    ])
   )
 })
 
 // Manejar click en notificación
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification clicked')
+  console.log('[SW] Notification clicked:', event.notification.tag)
 
   event.notification.close()
 
-  const urlToOpen = event.notification.data?.url || '/'
+  const urlToOpen = event.notification.data?.url || DEFAULT_NOTIFICATION.defaultUrl
 
   // Manejar acciones específicas si existen
   if (event.action) {
     console.log('[SW] Action clicked:', event.action)
-    // Aquí se pueden manejar acciones específicas
+    // Aquí se pueden manejar acciones específicas basadas en el action ID
   }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Buscar si ya hay una ventana/pestaña abierta
+      // Buscar si ya hay una ventana/pestaña abierta de nuestra app
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.focus()
-          // Navegar a la URL específica
-          if (urlToOpen !== '/') {
-            client.navigate(urlToOpen)
-          }
-          return
+          // Navegar a la URL específica y luego enfocar
+          return client.navigate(urlToOpen).then(() => client.focus())
         }
       }
       // Si no hay ventana abierta, abrir una nueva
