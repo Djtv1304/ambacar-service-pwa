@@ -21,6 +21,7 @@ import {
   Bell,
   TrendingUp,
   Brain,
+  BarChart3,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/components/auth/auth-provider"
@@ -99,6 +100,12 @@ const navItems: NavItem[] = [
     href: "/dashboard/notificaciones",
     icon: Bell,
     roles: ["admin", "manager", "operator", "customer"],
+  },
+  {
+    title: "Analíticas",
+    href: "/dashboard/analiticas",
+    icon: BarChart3,
+    roles: ["admin", "operator", "manager"],
   },
   {
     title: "Configuración",
