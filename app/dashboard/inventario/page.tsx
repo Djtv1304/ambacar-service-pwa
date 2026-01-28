@@ -1,30 +1,32 @@
 "use client"
 
-import { useState, useMemo, useEffect, useRef } from "react"
-import { motion } from "framer-motion"
+import { useState, useEffect, useRef } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   Brain,
   Package,
   AlertTriangle,
   TrendingUp,
   DollarSign,
-  Zap,
   RefreshCw,
   Settings,
-  Sparkles
+  Sparkles,
+  BarChart3,
+  Car,
+  Zap,
+  ChevronRight,
+  Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
-import { RiskAlertsHUD } from "@/components/inventario/risk-alerts-hud"
-import { ConsumptionTrendsChart } from "@/components/inventario/consumption-trends-chart"
-import { SmartPartsGrid } from "@/components/inventario/smart-parts-grid"
-import {
-  smartParts,
-  riskAlerts,
-  aiModelMetrics,
-  type RiskAlert
-} from "@/lib/fixtures/smart-inventory"
+import { VehicleSelector } from "@/components/inventario/vehicle-selector"
+import { RecommendationsPanel } from "@/components/inventario/recommendations-panel"
+import { AnalyticsPanel } from "@/components/inventario/analytics-panel"
+import { ModelInfoPanel } from "@/components/inventario/model-info-panel"
+import { usePredictions, useAnalytics, useModelInfo } from "@/lib/hooks/use-recommender"
+import type { PredictionMethod } from "@/lib/api/recommender"
 
 // KPI Card component
 function KpiCard({
@@ -35,7 +37,8 @@ function KpiCard({
   trend,
   trendValue,
   variant = "default",
-  pulse = false
+  pulse = false,
+  isLoading = false
 }: {
   title: string
   value: string
@@ -45,6 +48,7 @@ function KpiCard({
   trendValue?: string
   variant?: "default" | "warning" | "danger" | "success" | "ai"
   pulse?: boolean
+  isLoading?: boolean
 }) {
   const variantStyles = {
     default: "border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950",
@@ -87,10 +91,14 @@ function KpiCard({
             {title}
           </p>
           <div className="flex items-baseline gap-2 mt-0.5">
-            <p className="text-xl font-bold text-gray-900 dark:text-gray-100 truncate">
-              {value}
-            </p>
-            {trend && trendValue && (
+            {isLoading ? (
+              <div className="h-7 w-16 bg-gray-200 dark:bg-gray-800 rounded animate-pulse" />
+            ) : (
+              <p className="text-xl font-bold text-gray-900 dark:text-gray-100 truncate">
+                {value}
+              </p>
+            )}
+            {trend && trendValue && !isLoading && (
               <span className={cn(
                 "text-xs font-medium",
                 trend === "up" ? "text-green-600 dark:text-green-400" :
@@ -111,30 +119,29 @@ function KpiCard({
 }
 
 export default function InventarioPage() {
-  const [selectedPartId, setSelectedPartId] = useState(smartParts[0]?.id)
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [activeTab, setActiveTab] = useState("predictor")
   const [isSticky, setIsSticky] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLDivElement>(null)
 
-  // Calculate KPIs from smart parts
-  const kpis = useMemo(() => {
-    const totalValue = smartParts.reduce((sum, part) => sum + (part.stockTotal * part.costoPromedio), 0)
-    const criticalParts = smartParts.filter(p => p.riskLevel === "critical")
-    const potentialLoss = criticalParts.reduce((sum, part) => sum + (part.predictedDemandNextWeek * part.costoPromedio * 1.5), 0)
-    const avgConfidence = smartParts.reduce((sum, part) => sum + part.replenishmentConfidence, 0) / smartParts.length
-    const partsNeedingReorder = smartParts.filter(p => p.riskLevel === "critical" || p.riskLevel === "warning").length
+  // API Hooks
+  const { data: predictions, isLoading: isPredicting, error: predictError, predict, reset: resetPredictions } = usePredictions()
+  const { data: analytics, isLoading: analyticsLoading } = useAnalytics()
+  const { data: modelInfo, isLoading: modelLoading, refetch: refetchModel } = useModelInfo()
 
-    return {
-      totalValue,
-      potentialLoss,
-      avgConfidence,
-      partsNeedingReorder,
-      criticalCount: criticalParts.length,
-      totalParts: smartParts.length
-    }
-  }, [])
+  // Handle prediction request
+  const handlePredict = async (params: {
+    marca: string
+    modelo: string
+    anio: number
+    kilometraje: number
+    metodo: PredictionMethod
+    n_recomendaciones: number
+  }) => {
+    await predict(params)
+  }
 
+  // Sticky header detection
   useEffect(() => {
     const sentinel = sentinelRef.current
     if (!sentinel) return
@@ -170,17 +177,14 @@ export default function InventarioPage() {
     }
   }, [])
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
-    // Simulate AI model refresh
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    setIsRefreshing(false)
-  }
-
-  const handleViewDetails = (alert: RiskAlert) => {
-    setSelectedPartId(alert.partId)
-    // Scroll to chart
-    document.getElementById("trends-chart")?.scrollIntoView({ behavior: "smooth" })
+  // Calculate KPIs from analytics and model info
+  const modelDurationRaw = modelInfo?.duracion_entrenamiento ?? 0
+  const kpis = {
+    totalRepuestos: analytics?.total_repuestos_analizados ?? 0,
+    totalRangos: analytics?.rangos_kilometraje?.length ?? 0,
+    topRepuestos: analytics?.top_repuestos?.length ?? 0,
+    modelF1: modelInfo?.metricas?.f1 ?? 0,
+    modelDuration: typeof modelDurationRaw === 'number' ? `${modelDurationRaw.toFixed(1)}s` : modelDurationRaw
   }
 
   return (
@@ -207,18 +211,18 @@ export default function InventarioPage() {
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">
-                    Inventario Inteligente
+                    Recomendador IA
                   </h1>
                   <Badge
                     variant="outline"
                     className="hidden sm:flex gap-1 bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border-cyan-500/30 text-cyan-700 dark:text-cyan-400"
                   >
                     <Sparkles className="h-3 w-3" />
-                    IA v{aiModelMetrics.modelVersion}
+                    {kpis.modelDuration}
                   </Badge>
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Predicciones actualizadas hace {aiModelMetrics.lastTrainingDate}
+                  Predicciones inteligentes de repuestos por vehiculo
                 </p>
               </div>
             </div>
@@ -229,31 +233,33 @@ export default function InventarioPage() {
                 variant="outline"
                 className={cn(
                   "hidden md:flex gap-1.5",
-                  aiModelMetrics.accuracy >= 90
+                  kpis.modelF1 >= 0.7
                     ? "border-green-500/30 text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-500/10"
-                    : "border-yellow-500/30 text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10"
+                    : kpis.modelF1 >= 0.5
+                    ? "border-yellow-500/30 text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-500/10"
+                    : "border-gray-500/30 text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-500/10"
                 )}
               >
                 <TrendingUp className="h-3 w-3" />
-                {aiModelMetrics.accuracy}% Precisión
+                {modelLoading ? "---" : `${(kpis.modelF1 * 100).toFixed(1)}% F1`}
               </Badge>
 
               {/* Refresh Button */}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleRefresh}
-                disabled={isRefreshing}
+                onClick={() => refetchModel()}
+                disabled={modelLoading}
                 className="gap-1.5"
               >
-                <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+                <RefreshCw className={cn("h-4 w-4", modelLoading && "animate-spin")} />
                 <span className="hidden sm:inline">
-                  {isRefreshing ? "Actualizando..." : "Actualizar IA"}
+                  {modelLoading ? "Actualizando..." : "Actualizar"}
                 </span>
               </Button>
 
-              {/* Settings Button */}
-              <Button
+              {/* Settings Button - Hidden for now */}
+              {/* <Button
                 variant="outline"
                 size="sm"
                 className="gap-1.5"
@@ -263,7 +269,7 @@ export default function InventarioPage() {
                   <Settings className="h-4 w-4" />
                   <span className="hidden sm:inline">Configurar</span>
                 </a>
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
@@ -279,177 +285,189 @@ export default function InventarioPage() {
           className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
         >
           <KpiCard
-            title="Valor Inventario"
-            value={`$${(kpis.totalValue / 1000).toFixed(1)}K`}
-            subtitle={`${kpis.totalParts} repuestos en sistema`}
-            icon={DollarSign}
-            variant="default"
-          />
-          <KpiCard
-            title="Pérdida Potencial"
-            value={`$${(kpis.potentialLoss / 1000).toFixed(1)}K`}
-            subtitle="Por quiebre de stock estimado"
-            icon={AlertTriangle}
-            variant="danger"
-            pulse={kpis.criticalCount > 0}
-          />
-          <KpiCard
-            title="Requieren Pedido"
-            value={kpis.partsNeedingReorder.toString()}
-            subtitle={`${kpis.criticalCount} críticos, ${kpis.partsNeedingReorder - kpis.criticalCount} alerta`}
+            title="Repuestos Analizados"
+            value={kpis.totalRepuestos.toString()}
+            subtitle="En modelo de IA"
             icon={Package}
-            variant={kpis.criticalCount > 0 ? "warning" : "success"}
+            variant="default"
+            isLoading={analyticsLoading}
           />
           <KpiCard
-            title="Confianza IA"
-            value={`${kpis.avgConfidence.toFixed(0)}%`}
-            subtitle={`Modelo v${aiModelMetrics.modelVersion} • ${aiModelMetrics.dataPointsAnalyzed.toLocaleString()} datos`}
+            title="Rangos de KM"
+            value={kpis.totalRangos.toString()}
+            subtitle="Segmentos de datos"
+            icon={Car}
+            variant="success"
+            isLoading={analyticsLoading}
+          />
+          <KpiCard
+            title="Top Repuestos"
+            value={kpis.topRepuestos.toString()}
+            subtitle="Mas frecuentes"
+            icon={BarChart3}
+            variant="warning"
+            isLoading={analyticsLoading}
+          />
+          <KpiCard
+            title="F1 Score IA"
+            value={modelLoading ? "---" : `${(kpis.modelF1 * 100).toFixed(1)}%`}
+            subtitle={`Tiempo: ${kpis.modelDuration}`}
             icon={Brain}
             variant="ai"
             trend="up"
-            trendValue="2.3%"
+            trendValue="estable"
+            isLoading={modelLoading}
           />
         </motion.div>
 
-        {/* Risk Alerts HUD */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-        >
-          <RiskAlertsHUD
-            alerts={riskAlerts}
-            onViewDetails={handleViewDetails}
-          />
-        </motion.div>
+        {/* Main Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="predictor" className="gap-1.5">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Predictor IA</span>
+              <span className="sm:hidden">Predictor</span>
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-1.5">
+              <BarChart3 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Analytics</span>
+              <span className="sm:hidden">Stats</span>
+            </TabsTrigger>
+            <TabsTrigger value="model" className="gap-1.5">
+              <Brain className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Modelo IA</span>
+              <span className="sm:hidden">Modelo</span>
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Chart and Analysis Section */}
-        <div className="flex flex-wrap gap-6">
-          {/* Consumption Trends Chart */}
-          <motion.div
-            id="trends-chart"
-            className="min-w-[300px] flex-[1_1_600px]"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-          >
-            <ConsumptionTrendsChart
-              parts={smartParts}
-              selectedPartId={selectedPartId}
-              onPartChange={setSelectedPartId}
-            />
-          </motion.div>
+          {/* Predictor Tab */}
+          <TabsContent value="predictor" className="mt-0">
+            <div className="flex flex-wrap gap-6">
+              {/* Left Column - Vehicle Selector */}
+              <motion.div
+                className="min-w-[300px] flex-[1_1_350px] xl:flex-[0_0_400px]"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4 }}
+              >
+                <VehicleSelector
+                  onPredict={handlePredict}
+                  isLoading={isPredicting}
+                />
 
-          {/* AI Insights Panel */}
-          <motion.div
-            className="flex-[1_1_280px] xl:flex-[0_0_320px]"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            <div className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 shadow-lg h-full">
-              <div className="border-b border-gray-200 dark:border-gray-800 px-4 py-3 bg-gradient-to-r from-gray-50 dark:from-gray-900 to-transparent">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500">
-                    <Zap className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
-                      Insights de IA
-                    </h3>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                      Análisis predictivo en tiempo real
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 space-y-4">
-                {/* Model Stats */}
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">Precisión del Modelo</span>
-                    <span className="text-xs font-bold text-green-600 dark:text-green-400">{aiModelMetrics.accuracy}%</span>
-                  </div>
-                  <div className="h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-500"
-                      style={{ width: `${aiModelMetrics.accuracy}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 text-center">
-                    <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Predicciones
-                    </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                      {aiModelMetrics.predictionsGenerated.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 text-center">
-                    <p className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Datos Analizados
-                    </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                      {(aiModelMetrics.dataPointsAnalyzed / 1000).toFixed(0)}K
-                    </p>
-                  </div>
-                </div>
-
-                {/* Key Insights */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                    Patrones Detectados
-                  </h4>
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2 p-2 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-200 dark:border-cyan-500/20">
-                      <div className="h-1.5 w-1.5 rounded-full bg-cyan-500 mt-1.5 shrink-0" />
-                      <p className="text-[11px] text-cyan-700 dark:text-cyan-300">
-                        Demanda de filtros +23% por temporada de mantenimiento
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-2 p-2 rounded-lg bg-orange-50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20">
-                      <div className="h-1.5 w-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
-                      <p className="text-[11px] text-orange-700 dark:text-orange-300">
-                        Pastillas de freno correlacionadas con kilometraje OT
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-2 p-2 rounded-lg bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20">
-                      <div className="h-1.5 w-1.5 rounded-full bg-purple-500 mt-1.5 shrink-0" />
-                      <p className="text-[11px] text-purple-700 dark:text-purple-300">
-                        Aceites sintéticos preferidos por vehículos &gt;2020
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Train Model Button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-2 mt-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+                {/* Model Info Panel (Compact) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.2 }}
+                  className="mt-4"
                 >
-                  <Brain className="h-4 w-4" />
-                  Re-entrenar Modelo
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
+                  <ModelInfoPanel compact />
+                </motion.div>
+              </motion.div>
 
-        {/* Smart Parts Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.4 }}
-        >
-          <SmartPartsGrid
-            parts={smartParts}
-            onViewTrend={(part) => setSelectedPartId(part.id)}
-          />
-        </motion.div>
+              {/* Right Column - Results */}
+              <motion.div
+                className="min-w-[300px] flex-[1_1_600px]"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
+              >
+                <AnimatePresence mode="wait">
+                  {isPredicting ? (
+                    <motion.div
+                      key="loading"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 p-12"
+                    >
+                      <div className="flex flex-col items-center justify-center gap-4">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full blur-xl opacity-30 animate-pulse" />
+                          <div className="relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-purple-500">
+                            <Loader2 className="h-8 w-8 text-white animate-spin" />
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            Analizando vehiculo...
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            El modelo IA esta procesando los datos
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ) : predictions ? (
+                    <motion.div
+                      key="results"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                    >
+                      <RecommendationsPanel
+                        data={predictions}
+                        onReset={resetPredictions}
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="empty"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30 p-12"
+                    >
+                      <div className="flex flex-col items-center justify-center gap-4 text-center">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-800 dark:to-gray-700">
+                          <Car className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            Selecciona un vehiculo
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-[250px]">
+                            Ingresa la marca, modelo, anio y kilometraje para obtener recomendaciones de repuestos
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+                          <ChevronRight className="h-4 w-4" />
+                          <span>Las predicciones apareceran aqui</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {predictError && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4"
+                  >
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                      <p className="text-sm text-red-600 dark:text-red-400">
+                        {predictError}
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
+              </motion.div>
+            </div>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="mt-0">
+            <AnalyticsPanel />
+          </TabsContent>
+
+          {/* Model Tab */}
+          <TabsContent value="model" className="mt-0">
+            <ModelInfoPanel />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

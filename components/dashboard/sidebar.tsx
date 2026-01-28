@@ -113,12 +113,12 @@ const navItems: NavItem[] = [
     icon: Settings,
     roles: [], // Habilitado para todos los usuarios
   },
-  {
-    title: "Laboratorio IA",
-    href: "/dashboard/configuracion/ia-models",
-    icon: Brain,
-    roles: ["admin", "manager"],
-  },
+  // {
+  //   title: "Laboratorio IA",
+  //   href: "/dashboard/configuracion/ia-models",
+  //   icon: Brain,
+  //   roles: ["admin", "manager"],
+  // },
 ]
 
 // Mobile FAB Toggle Button (visible only on mobile, bottom-left position)
