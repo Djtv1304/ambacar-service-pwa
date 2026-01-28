@@ -31,6 +31,13 @@ import type { OrdenTrabajoDetalle, EstadoOrdenTrabajo, InspeccionListItem } from
 import { toast } from "sonner"
 import { RegistroHallazgoDialog } from "@/components/hallazgos/registro-hallazgo-dialog"
 import { OTProformaSheet } from "@/components/ot/ot-proforma-sheet"
+import {
+  notifyReceptionStarted,
+  notifyRepairStarted,
+  notifyQualityCheckStarted,
+  notifyVehicleReady,
+  type ServiceTypeSlug,
+} from "@/lib/services/phase-notification-service"
 
 const estadoColors: Record<string, string> = {
   creada: "bg-gray-500/10 text-gray-500 border-gray-500/20",
@@ -47,6 +54,92 @@ const estadoColors: Record<string, string> = {
 const getEstadoColorClass = (codigo: string): string => {
   const codigoLower = codigo.toLowerCase().replace(/-/g, "_")
   return estadoColors[codigoLower] || estadoColors.creada
+}
+
+// Mapeo de tipo de servicio a slug para notificaciones
+function getServiceTypeFromOT(tipoServicio: string | undefined): ServiceTypeSlug {
+  if (!tipoServicio) return "mantenimiento-preventivo"
+  const lower = tipoServicio.toLowerCase()
+  if (lower.includes("preventivo") || lower.includes("mantenimiento")) {
+    return "mantenimiento-preventivo"
+  }
+  if (lower.includes("colision") || lower.includes("pintura")) {
+    return "colision-pintura"
+  }
+  if (lower.includes("avaluo")) {
+    return lower.includes("mg") ? "avaluo-mg" : "avaluo-comercial"
+  }
+  return "averia-revision"
+}
+
+// Dispara notificaciones basadas en el cambio de estado de la OT
+async function dispatchStatusNotification(
+  estadoCodigo: string,
+  ot: OrdenTrabajoDetalle
+) {
+  // Extraer datos del cliente y vehículo desde la estructura anidada
+  const clienteId = ot.cliente_detalle?.id?.toString() || ""
+  const clienteNombre = `${ot.cliente_detalle?.first_name || ""} ${ot.cliente_detalle?.last_name || ""}`.trim()
+  const vehiculoDisplay = `${ot.vehiculo_detalle?.marca || ""} ${ot.vehiculo_detalle?.modelo || ""}`.trim()
+  const vehiculoPlaca = ot.vehiculo_detalle?.placa || ""
+  const tipoServicio = ot.tipo_detalle?.nombre || ""
+
+  const notificationParams = {
+    customerId: clienteId,
+    customerName: clienteNombre,
+    vehicleDisplay: vehiculoDisplay,
+    vehiclePlate: vehiculoPlaca,
+    orderNumber: `OT-${ot.id}`,
+    serviceType: getServiceTypeFromOT(tipoServicio),
+  }
+
+  // Skip if we don't have customer info
+  if (!notificationParams.customerId) {
+    console.warn("[Notification] No customer ID found in OT, skipping notification")
+    return
+  }
+
+  console.log(`[Notification] Sending to OT customer: id=${notificationParams.customerId}, name="${notificationParams.customerName}", vehicle=${notificationParams.vehiclePlate}`)
+
+  // Normalizar código: CTRL-CAL → ctrl_cal, EN-PROCESO → en_proceso
+  const codigoNormalizado = estadoCodigo.toLowerCase().replace(/-/g, "_")
+  console.log(`[Notification] Processing status change to: ${estadoCodigo} (normalized: ${codigoNormalizado})`)
+
+  try {
+    switch (codigoNormalizado) {
+      case "en_diagnostico":
+      case "recepcion":
+        // Recepción/Diagnóstico inicia → vehicle_received
+        await notifyReceptionStarted(notificationParams)
+        console.log("[Notification] Reception started notification sent")
+        break
+      case "en_proceso":
+      case "reparacion":
+        // Reparación inicia → repair_started
+        await notifyRepairStarted(notificationParams)
+        console.log("[Notification] Repair started notification sent")
+        break
+      case "ctrl_cal":
+      case "control_calidad":
+      case "en_prueba":
+        // Control de calidad → quality_check
+        await notifyQualityCheckStarted(notificationParams)
+        console.log("[Notification] Quality check notification sent")
+        break
+      case "lavado":
+      case "entrega":
+      case "completada":
+        // Vehículo listo (lavado terminado) → vehicle_ready
+        await notifyVehicleReady(notificationParams)
+        console.log("[Notification] Vehicle ready notification sent")
+        break
+      default:
+        console.log(`[Notification] No notification configured for status: ${codigoNormalizado}`)
+    }
+  } catch (error) {
+    console.error("[Notification] Failed to send status notification:", error)
+    // Don't throw - notifications are non-blocking
+  }
 }
 
 
@@ -165,6 +258,9 @@ export default function OTDetailPage({ params }: { params: Promise<{ id: string 
 
       // Mostrar mensaje de éxito de la API
       toast.success(response.message)
+
+      // Disparar notificación de fase (fire-and-forget)
+      dispatchStatusNotification(nuevoEstado.codigo, ot!)
     } catch (error: any) {
       toast.error(error.message || "Error al cambiar estado")
     }

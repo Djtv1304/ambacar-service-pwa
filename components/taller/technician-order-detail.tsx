@@ -14,9 +14,27 @@ import type { TechnicianOrder } from "@/lib/fixtures/technical-progress"
 import { completarEtapaOrdenTrabajo } from "@/lib/api/taller"
 import { useAuthToken } from "@/hooks/use-auth-token"
 import { toast } from "sonner"
+import {
+  notifyPhaseCompleted,
+  type ServiceTypeSlug,
+} from "@/lib/services/phase-notification-service"
 
 interface TechnicianOrderDetailProps {
   order: TechnicianOrder
+}
+
+// Mapeo de tipo de orden a service type slug para notificaciones
+function getServiceTypeSlug(tipoOrden: TechnicianOrder["tipoOrden"]): ServiceTypeSlug {
+  switch (tipoOrden) {
+    case "mantenimiento":
+      return "mantenimiento-preventivo"
+    case "reparacion":
+      return "averia-revision"
+    case "garantia":
+      return "averia-revision"
+    default:
+      return "mantenimiento-preventivo"
+  }
 }
 
 export function TechnicianOrderDetail({ order: initialOrder }: TechnicianOrderDetailProps) {
@@ -57,6 +75,10 @@ export function TechnicianOrderDetail({ order: initialOrder }: TechnicianOrderDe
         responsable_id: data.responsable_id,
       }, token)
 
+      // Find the completed phase to determine what notification to send
+      const completedPhase = order.fases.find(f => f.id === phaseId)
+      const completedPhaseName = completedPhase?.fase
+
       // Update local state on success
       setOrder(prev => {
         const updatedFases = [...prev.fases]
@@ -86,11 +108,31 @@ export function TechnicianOrderDetail({ order: initialOrder }: TechnicianOrderDe
       })
 
       toast.success("Fase completada exitosamente")
+
+      // Dispatch phase notification (fire-and-forget, don't block the flow)
+      if (completedPhaseName) {
+        notifyPhaseCompleted(completedPhaseName, {
+          customerId: order.cliente.id,
+          customerName: `${order.cliente.nombre} ${order.cliente.apellido}`,
+          vehicleDisplay: `${order.vehiculo.marca} ${order.vehiculo.modelo}`,
+          vehiclePlate: order.vehiculo.placa,
+          orderNumber: order.codigo,
+          technicianName: order.tecnicoAsignado?.nombre,
+          serviceType: getServiceTypeSlug(order.tipoOrden),
+        }).then(result => {
+          if (result) {
+            console.log(`[Notification] Phase ${completedPhaseName} completed, ${result.notifications_queued} notifications sent`)
+          }
+        }).catch(err => {
+          console.error("[Notification] Failed to send phase notification:", err)
+          // Don't show error to user, notifications are non-blocking
+        })
+      }
     } catch (error) {
       console.error("Error completing phase:", error)
       throw error // Re-throw so PhaseTimeline can handle it
     }
-  }, [getToken])
+  }, [getToken, order])
 
   // Handle additional work toggle
   const handleToggleWork = useCallback(async (itemId: string, completed: boolean) => {

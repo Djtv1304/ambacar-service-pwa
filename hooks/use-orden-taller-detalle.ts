@@ -48,7 +48,17 @@ export function useOrdenTallerDetalle(ordenId: string): UseOrdenTallerDetalleRet
         tecnicoId: fase.tecnicoId,
         tecnicoNombre: fase.tecnicoNombre,
         observaciones: fase.observaciones || undefined,
-        evidencia: fase.evidencia as PhaseEvidence[] || [],
+        // Transformar evidencia: API puede enviar 'imagenes' o 'evidencia'
+        // El campo de imagen es 'imagen' (URL firmada completa)
+        evidencia: ((fase as any).imagenes || fase.evidencia || []).map((ev: any): PhaseEvidence => ({
+          id: ev.id?.toString() || ev.media_id?.toString() || String(Date.now()),
+          tipo: ev.tipo || ev.media_type || "foto",
+          // Campo 'imagen' contiene la URL firmada completa
+          url: ev.imagen || ev.imagen_url_firmada || ev.imagen_url || ev.url || "",
+          thumbnail: ev.thumbnail || ev.imagen || ev.imagen_url_firmada || ev.imagen_url || ev.url,
+          descripcion: ev.descripcion || ev.tipo_foto || undefined,
+          fecha: ev.fecha_captura ? new Date(ev.fecha_captura) : new Date(),
+        })),
       })),
       trabajosAdicionales: apiData.trabajosAdicionales,
       // Transformar repuestos con conversión de precioUnitario string → number

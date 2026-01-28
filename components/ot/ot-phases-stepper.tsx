@@ -28,6 +28,15 @@ import { cn } from "@/lib/utils"
 // Phase types
 export type PhaseStatus = "completed" | "in_progress" | "pending"
 
+// API Imagen embebida en etapa
+export interface ImagenEmbebidaAPI {
+  id: number
+  imagen: string  // URL firmada completa
+  tipo_foto: string
+  descripcion?: string
+  fecha_captura?: string
+}
+
 // API Etapa structure
 export interface EtapaAPI {
   id: number
@@ -45,12 +54,16 @@ export interface EtapaAPI {
   fecha_fin: string | null
   observaciones: string | null
   duracion_minutos: number | null
+  // Imágenes embebidas directamente en la etapa (estructura real de API)
+  imagenes?: ImagenEmbebidaAPI[]
 }
 
-// API Imagen structure
+// API Imagen structure (root imagenes array)
 export interface ImagenOTAPI {
   id: number
-  imagen_url: string
+  imagen?: string // URL firmada completa (campo principal en API actual)
+  imagen_url?: string // Campo legacy
+  imagen_url_firmada?: string // Campo legacy para URL firmada
   fase_ot: string | null // "RECEPCION", "DIAGNOSTICO", "REPARACION", "CTRL-CAL", "ENTREGA"
   tipo_foto: string
   descripcion?: string
@@ -95,6 +108,7 @@ interface OTPhasesStepperProps {
 
 /**
  * Convert API etapas and imagenes to Phase[] format
+ * Prioriza imágenes embebidas en etapa.imagenes, si no existe usa imagenes[] del root
  */
 function mapEtapasToPhases(etapas: EtapaAPI[], imagenes: ImagenOTAPI[]): Phase[] {
   return etapas.map((etapa) => {
@@ -103,7 +117,26 @@ function mapEtapasToPhases(etapas: EtapaAPI[], imagenes: ImagenOTAPI[]): Phase[]
     if (etapa.estado === "COMPLETADA") estado = "completed"
     else if (etapa.estado === "EN_PROCESO") estado = "in_progress"
 
-    // Find images for this phase
+    // Primero verificar si hay imágenes embebidas en la etapa
+    if (etapa.imagenes && etapa.imagenes.length > 0) {
+      return {
+        id: etapa.id.toString(),
+        nombre: etapa.etapa_detalle.nombre,
+        estado,
+        fechaInicio: etapa.fecha_inicio || undefined,
+        fechaFin: etapa.fecha_fin || undefined,
+        duracionMinutos: etapa.duracion_minutos || undefined,
+        observaciones: etapa.observaciones || undefined,
+        evidencia: etapa.imagenes.map((img) => ({
+          id: img.id.toString(),
+          // Campo 'imagen' contiene la URL firmada completa
+          url: img.imagen,
+          descripcion: img.descripcion || img.tipo_foto,
+        })),
+      }
+    }
+
+    // Fallback: buscar imágenes en el array root por fase_ot
     const etapaCode = etapa.etapa_detalle.codigo.toUpperCase()
     const phaseImages = imagenes.filter((img) => {
       if (!img.fase_ot) return false
@@ -121,7 +154,8 @@ function mapEtapasToPhases(etapas: EtapaAPI[], imagenes: ImagenOTAPI[]): Phase[]
       observaciones: etapa.observaciones || undefined,
       evidencia: phaseImages.map((img) => ({
         id: img.id.toString(),
-        url: img.imagen_url,
+        // Usar campo imagen que contiene la URL firmada completa
+        url: (img as any).imagen || img.imagen_url_firmada || img.imagen_url,
         descripcion: img.descripcion || img.tipo_foto,
       })),
     }
