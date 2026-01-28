@@ -6,6 +6,9 @@ import { motion } from "framer-motion"
 
 interface OperationalPanelProps {
   recommendations: Recommendation[]
+  /** Precision from /model/metrics endpoint (e.g., "95.1%") */
+  modelPrecision?: string | null
+  isLoadingPrecision?: boolean
 }
 
 const iconMap = {
@@ -39,7 +42,8 @@ const severityConfig = {
   },
 }
 
-export function OperationalPanel({ recommendations }: OperationalPanelProps) {
+export function OperationalPanel({ recommendations, modelPrecision, isLoadingPrecision }: OperationalPanelProps) {
+  const precisionDisplay = isLoadingPrecision ? "..." : (modelPrecision || "-")
   return (
     <div
       id="recommendations-panel"
@@ -123,7 +127,7 @@ export function OperationalPanel({ recommendations }: OperationalPanelProps) {
       <div className="border-t border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-950/50 px-4 py-2.5 sm:px-5 sm:py-3 backdrop-blur-md">
         <div className="flex items-center justify-between text-xs">
           <span className="text-gray-600 dark:text-gray-400">Precisión del Modelo</span>
-          <span className="font-bold text-green-600 dark:text-green-400">92.5%</span>
+          <span className="font-bold text-green-600 dark:text-green-400">{precisionDisplay}</span>
         </div>
       </div>
     </div>

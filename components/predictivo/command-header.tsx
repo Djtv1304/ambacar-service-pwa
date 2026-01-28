@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
   Select,
   SelectContent,
@@ -14,8 +14,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { tallerOptions, marcaOptions, modeloOptions } from "@/lib/fixtures/predictive-data"
-import { TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react"
+import { marcaOptions, modeloOptions } from "@/lib/fixtures/predictive-data"
+import type { TallerPredictivo } from "@/lib/api/predictivo"
+import { TrendingUp, AlertTriangle, CheckCircle2, ChevronUp, ChevronDown, Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
@@ -26,11 +27,323 @@ interface CommandHeaderProps {
   marca: string
   modelo: string
   range: "weekly" | "monthly"
+  periods: number
   isOverload: boolean
+  isLoading?: boolean
+  workshops: TallerPredictivo[]
+  isLoadingWorkshops?: boolean
   onTallerChange: (value: string) => void
   onMarcaChange: (value: string) => void
   onModeloChange: (value: string) => void
   onRangeChange: (range: "weekly" | "monthly") => void
+  onPeriodsChange: (periods: number) => void
+}
+
+const PERIOD_LIMITS = {
+  weekly: { min: 1, max: 52 },
+  monthly: { min: 1, max: 12 },
+}
+
+// ============================================================================
+// Period Input Component - Desktop Version
+// ============================================================================
+interface PeriodInputProps {
+  value: number
+  onChange: (value: number) => void
+  min: number
+  max: number
+  unit: string
+  unitSingular: string
+  isLoading?: boolean
+}
+
+function PeriodInput({ value, onChange, min, max, unit, unitSingular, isLoading }: PeriodInputProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [localValue, setLocalValue] = useState(value.toString())
+  const [isFocused, setIsFocused] = useState(false)
+
+  // Sync local value with prop
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalValue(value.toString())
+    }
+  }, [value, isFocused])
+
+  const handleIncrement = useCallback(() => {
+    if (value < max && !isLoading) {
+      onChange(value + 1)
+    }
+  }, [value, max, onChange, isLoading])
+
+  const handleDecrement = useCallback(() => {
+    if (value > min && !isLoading) {
+      onChange(value - 1)
+    }
+  }, [value, min, onChange, isLoading])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "")
+    setLocalValue(raw)
+  }
+
+  const handleInputBlur = () => {
+    setIsFocused(false)
+    const parsed = parseInt(localValue, 10)
+    if (isNaN(parsed) || parsed < min) {
+      onChange(min)
+      setLocalValue(min.toString())
+    } else if (parsed > max) {
+      onChange(max)
+      setLocalValue(max.toString())
+    } else {
+      onChange(parsed)
+      setLocalValue(parsed.toString())
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      inputRef.current?.blur()
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault()
+      handleIncrement()
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault()
+      handleDecrement()
+    }
+  }
+
+  return (
+    <div className="group relative">
+      <div
+        className={cn(
+          "flex items-center gap-2 rounded-xl border px-3 py-1.5 transition-all duration-200",
+          "bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900/60 dark:to-gray-900/60",
+          isFocused
+            ? "border-blue-400 dark:border-blue-500 shadow-lg shadow-blue-500/10 ring-2 ring-blue-500/20"
+            : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600",
+          isLoading && "opacity-60 pointer-events-none"
+        )}
+      >
+        {/* Decrement Button */}
+        <button
+          type="button"
+          onClick={handleDecrement}
+          disabled={value <= min || isLoading}
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-150",
+            "hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95",
+            value <= min
+              ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+              : "text-gray-600 dark:text-gray-300"
+          )}
+        >
+          <ChevronDown className="h-4 w-4" />
+        </button>
+
+        {/* Editable Number Display */}
+        <div className="flex items-baseline gap-1.5">
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="numeric"
+              value={localValue}
+              onChange={handleInputChange}
+              onFocus={() => setIsFocused(true)}
+              onBlur={handleInputBlur}
+              onKeyDown={handleKeyDown}
+              disabled={isLoading}
+              className={cn(
+                "w-10 bg-transparent text-center text-xl font-bold tabular-nums outline-none",
+                "text-gray-900 dark:text-gray-100",
+                "selection:bg-blue-200 dark:selection:bg-blue-800"
+              )}
+              aria-label={`Número de ${unit}`}
+            />
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+              </div>
+            )}
+          </div>
+          <span className="text-sm font-medium text-gray-500 dark:text-gray-400 whitespace-nowrap">
+            {value === 1 ? unitSingular : unit}
+          </span>
+        </div>
+
+        {/* Increment Button */}
+        <button
+          type="button"
+          onClick={handleIncrement}
+          disabled={value >= max || isLoading}
+          className={cn(
+            "flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-150",
+            "hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-95",
+            value >= max
+              ? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+              : "text-gray-600 dark:text-gray-300"
+          )}
+        >
+          <ChevronUp className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Range Hint */}
+      <div
+        className={cn(
+          "absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] text-gray-400 dark:text-gray-500 whitespace-nowrap transition-opacity duration-200",
+          isFocused ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+        )}
+      >
+        {min} - {max}
+      </div>
+    </div>
+  )
+}
+
+// ============================================================================
+// Period Input Component - Mobile Compact Version
+// ============================================================================
+interface PeriodInputCompactProps {
+  value: number
+  onChange: (value: number) => void
+  min: number
+  max: number
+  unit: string
+  isLoading?: boolean
+}
+
+function PeriodInputCompact({ value, onChange, min, max, unit, isLoading }: PeriodInputCompactProps) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [localValue, setLocalValue] = useState(value.toString())
+  const [isFocused, setIsFocused] = useState(false)
+
+  useEffect(() => {
+    if (!isFocused) {
+      setLocalValue(value.toString())
+    }
+  }, [value, isFocused])
+
+  const handleIncrement = useCallback(() => {
+    if (value < max && !isLoading) {
+      onChange(value + 1)
+    }
+  }, [value, max, onChange, isLoading])
+
+  const handleDecrement = useCallback(() => {
+    if (value > min && !isLoading) {
+      onChange(value - 1)
+    }
+  }, [value, min, onChange, isLoading])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "")
+    setLocalValue(raw)
+  }
+
+  const handleInputBlur = () => {
+    setIsFocused(false)
+    const parsed = parseInt(localValue, 10)
+    if (isNaN(parsed) || parsed < min) {
+      onChange(min)
+      setLocalValue(min.toString())
+    } else if (parsed > max) {
+      onChange(max)
+      setLocalValue(max.toString())
+    } else {
+      onChange(parsed)
+      setLocalValue(parsed.toString())
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      inputRef.current?.blur()
+    }
+  }
+
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-0.5 rounded-lg border px-1 py-0.5 transition-all duration-200",
+        "bg-gradient-to-r from-slate-50 to-gray-50 dark:from-slate-900/60 dark:to-gray-900/60",
+        isFocused
+          ? "border-blue-400 dark:border-blue-500 ring-1 ring-blue-500/20"
+          : "border-gray-200 dark:border-gray-700",
+        isLoading && "opacity-60"
+      )}
+    >
+      {/* Decrement */}
+      <button
+        type="button"
+        onClick={handleDecrement}
+        disabled={value <= min || isLoading}
+        className={cn(
+          "flex h-6 w-5 items-center justify-center rounded transition-colors",
+          value <= min
+            ? "text-gray-300 dark:text-gray-600"
+            : "text-gray-500 dark:text-gray-400 active:bg-gray-200 dark:active:bg-gray-700"
+        )}
+      >
+        <ChevronDown className="h-3 w-3" />
+      </button>
+
+      {/* Number + Unit */}
+      <div className="flex items-center gap-0.5 px-0.5">
+        {isLoading ? (
+          <div className="w-6 flex items-center justify-center">
+            <Loader2 className="h-3 w-3 animate-spin text-blue-500" />
+          </div>
+        ) : (
+          <input
+            ref={inputRef}
+            type="text"
+            inputMode="numeric"
+            value={localValue}
+            onChange={handleInputChange}
+            onFocus={() => setIsFocused(true)}
+            onBlur={handleInputBlur}
+            onKeyDown={handleKeyDown}
+            disabled={isLoading}
+            className={cn(
+              "w-6 bg-transparent text-center text-xs font-bold tabular-nums outline-none",
+              "text-gray-900 dark:text-gray-100"
+            )}
+          />
+        )}
+        <span className="text-[9px] font-medium text-gray-400 dark:text-gray-500 uppercase">
+          {unit}
+        </span>
+      </div>
+
+      {/* Increment */}
+      <button
+        type="button"
+        onClick={handleIncrement}
+        disabled={value >= max || isLoading}
+        className={cn(
+          "flex h-6 w-5 items-center justify-center rounded transition-colors",
+          value >= max
+            ? "text-gray-300 dark:text-gray-600"
+            : "text-gray-500 dark:text-gray-400 active:bg-gray-200 dark:active:bg-gray-700"
+        )}
+      >
+        <ChevronUp className="h-3 w-3" />
+      </button>
+    </div>
+  )
+}
+
+/**
+ * Converts UPPERCASE text to Title Case
+ */
+function toTitleCase(str: string): string {
+  return str
+    .toLowerCase()
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ")
 }
 
 export function CommandHeader({
@@ -38,11 +351,16 @@ export function CommandHeader({
   marca,
   modelo,
   range,
+  periods,
   isOverload,
+  isLoading,
+  workshops,
+  isLoadingWorkshops,
   onTallerChange,
   onMarcaChange,
   onModeloChange,
   onRangeChange,
+  onPeriodsChange,
 }: CommandHeaderProps) {
   const [isNotifying, setIsNotifying] = useState(false)
   const [isSticky, setIsSticky] = useState(false)
@@ -137,18 +455,24 @@ export function CommandHeader({
 
             {/* Filters */}
             <div className="flex items-center gap-2">
-              <Select value={taller} onValueChange={onTallerChange}>
+              <Select value={taller} onValueChange={onTallerChange} disabled={isLoadingWorkshops}>
                 <SelectTrigger className="h-9 w-auto border-0 bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 focus:ring-1 focus:ring-blue-500 dark:focus:ring-blue-400">
-                  <SelectValue placeholder="Taller" />
+                  <SelectValue placeholder={isLoadingWorkshops ? "Cargando..." : "Taller"} />
                 </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800">
-                  {tallerOptions.map((option) => (
+                <SelectContent className="bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 max-h-[300px]">
+                  <SelectItem
+                    value="all"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-gray-800"
+                  >
+                    Todos los Talleres
+                  </SelectItem>
+                  {workshops.map((workshop) => (
                     <SelectItem
-                      key={option.value}
-                      value={option.value}
+                      key={workshop.id}
+                      value={workshop.id}
                       className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-gray-800"
                     >
-                      {option.label}
+                      {toTitleCase(workshop.nombre)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -197,18 +521,24 @@ export function CommandHeader({
           {/* Mobile: Filters row with horizontal scroll */}
           <div className="xl:hidden -mx-2 px-2 overflow-x-auto">
             <div className="flex items-center gap-1.5 min-w-max">
-              <Select value={taller} onValueChange={onTallerChange}>
+              <Select value={taller} onValueChange={onTallerChange} disabled={isLoadingWorkshops}>
                 <SelectTrigger className="h-7 w-auto border-0 bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 text-xs">
-                  <SelectValue placeholder="Taller" />
+                  <SelectValue placeholder={isLoadingWorkshops ? "..." : "Taller"} />
                 </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800">
-                  {tallerOptions.map((option) => (
+                <SelectContent className="bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800 max-h-[280px]">
+                  <SelectItem
+                    value="all"
+                    className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-gray-800"
+                  >
+                    Todos
+                  </SelectItem>
+                  {workshops.map((workshop) => (
                     <SelectItem
-                      key={option.value}
-                      value={option.value}
+                      key={workshop.id}
+                      value={workshop.id}
                       className="text-gray-900 dark:text-gray-100 focus:bg-gray-100 dark:focus:bg-gray-800"
                     >
-                      {option.label}
+                      {toTitleCase(workshop.nombre)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -254,18 +584,18 @@ export function CommandHeader({
             </div>
           </div>
 
-          {/* Mobile/Tablet: Range Control + Status (50% each) */}
+          {/* Mobile/Tablet: Range Control + Period Selector + Status */}
           <div className="flex items-center gap-2 xl:hidden">
-            {/* Time Range Control - Mobile (50%) */}
-            <div className="flex-1 flex items-center justify-center gap-0.5 rounded-lg bg-gray-100 dark:bg-gray-900 p-0.5">
+            {/* Time Range Control - Mobile */}
+            <div className="flex items-center justify-center gap-0.5 rounded-lg bg-gray-100 dark:bg-gray-900 p-0.5">
               <Button
                 variant={range === "weekly" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => onRangeChange("weekly")}
                 className={
                   range === "weekly"
-                    ? "flex-1 h-7 text-[10px] px-2 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 shadow-sm hover:bg-white dark:hover:bg-gray-950"
-                    : "flex-1 h-7 text-[10px] px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent"
+                    ? "h-7 text-[10px] px-2 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 shadow-sm hover:bg-white dark:hover:bg-gray-950"
+                    : "h-7 text-[10px] px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent"
                 }
               >
                 Sem
@@ -276,13 +606,23 @@ export function CommandHeader({
                 onClick={() => onRangeChange("monthly")}
                 className={
                   range === "monthly"
-                    ? "flex-1 h-7 text-[10px] px-2 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 shadow-sm hover:bg-white dark:hover:bg-gray-950"
-                    : "flex-1 h-7 text-[10px] px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent"
+                    ? "h-7 text-[10px] px-2 bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 shadow-sm hover:bg-white dark:hover:bg-gray-950"
+                    : "h-7 text-[10px] px-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent"
                 }
               >
                 Men
               </Button>
             </div>
+
+            {/* Period Selector - Mobile Compact */}
+            <PeriodInputCompact
+              value={periods}
+              onChange={onPeriodsChange}
+              min={PERIOD_LIMITS[range].min}
+              max={PERIOD_LIMITS[range].max}
+              unit={range === "weekly" ? "sem" : "mes"}
+              isLoading={isLoading}
+            />
 
             {/* Status Badge - Mobile (50%) */}
             <div className="flex-1 flex items-center justify-center">
@@ -336,15 +676,6 @@ export function CommandHeader({
                       </div>
 
                       <div className="flex gap-2 pt-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="flex-1"
-                          onClick={handleTriggerAlert}
-                          disabled={isNotifying}
-                        >
-                          {isNotifying ? "Enviando..." : "Notificar Staff"}
-                        </Button>
                         <Button
                           size="sm"
                           className="flex-1 bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600"
@@ -457,32 +788,46 @@ export function CommandHeader({
             )}
           </div>
 
-          {/* Desktop: Time Range Control */}
-          <div className="hidden xl:flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-gray-900 p-1">
-            <Button
-              variant={range === "weekly" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => onRangeChange("weekly")}
-              className={
-                range === "weekly"
-                  ? "h-8 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 shadow-sm hover:bg-white dark:hover:bg-gray-950"
-                  : "h-8 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent"
-              }
-            >
-              Semanal
-            </Button>
-            <Button
-              variant={range === "monthly" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => onRangeChange("monthly")}
-              className={
-                range === "monthly"
-                  ? "h-8 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 shadow-sm hover:bg-white dark:hover:bg-gray-950"
-                  : "h-8 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent"
-              }
-            >
-              Mensual
-            </Button>
+          {/* Desktop: Time Range Control + Period Selector */}
+          <div className="hidden xl:flex items-center gap-3">
+            {/* Range Toggle */}
+            <div className="flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-gray-900 p-1">
+              <Button
+                variant={range === "weekly" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => onRangeChange("weekly")}
+                className={
+                  range === "weekly"
+                    ? "h-8 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 shadow-sm hover:bg-white dark:hover:bg-gray-950"
+                    : "h-8 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent"
+                }
+              >
+                Semanal
+              </Button>
+              <Button
+                variant={range === "monthly" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => onRangeChange("monthly")}
+                className={
+                  range === "monthly"
+                    ? "h-8 text-sm bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 shadow-sm hover:bg-white dark:hover:bg-gray-950"
+                    : "h-8 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-transparent"
+                }
+              >
+                Mensual
+              </Button>
+            </div>
+
+            {/* Period Selector - Inline Editable Number */}
+            <PeriodInput
+              value={periods}
+              onChange={onPeriodsChange}
+              min={PERIOD_LIMITS[range].min}
+              max={PERIOD_LIMITS[range].max}
+              unit={range === "weekly" ? "semanas" : "meses"}
+              unitSingular={range === "weekly" ? "semana" : "mes"}
+              isLoading={isLoading}
+            />
           </div>
         </div>
       </div>

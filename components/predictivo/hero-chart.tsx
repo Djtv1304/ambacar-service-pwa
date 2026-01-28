@@ -2,15 +2,21 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import type { PredictionDataPoint } from "@/lib/fixtures/predictive-data"
+import type { GraficaTradingView } from "@/lib/api/predictivo"
 import { createChart, ColorType, LineStyle, LineSeries } from "lightweight-charts"
 import type { IChartApi, ISeriesApi, LineData, MouseEventParams } from "lightweight-charts"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { Moon, Sun, TrendingUp, Calendar } from "lucide-react"
+import { Moon, Sun, TrendingUp, Calendar, Loader2 } from "lucide-react"
 
 interface HeroChartProps {
-  data: PredictionDataPoint[]
+  /** Legacy data format for fixtures */
+  data?: PredictionDataPoint[]
+  /** API data format from grafica_tradingview */
+  apiData?: GraficaTradingView | null
   range: "weekly" | "monthly"
+  periods?: number
+  isLoading?: boolean
 }
 
 interface TooltipData {
@@ -21,12 +27,11 @@ interface TooltipData {
   y: number
 }
 
-export function HeroChart({ data, range }: HeroChartProps) {
+export function HeroChart({ data, apiData, range, periods = 1, isLoading = false }: HeroChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null)
   const chartRef = useRef<IChartApi | null>(null)
-  const historicalSeriesRef = useRef<ISeriesApi<"Line"> | null>(null)
-  const projectedSeriesRef = useRef<ISeriesApi<"Line"> | null>(null)
-  const { theme, resolvedTheme, setTheme } = useTheme()
+  const seriesRefs = useRef<Map<string, ISeriesApi<"Line">>>(new Map())
+  const { theme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   const [tooltipData, setTooltipData] = useState<TooltipData | null>(null)
   const [chartTheme, setChartTheme] = useState<"light" | "dark">("light")
@@ -71,7 +76,10 @@ export function HeroChart({ data, range }: HeroChartProps) {
   }
 
   useEffect(() => {
-    if (!chartContainerRef.current || !mounted) return
+    if (!chartContainerRef.current || !mounted || isLoading) return
+
+    // Need either legacy data or API data
+    if (!data && !apiData) return
 
     // Create chart instance with autoSize for native responsive behavior
     const chart = createChart(chartContainerRef.current, {
@@ -128,77 +136,131 @@ export function HeroChart({ data, range }: HeroChartProps) {
     })
 
     chartRef.current = chart
+    seriesRefs.current.clear()
 
-    // Split data into historical and projected
-    const historicalData = data
-      .filter((d) => d.type === "historical")
-      .map((d) => ({
-        time: d.time as any,
-        value: d.value,
-      }))
+    // Use API data if available, otherwise fall back to legacy format
+    if (apiData && apiData.series && apiData.series.length > 0) {
+      // Create series from API data
+      apiData.series.forEach((seriesConfig) => {
+        const lineStyle = seriesConfig.options.lineStyle === 2 ? LineStyle.Dashed : LineStyle.Solid
 
-    const projectedData = data
-      .filter((d) => d.type === "projected")
-      .map((d) => ({
-        time: d.time as any,
-        value: d.value,
-      }))
-
-    // Add last historical point to projected data for continuity
-    if (historicalData.length > 0 && projectedData.length > 0) {
-      const lastHistorical = historicalData[historicalData.length - 1]
-      projectedData.unshift(lastHistorical)
-    }
-
-    // Create historical series (solid line)
-    const historicalSeries = chart.addSeries(LineSeries, {
-      color: chartColors.historicalLineColor,
-      lineWidth: 3,
-      lineStyle: LineStyle.Solid,
-      title: "Histórico",
-      priceFormat: {
-        type: "custom",
-        formatter: (price: number) => `${Math.round(price)}`,
-      },
-    })
-    historicalSeriesRef.current = historicalSeries
-    historicalSeries.setData(historicalData as LineData[])
-
-    // Create projected series (dashed line) - Vibrant color
-    const projectedSeries = chart.addSeries(LineSeries, {
-      color: chartColors.projectedLineColor,
-      lineWidth: 3,
-      lineStyle: LineStyle.Dashed,
-      title: "Proyectado",
-      priceFormat: {
-        type: "custom",
-        formatter: (price: number) => `${Math.round(price)}`,
-      },
-    })
-    projectedSeriesRef.current = projectedSeries
-    projectedSeries.setData(projectedData as LineData[])
-
-    // Crosshair move handler for custom tooltip
-    chart.subscribeCrosshairMove((param: MouseEventParams) => {
-      if (!param.time || !param.point) {
-        setTooltipData(null)
-        return
-      }
-
-      const timeStr = param.time.toString()
-      const dataPoint = data.find((d) => d.time === timeStr)
-
-      if (dataPoint && chartContainerRef.current) {
-        const containerRect = chartContainerRef.current.getBoundingClientRect()
-        setTooltipData({
-          date: timeStr,
-          value: dataPoint.value,
-          type: dataPoint.type,
-          x: Math.min(param.point.x, containerRect.width - 180),
-          y: param.point.y,
+        const series = chart.addSeries(LineSeries, {
+          color: seriesConfig.options.color,
+          lineWidth: seriesConfig.options.lineWidth || 2,
+          lineStyle: lineStyle,
+          title: seriesConfig.options.title,
+          priceFormat: {
+            type: "custom",
+            formatter: (price: number) => `${Math.round(price)}`,
+          },
         })
+
+        // Transform data to LineData format
+        const lineData = seriesConfig.data.map((d) => ({
+          time: d.time as any,
+          value: d.value,
+        }))
+
+        series.setData(lineData as LineData[])
+        seriesRefs.current.set(seriesConfig.id, series)
+      })
+
+      // Crosshair move handler for API data
+      chart.subscribeCrosshairMove((param: MouseEventParams) => {
+        if (!param.time || !param.point) {
+          setTooltipData(null)
+          return
+        }
+
+        const timeStr = param.time.toString()
+
+        // Find value from prediccion series (main line)
+        const prediccionSeries = apiData.series.find(s => s.id === "prediccion")
+        const dataPoint = prediccionSeries?.data.find((d) => d.time === timeStr)
+
+        if (dataPoint && chartContainerRef.current) {
+          const containerRect = chartContainerRef.current.getBoundingClientRect()
+          setTooltipData({
+            date: timeStr,
+            value: dataPoint.value,
+            type: "projected",
+            x: Math.min(param.point.x, containerRect.width - 180),
+            y: param.point.y,
+          })
+        }
+      })
+    } else if (data) {
+      // Legacy format handling
+      const historicalData = data
+        .filter((d) => d.type === "historical")
+        .map((d) => ({
+          time: d.time as any,
+          value: d.value,
+        }))
+
+      const projectedData = data
+        .filter((d) => d.type === "projected")
+        .map((d) => ({
+          time: d.time as any,
+          value: d.value,
+        }))
+
+      // Add last historical point to projected data for continuity
+      if (historicalData.length > 0 && projectedData.length > 0) {
+        const lastHistorical = historicalData[historicalData.length - 1]
+        projectedData.unshift(lastHistorical)
       }
-    })
+
+      // Create historical series (solid line)
+      const historicalSeries = chart.addSeries(LineSeries, {
+        color: chartColors.historicalLineColor,
+        lineWidth: 3,
+        lineStyle: LineStyle.Solid,
+        title: "Histórico",
+        priceFormat: {
+          type: "custom",
+          formatter: (price: number) => `${Math.round(price)}`,
+        },
+      })
+      seriesRefs.current.set("historical", historicalSeries)
+      historicalSeries.setData(historicalData as LineData[])
+
+      // Create projected series (dashed line) - Vibrant color
+      const projectedSeries = chart.addSeries(LineSeries, {
+        color: chartColors.projectedLineColor,
+        lineWidth: 3,
+        lineStyle: LineStyle.Dashed,
+        title: "Proyectado",
+        priceFormat: {
+          type: "custom",
+          formatter: (price: number) => `${Math.round(price)}`,
+        },
+      })
+      seriesRefs.current.set("projected", projectedSeries)
+      projectedSeries.setData(projectedData as LineData[])
+
+      // Crosshair move handler for legacy data
+      chart.subscribeCrosshairMove((param: MouseEventParams) => {
+        if (!param.time || !param.point) {
+          setTooltipData(null)
+          return
+        }
+
+        const timeStr = param.time.toString()
+        const dataPoint = data.find((d) => d.time === timeStr)
+
+        if (dataPoint && chartContainerRef.current) {
+          const containerRect = chartContainerRef.current.getBoundingClientRect()
+          setTooltipData({
+            date: timeStr,
+            value: dataPoint.value,
+            type: dataPoint.type,
+            x: Math.min(param.point.x, containerRect.width - 180),
+            y: param.point.y,
+          })
+        }
+      })
+    }
 
     // Fit all content into visible area
     chart.timeScale().fitContent()
@@ -207,7 +269,7 @@ export function HeroChart({ data, range }: HeroChartProps) {
     return () => {
       chart.remove()
     }
-  }, [data, mounted, chartTheme])
+  }, [data, apiData, mounted, chartTheme, isLoading])
 
   // Update chart colors when chart theme changes
   useEffect(() => {
@@ -240,14 +302,17 @@ export function HeroChart({ data, range }: HeroChartProps) {
       },
     })
 
-    if (historicalSeriesRef.current) {
-      historicalSeriesRef.current.applyOptions({
+    // Update legacy series colors if they exist
+    const historicalSeries = seriesRefs.current.get("historical")
+    if (historicalSeries) {
+      historicalSeries.applyOptions({
         color: chartColors.historicalLineColor,
       })
     }
 
-    if (projectedSeriesRef.current) {
-      projectedSeriesRef.current.applyOptions({
+    const projectedSeries = seriesRefs.current.get("projected")
+    if (projectedSeries) {
+      projectedSeries.applyOptions({
         color: chartColors.projectedLineColor,
       })
     }
@@ -282,7 +347,10 @@ export function HeroChart({ data, range }: HeroChartProps) {
               isDark ? "text-gray-400" : "text-gray-600 dark:text-muted-foreground"
             }`}
           >
-            {range === "weekly" ? "7 días + 7 días" : "30 días + 30 días"}
+            {range === "weekly"
+              ? `Proyección: ${periods} ${periods === 1 ? "semana" : "semanas"}`
+              : `Proyección: ${periods} ${periods === 1 ? "mes" : "meses"}`
+            }
           </p>
         </div>
 
@@ -314,6 +382,18 @@ export function HeroChart({ data, range }: HeroChartProps) {
       {/* Chart Canvas with Tooltip - Fixed height for autoSize */}
       <div className="relative">
         <div ref={chartContainerRef} className="w-full h-[280px] sm:h-[350px] lg:h-[400px]" />
+
+        {/* Loading Overlay */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              <span className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                Cargando predicciones...
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Custom Tracking Tooltip */}
         {tooltipData && (
