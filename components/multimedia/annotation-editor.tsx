@@ -52,7 +52,7 @@ type HistoryItem =
   | { type: "line"; data: LineData }
   | { type: "shape"; data: ShapeData }
 
-interface AnnotationData {
+export interface AnnotationData {
   lines: LineData[]
   shapes: ShapeData[]
   imageId: string
@@ -61,8 +61,9 @@ interface AnnotationData {
 interface AnnotationEditorProps {
   imageUrl: string
   imageId: string
-  onSave?: (data: AnnotationData) => void
+  onSave?: (data: AnnotationData) => void | Promise<void>
   initialAnnotations?: AnnotationData
+  isSaving?: boolean
 }
 
 // Colores del tema Ambacar
@@ -85,6 +86,7 @@ export function AnnotationEditor({
   imageId,
   onSave,
   initialAnnotations,
+  isSaving = false,
 }: AnnotationEditorProps) {
   // Cargar imagen usando use-image
   const [image, imageStatus] = useImage(imageUrl, "anonymous")
@@ -834,10 +836,19 @@ export function AnnotationEditor({
           <Button
             onClick={handleSave}
             className="bg-primary hover:bg-primary/90 text-white"
-            disabled={lines.length === 0 && shapes.length === 0}
+            disabled={(lines.length === 0 && shapes.length === 0) || isSaving}
           >
-            <Save className="h-4 w-4 mr-2" />
-            Guardar Anotaciones
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Guardar Anotaciones
+              </>
+            )}
           </Button>
         </div>
       </motion.div>

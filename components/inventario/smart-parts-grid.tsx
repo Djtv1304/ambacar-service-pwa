@@ -9,7 +9,6 @@ import {
   Minus,
   Snowflake,
   Flame,
-  ShoppingCart,
   ChevronDown,
   ChevronUp,
   Search,
@@ -39,7 +38,6 @@ import type { SmartPart, RiskLevel, DemandTrend, PartStatus } from "@/lib/fixtur
 
 interface SmartPartsGridProps {
   parts: SmartPart[]
-  onAddToOrder?: (part: SmartPart) => void
   onViewTrend?: (part: SmartPart) => void
 }
 
@@ -162,12 +160,10 @@ function ProbabilityCircle({ value, size = "md" }: { value: number; size?: "sm" 
 function SmartPartRow({
   part,
   index,
-  onAddToOrder,
   onViewTrend
 }: {
   part: SmartPart
   index: number
-  onAddToOrder?: (part: SmartPart) => void
   onViewTrend?: (part: SmartPart) => void
 }) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -175,8 +171,6 @@ function SmartPartRow({
   const trend = trendConfig[part.demandTrend]
   const StatusIcon = status.icon
   const TrendIcon = trend.icon
-
-  const needsAction = part.urgenciaPedido === "immediate" || part.urgenciaPedido === "this_week"
 
   return (
     <motion.div
@@ -193,8 +187,7 @@ function SmartPartRow({
               ? "border-red-300 dark:border-red-800 shadow-red-100 dark:shadow-red-900/20 shadow-md"
               : part.riskLevel === "warning"
                 ? "border-orange-200 dark:border-orange-900 shadow-orange-50 dark:shadow-orange-900/10 shadow-sm"
-                : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700",
-            needsAction && "ring-1 ring-inset ring-red-500/20"
+                : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
           )}
         >
           {/* Main Row */}
@@ -275,23 +268,6 @@ function SmartPartRow({
 
               {/* Actions */}
               <div className="flex items-center gap-2">
-                {needsAction && (
-                  <Button
-                    size="sm"
-                    className={cn(
-                      "h-8 gap-1.5 text-xs",
-                      part.urgenciaPedido === "immediate"
-                        ? "bg-red-600 hover:bg-red-700"
-                        : "bg-orange-600 hover:bg-orange-700"
-                    )}
-                    onClick={() => onAddToOrder?.(part)}
-                  >
-                    <ShoppingCart className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">
-                      {part.urgenciaPedido === "immediate" ? "Pedir Ya" : "Añadir"}
-                    </span>
-                  </Button>
-                )}
                 <CollapsibleTrigger asChild>
                   <Button
                     variant="ghost"
@@ -424,7 +400,7 @@ function SmartPartRow({
   )
 }
 
-export function SmartPartsGrid({ parts, onAddToOrder, onViewTrend }: SmartPartsGridProps) {
+export function SmartPartsGrid({ parts, onViewTrend }: SmartPartsGridProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [filterCategoria, setFilterCategoria] = useState<string>("todas")
   const [filterRisk, setFilterRisk] = useState<string>("todos")
@@ -561,7 +537,6 @@ export function SmartPartsGrid({ parts, onAddToOrder, onViewTrend }: SmartPartsG
                 key={part.id}
                 part={part}
                 index={index}
-                onAddToOrder={onAddToOrder}
                 onViewTrend={onViewTrend}
               />
             ))

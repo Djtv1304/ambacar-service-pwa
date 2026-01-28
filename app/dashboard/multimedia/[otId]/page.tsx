@@ -20,13 +20,13 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { useAuthToken } from "@/hooks/use-auth-token"
 import { getOrdenTrabajoDetalle } from "@/lib/api/ordenes-trabajo"
-import { getGaleriaByOT, getUserById } from "@/lib/api/galeria"
+import { getGaleriaByOT, getUserById, createAnnotation } from "@/lib/api/galeria"
 import type { OrdenTrabajoDetalle, GaleriaOTResponse, MediaItem, MediaType, User as UserType } from "@/lib/types"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { AddTextNote } from "@/components/multimedia/add-text-note"
 import { AddVoiceNote } from "@/components/multimedia/add-voice-note"
-import { AnnotationEditor } from "@/components/multimedia/annotation-editor"
+import { AnnotationEditor, type AnnotationData } from "@/components/multimedia/annotation-editor"
 
 type FilterOption = MediaType | "TODAS"
 
@@ -64,6 +64,7 @@ export default function MultimediaDetailPage() {
   const [usuariosCache, setUsuariosCache] = useState<Record<number, UserType>>({})
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const [showAnnotationEditor, setShowAnnotationEditor] = useState(false)
+  const [isSavingAnnotation, setIsSavingAnnotation] = useState(false)
 
   useEffect(() => {
     loadData()
@@ -497,10 +498,43 @@ export default function MultimediaDetailPage() {
                 <AnnotationEditor
                   imageUrl={imagenSeleccionada.imagen_url_firmada}
                   imageId={imagenSeleccionada.media_id.toString()}
-                  onSave={(data) => {
-                    console.log("Anotaciones guardadas:", data)
-                    setShowAnnotationEditor(false)
-                    // Aquí se podría llamar a una API para guardar las anotaciones
+                  isSaving={isSavingAnnotation}
+                  onSave={async (data: AnnotationData) => {
+                    setIsSavingAnnotation(true)
+                    try {
+                      const token = await getToken()
+                      if (!token) {
+                        toast.error("Error de autenticación")
+                        return
+                      }
+
+                      await createAnnotation(
+                        {
+                          media_type: imagenSeleccionada.media_type,
+                          media_id: imagenSeleccionada.media_id,
+                          tipo_anotacion: "CANVAS_DRAWING",
+                          content_json: {
+                            lines: data.lines,
+                            shapes: data.shapes,
+                          },
+                        },
+                        token
+                      )
+
+                      toast.success("Anotaciones guardadas", {
+                        description: "Las anotaciones se han guardado correctamente",
+                      })
+                      setShowAnnotationEditor(false)
+                      // Recargar datos para mostrar el contador actualizado
+                      loadData()
+                    } catch (error) {
+                      console.error("Error guardando anotaciones:", error)
+                      toast.error("Error", {
+                        description: "No se pudieron guardar las anotaciones",
+                      })
+                    } finally {
+                      setIsSavingAnnotation(false)
+                    }
                   }}
                 />
               ) : (

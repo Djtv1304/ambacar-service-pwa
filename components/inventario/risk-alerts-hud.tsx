@@ -8,7 +8,6 @@ import {
   Clock,
   ChevronRight,
   Zap,
-  ShoppingCart,
   AlertCircle
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -18,7 +17,6 @@ import type { RiskAlert, RiskLevel } from "@/lib/fixtures/smart-inventory"
 
 interface RiskAlertsHUDProps {
   alerts: RiskAlert[]
-  onAddToOrder?: (alert: RiskAlert) => void
   onViewDetails?: (alert: RiskAlert) => void
 }
 
@@ -72,12 +70,10 @@ const riskConfig: Record<RiskLevel, {
 function RiskAlertCard({
   alert,
   index,
-  onAddToOrder,
   onViewDetails
 }: {
   alert: RiskAlert
   index: number
-  onAddToOrder?: (alert: RiskAlert) => void
   onViewDetails?: (alert: RiskAlert) => void
 }) {
   const config = riskConfig[alert.riskLevel]
@@ -202,28 +198,13 @@ function RiskAlertCard({
 
         {/* Actions */}
         <div className="flex gap-2 pt-1">
-          {alert.riskLevel !== "overstock" && (
-            <Button
-              size="sm"
-              className={cn(
-                "flex-1 gap-1.5 text-xs h-8",
-                alert.riskLevel === "critical"
-                  ? "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
-                  : "bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600"
-              )}
-              onClick={() => onAddToOrder?.(alert)}
-            >
-              <ShoppingCart className="h-3.5 w-3.5" />
-              Añadir a Pedido
-            </Button>
-          )}
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 text-xs h-8"
+            className="flex-1 gap-1.5 text-xs h-8"
             onClick={() => onViewDetails?.(alert)}
           >
-            Ver más
+            Ver detalles
             <ChevronRight className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -232,7 +213,7 @@ function RiskAlertCard({
   )
 }
 
-export function RiskAlertsHUD({ alerts, onAddToOrder, onViewDetails }: RiskAlertsHUDProps) {
+export function RiskAlertsHUD({ alerts, onViewDetails }: RiskAlertsHUDProps) {
   const criticalCount = alerts.filter(a => a.riskLevel === "critical").length
   const warningCount = alerts.filter(a => a.riskLevel === "warning").length
 
@@ -288,7 +269,6 @@ export function RiskAlertsHUD({ alerts, onAddToOrder, onViewDetails }: RiskAlert
                 key={alert.id}
                 alert={alert}
                 index={index}
-                onAddToOrder={onAddToOrder}
                 onViewDetails={onViewDetails}
               />
             ))}

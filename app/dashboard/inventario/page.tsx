@@ -177,11 +177,6 @@ export default function InventarioPage() {
     setIsRefreshing(false)
   }
 
-  const handleAddToOrder = (alert: RiskAlert) => {
-    console.log("Adding to order:", alert.partSku)
-    // TODO: Implement order functionality
-  }
-
   const handleViewDetails = (alert: RiskAlert) => {
     setSelectedPartId(alert.partId)
     // Scroll to chart
@@ -324,7 +319,6 @@ export default function InventarioPage() {
         >
           <RiskAlertsHUD
             alerts={riskAlerts}
-            onAddToOrder={handleAddToOrder}
             onViewDetails={handleViewDetails}
           />
         </motion.div>
@@ -453,7 +447,7 @@ export default function InventarioPage() {
         >
           <SmartPartsGrid
             parts={smartParts}
-            onSelectPart={setSelectedPartId}
+            onViewTrend={(part) => setSelectedPartId(part.id)}
           />
         </motion.div>
       </div>
