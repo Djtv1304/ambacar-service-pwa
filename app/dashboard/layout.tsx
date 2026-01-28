@@ -7,6 +7,7 @@ import { Sidebar, MobileMenuToggle } from "@/components/dashboard/sidebar"
 import { SidebarProvider, useSidebar } from "@/components/dashboard/sidebar-context"
 import { Topbar } from "@/components/dashboard/topbar"
 import { Breadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { InstallPrompt } from "@/components/pwa/install-prompt"
 import { useAuth } from "@/components/auth/auth-provider"
 import { Loader2 } from "lucide-react"
 import { motion } from "framer-motion"
@@ -85,6 +86,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className="flex flex-1 flex-col overflow-hidden"
       >
+        <InstallPrompt />
         <Topbar />
         <main className="flex-1 overflow-y-auto p-6">
           <Breadcrumbs />
